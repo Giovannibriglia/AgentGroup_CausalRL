@@ -69,10 +69,6 @@ def QL(env, n_act_agents, n_episodes):
         # updating the exploration proba using exponential decay formula
         exploration_proba = max(min_exploration_proba, np.exp(-exploration_decreasing_decay * e))
 
-    fig = plt.figure()
-    plt.plot(average_episodes_rewards)
-    plt.plot(step_for_episode)
-    plt.show()
     return average_episodes_rewards, steps_for_episode
 
 def CQL4():
