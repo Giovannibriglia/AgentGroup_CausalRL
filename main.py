@@ -1,3 +1,4 @@
+import time
 import matplotlib.pyplot as plt
 import numpy as np
 import env_game
@@ -5,10 +6,10 @@ import os
 import models
 from scipy.ndimage import gaussian_filter1d
 
-algorithms = ['CQL3', 'CQL4', 'DeepQNetwork_Mod']
+algorithms = ['QL', 'CQL3', 'CQL4', 'DeepQNetwork', 'DeepQNetwork_Mod']
 n_games = 1
-vect_rows = [10]
-vect_n_enemies = [10]
+vect_rows = [5]
+vect_n_enemies = [1]
 n_episodes = 1000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
@@ -39,7 +40,7 @@ for if_maze in vect_if_maze:
                 for game_n in range(1, n_games+1, 1):
                     n_agents = 1
                     n_act_agents = 5
-                    n_act_enemies = 5
+                    n_act_enemies = 1
                     n_goals = 1
                     env = env_game.CustomEnv(rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals,
                                              if_maze, if_same_enemies_actions)
@@ -49,6 +50,7 @@ for if_maze in vect_if_maze:
 
                     for alg in algorithms:
                         print(f'\n*** {alg} ****')
+                        time.sleep(1)
                         env_for_alg = env
                         rewards = []
                         steps = []
@@ -69,7 +71,7 @@ for if_maze in vect_if_maze:
 
                         ax1.plot(gaussian_filter1d(rewards, 2), label=f'{alg} = {round(np.mean(rewards), 3)}')
                         ax1.set_title('Average reward on episode steps')
-                        ax1.legend(fontsize='x-small')
+                        ax1.legend()  # fontsize='x-small'
 
                         ax2.plot(gaussian_filter1d(steps, 2))
                         ax2.set_yscale('log')
