@@ -13,22 +13,6 @@ from gym.spaces import Discrete
 from scipy.ndimage import gaussian_filter1d
 warnings.filterwarnings("ignore")
 
-visualization = False
-time_limit_minutes = 5
-colors_sequence = ['blue', 'orange', 'green', 'red', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
-Q_table_plot = False
-grids_dim = [10]
-n_episodes = 1000
-n_games = 10
-vet_n_enemies = [5]
-# CQL1: more exploration, no Q-Table update
-# CQL2: more exploration, Q-Table update
-# CQL3: nearby and attached with more exploration, Q-Table update
-# CQL4: nearby and attached without more exploration, Q-Table update
-approaches_choices = ['QL',
-                      'CQL1', 'CQL2', 'CQL3', 'CQL4',
-                      'CQL1*', 'CQL2*', 'CQL3*', 'CQL4*']
-
 
 class GUI:
     #  notice that pygame has x and y coordinates reversed than the implementation done in th "CustomEnv" class
