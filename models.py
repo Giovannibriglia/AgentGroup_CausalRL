@@ -1,15 +1,26 @@
+import math
 import random
-import matplotlib.pyplot as plt
+from collections import namedtuple, deque
+from itertools import count
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 import warnings
+
 warnings.filterwarnings("ignore")
 
 # discounted factor
 GAMMA = 0.99
 # learning rate
 LEARNING_RATE = 0.01
+EXPLORATION_PROBA = 1
+MIN_EXPLORATION_PROBA = 0.01
+BATCH_SIZE = 128
+TAU = 0.005
 # how many tries the system can do in the exploration
 exploration_actions_threshold = 10
 
@@ -66,18 +77,18 @@ def causal_model_gameover(causal_table, possible_actions_in, nearbies, attached)
 
 
 def QL(env, n_act_agents, n_episodes):
+    global EXPLORATION_PROBA
     rows = env.rows
     cols = env.cols
     Q_table = np.zeros((rows, cols, n_act_agents))
 
-    exploration_proba = 1
-    min_exploration_proba = 0.01
-    exploration_decreasing_decay = -np.log(min_exploration_proba) / (0.6 * n_episodes)
+    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (0.6 * n_episodes)
 
     average_episodes_rewards = []
     steps_for_episode = []
 
-    for e in tqdm(range(n_episodes)):
+    pbar = tqdm(range(n_episodes))
+    for e in pbar:
         agent = 0
         if e == 0:
             res_loser = True
@@ -97,8 +108,10 @@ def QL(env, n_act_agents, n_episodes):
 
             # print('current acquired', [current_stateX, current_stateY])
             step_for_episode += 1
+            _, _, _ = env.step_enemies()
+
             " epsiilon-greedy "
-            if np.random.uniform(0, 1) < exploration_proba:  # exploration
+            if np.random.uniform(0, 1) < EXPLORATION_PROBA:  # exploration
                 action = env.action_space.sample()
             else:  # exploitation
                 action = np.argmax(Q_table[current_stateX, current_stateY, :])
@@ -127,14 +140,16 @@ def QL(env, n_act_agents, n_episodes):
         average_episodes_rewards.append(total_episode_reward)
         steps_for_episode.append(step_for_episode)
         # updating the exploration proba using exponential decay formula
-        exploration_proba = max(min_exploration_proba, np.exp(-exploration_decreasing_decay * e))
+        EXPLORATION_PROBA = max(MIN_EXPLORATION_PROBA, np.exp(-EXPLORATION_DECREASING_DECAY * e))
 
-    print(f'Average reward: {np.mean(average_episodes_rewards)}')
+        pbar.set_postfix_str(f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
+
+    print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
     return average_episodes_rewards, steps_for_episode
 
 
 def CQL3(env, n_act_agents, n_episodes):
-
+    global EXPLORATION_PROBA
     rows = env.rows
     cols = env.cols
     # initialize the Q-Table
@@ -142,22 +157,20 @@ def CQL3(env, n_act_agents, n_episodes):
     # initialize table to keep track of the explored states
     Q_table_track = np.zeros((rows, cols))  # x, y, actions
 
-    exploration_proba = 1
-    min_exploration_proba = 0.01
-    exploration_decreasing_decay = -np.log(min_exploration_proba) / (0.6 * n_episodes)
+    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (0.6 * n_episodes)
 
     average_episodes_rewards = []
     steps_for_episode = []
 
-    for e in tqdm(range(n_episodes)):
+    pbar = tqdm(range(n_episodes))
+    for e in pbar:
         agent = 0
         if e == 0:
             res_loser = True
         else:
             res_loser = False
-        current_state, rewards, dones, enemies_nearby_all_agents, enemies_attached_all_agents = env.reset(res_loser)
-        current_stateX = current_state[agent][0]
-        current_stateY = current_state[agent][1]
+
+        env.reset(res_loser)
 
         total_episode_reward = 0
         step_for_episode = 0
@@ -169,8 +182,9 @@ def CQL3(env, n_act_agents, n_episodes):
 
             # print('current acquired', [current_stateX, current_stateY])
             step_for_episode += 1
+            enemies_nearby_all_agents, enemies_attached_all_agents, new_en_coord = env.step_enemies()
             " epsiilon-greedy "
-            if np.random.uniform(0, 1) < exploration_proba:  # exploration
+            if np.random.uniform(0, 1) < EXPLORATION_PROBA:  # exploration
                 enemies_nearby_agent = enemies_nearby_all_agents[agent]
                 enemies_attached_agent = enemies_attached_all_agents[agent]
                 possible_actions = [s for s in range(n_act_agents)]
@@ -199,7 +213,8 @@ def CQL3(env, n_act_agents, n_episodes):
                 else:
                     action = env.action_space.sample()
 
-                next_stateX, next_stateY = causal_model_movement(causal_table, action, current_stateY, current_stateX, rows, cols)
+                next_stateX, next_stateY = causal_model_movement(causal_table, action, current_stateY, current_stateX,
+                                                                 rows, cols)
 
                 if enemies_nearby_agent[0] == action and len(possible_actions) > 0:  # for debugging
                     print('Enemies nearby: ', enemies_nearby_agent)
@@ -271,26 +286,27 @@ def CQL3(env, n_act_agents, n_episodes):
         average_episodes_rewards.append(total_episode_reward)
         steps_for_episode.append(step_for_episode)
         # updating the exploration proba using exponential decay formula
-        exploration_proba = max(min_exploration_proba, np.exp(-exploration_decreasing_decay * e))
+        EXPLORATION_PROBA = max(MIN_EXPLORATION_PROBA, np.exp(-EXPLORATION_DECREASING_DECAY * e))
 
-    print(f'Average reward: {np.mean(average_episodes_rewards)}')
+        pbar.set_postfix_str(f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
+
+    print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
     return average_episodes_rewards, steps_for_episode
 
 
 def CQL4(env, n_act_agents, n_episodes):
-
+    global EXPLORATION_PROBA
     rows = env.rows
     cols = env.cols
     Q_table = np.zeros((rows, cols, n_act_agents))
 
-    exploration_proba = 1
-    min_exploration_proba = 0.01
-    exploration_decreasing_decay = -np.log(min_exploration_proba) / (0.6 * n_episodes)
+    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (0.6 * n_episodes)
 
     average_episodes_rewards = []
     steps_for_episode = []
 
-    for e in tqdm(range(n_episodes)):
+    pbar = tqdm(range(n_episodes))
+    for e in pbar:
         agent = 0
         if e == 0:
             res_loser = True
@@ -310,8 +326,9 @@ def CQL4(env, n_act_agents, n_episodes):
 
             # print('current acquired', [current_stateX, current_stateY])
             step_for_episode += 1
+            enemies_nearby_all_agents, enemies_attached_all_agents, new_en_coord = env.step_enemies()
             " epsiilon-greedy "
-            if np.random.uniform(0, 1) < exploration_proba:  # exploration
+            if np.random.uniform(0, 1) < EXPLORATION_PROBA:  # exploration
                 enemies_nearby_agent = enemies_nearby_all_agents[agent]
                 enemies_attached_agent = enemies_attached_all_agents[agent]
                 possible_actions = [s for s in range(n_act_agents)]
@@ -326,7 +343,8 @@ def CQL4(env, n_act_agents, n_episodes):
                 else:
                     action = env.action_space.sample()
 
-                next_stateX, next_stateY = causal_model_movement(causal_table, action, current_stateY, current_stateX, rows, cols)
+                next_stateX, next_stateY = causal_model_movement(causal_table, action, current_stateY, current_stateX,
+                                                                 rows, cols)
 
                 if enemies_nearby_agent[0] == action and len(possible_actions) > 0:
                     print('Enemies nearby: ', enemies_nearby_agent)
@@ -398,11 +416,10 @@ def CQL4(env, n_act_agents, n_episodes):
         average_episodes_rewards.append(total_episode_reward)
         steps_for_episode.append(step_for_episode)
         # updating the exploration proba using exponential decay formula
-        exploration_proba = max(min_exploration_proba, np.exp(-exploration_decreasing_decay * e))
+        EXPLORATION_PROBA = max(MIN_EXPLORATION_PROBA, np.exp(-EXPLORATION_DECREASING_DECAY * e))
 
-    print(f'Average reward: {np.mean(average_episodes_rewards)}')
+        pbar.set_postfix_str(f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
+
+    print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
     return average_episodes_rewards, steps_for_episode
 
-
-def DQN():
-    return 0

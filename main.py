@@ -54,8 +54,8 @@ for if_maze in vect_if_maze:
                             rewards, steps = models.CQL3(env_for_alg, n_act_agents, n_episodes)
                         elif alg == 'CQL4':
                             rewards, steps = models.CQL4(env_for_alg, n_act_agents, n_episodes)
-                        elif alg == 'DQN':
-                            rewards, steps = models.DQN()
+                        elif alg == 'DeepQNetwork':
+                            rewards, steps = models.DeepQNetwork(env_for_alg, n_act_agents, n_episodes)
 
                         np.save(f"{directory}/{alg}_rewards_game{game_n}.npy", rewards)
                         np.save(f"{directory}/{alg}_steps_game{game_n}.npy", steps)
