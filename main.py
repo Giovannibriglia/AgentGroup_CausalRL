@@ -3,7 +3,7 @@ import env_game
 import os
 import models
 
-algorithms = ['QL', 'CQL3', 'CQL4', 'DeepQNetwork']
+algorithms = ['DeepQNetwork']
 n_games = 1
 vect_rows = [5]
 vect_n_enemies = [1]
