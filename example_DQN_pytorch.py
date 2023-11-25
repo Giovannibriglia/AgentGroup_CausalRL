@@ -80,6 +80,7 @@ LR = 1e-4
 n_actions = env.action_space.n
 # Get the number of state observations
 state, info = env.reset()
+print(state)
 n_observations = len(state)
 
 policy_net = DQN(n_observations, n_actions).to(device)
