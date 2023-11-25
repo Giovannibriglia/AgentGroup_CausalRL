@@ -57,8 +57,4 @@ for if_maze in vect_if_maze:
                             rewards, steps = models.DQN()
 
                         np.save(f"{dir}/{alg}_rewards_game{game_n}.npy", rewards)
-                        # with open(f'{dir}/{alg}_rewards_game{game_n}', "wb") as fp:
-                            # pickle.dump(rewards, fp)
-
-                        with open(f'{dir}/{alg}_steps_game{game_n}', "wb") as fp:
-                            pickle.dump(steps, fp)
+                        np.save(f"{dir}/{alg}_steps_game{game_n}.npy", steps)
