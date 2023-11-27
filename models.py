@@ -13,15 +13,13 @@ from tqdm.auto import tqdm
 import warnings
 warnings.filterwarnings("ignore")
 
-# discounted factor
+
 GAMMA = 0.99
-# learning rate
 LEARNING_RATE = 0.01
 EXPLORATION_PROBA = 1
-MIN_EXPLORATION_PROBA = 0.01
+MIN_EXPLORATION_PROBA = 0.001
 BATCH_SIZE = 128
 TAU = 0.005
-# how many tries the system can do in the exploration
 exploration_actions_threshold = 10
 
 causal_table = pd.read_pickle('final_causal_table.pkl')
@@ -74,6 +72,34 @@ def causal_model_gameover(causal_table, possible_actions_in, nearbies, attached)
                 possible_actions.remove(action)
 
     return possible_actions
+
+class ReplayMemory(object):
+
+    def __init__(self, capacity):
+        self.memory = deque([], maxlen=capacity)
+
+    def push(self, *args, Transition):
+        """Save a transition"""
+        self.memory.append(Transition(*args))
+
+    def sample(self, batch_size):
+        return random.sample(self.memory, batch_size)
+
+    def __len__(self):
+        return len(self.memory)
+
+class DQN(nn.Module):
+
+    def __init__(self, n_observations, n_actions):
+        super(DQN, self).__init__()
+        self.layer1 = nn.Linear(n_observations, 128)
+        self.layer2 = nn.Linear(128, 128)
+        self.layer3 = nn.Linear(128, n_actions)
+
+    def forward(self, x):
+        x = F.relu(self.layer1(x))
+        x = F.relu(self.layer2(x))
+        return self.layer3(x)
 
 
 def QL(env, n_act_agents, n_episodes):
@@ -436,34 +462,6 @@ def DeepQNetwork(env, n_act_agents, n_episodes):
 
     Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
-    class ReplayMemory(object):
-
-        def __init__(self, capacity):
-            self.memory = deque([], maxlen=capacity)
-
-        def push(self, *args):
-            """Save a transition"""
-            self.memory.append(Transition(*args))
-
-        def sample(self, batch_size):
-            return random.sample(self.memory, batch_size)
-
-        def __len__(self):
-            return len(self.memory)
-
-    class DQN(nn.Module):
-
-        def __init__(self, n_observations, n_actions):
-            super(DQN, self).__init__()
-            self.layer1 = nn.Linear(n_observations, 128)
-            self.layer2 = nn.Linear(128, 128)
-            self.layer3 = nn.Linear(128, n_actions)
-
-        def forward(self, x):
-            x = F.relu(self.layer1(x))
-            x = F.relu(self.layer2(x))
-            return self.layer3(x)
-
     policy_net = DQN(env.cols*env.rows, n_act_agents).to(device)
     target_net = DQN(env.cols*env.rows, n_act_agents).to(device)
     target_net.load_state_dict(policy_net.state_dict())
@@ -575,7 +573,163 @@ def DeepQNetwork(env, n_act_agents, n_episodes):
             next_state = torch.tensor(next_state, dtype=torch.float32,
                                          device=device).unsqueeze(0)
 
-            memory.push(current_state, action, next_state, reward)
+            memory.push(current_state, action, next_state, reward, Transition=Transition)
+
+            optimize_model()
+
+            target_net_state_dict = target_net.state_dict()
+            policy_net_state_dict = policy_net.state_dict()
+            for key in policy_net_state_dict:
+                target_net_state_dict[key] = policy_net_state_dict[key] * TAU + target_net_state_dict[key] * (1 - TAU)
+            target_net.load_state_dict(target_net_state_dict)
+
+            if if_lose:
+                current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
+            if (abs(current_stateX - next_stateX) + abs(current_stateY - next_stateY)) > 1 and env.n_act_agents < 5:
+                print('movement control problem:', [current_stateX, current_stateY], [next_stateX, next_stateY])
+
+        average_episodes_rewards.append(total_episode_reward)
+        steps_for_episode.append(step_for_episode)
+        # updating the exploration proba using exponential decay formula
+        EXPLORATION_PROBA = max(MIN_EXPLORATION_PROBA, np.exp(-EXPLORATION_DECREASING_DECAY * e))
+
+        pbar.set_postfix_str(
+            f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
+
+    print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
+    return average_episodes_rewards, steps_for_episode
+
+
+def CausalDeepQNetwork(env, n_act_agents, n_episodes):
+
+    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (0.6 * n_episodes)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type == 'cuda':
+        print('Device: ', torch.cuda.get_device_name(0))
+
+    Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+
+    policy_net = DQN(env.cols*env.rows, n_act_agents).to(device)
+    target_net = DQN(env.cols*env.rows, n_act_agents).to(device)
+    target_net.load_state_dict(policy_net.state_dict())
+
+    optimizer = optim.AdamW(policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
+    memory = ReplayMemory(10000)
+
+    def select_action(state, steps_done, enemies_nearby_agent, enemies_attached_agente):
+        sample = random.random()
+        eps_threshold = MIN_EXPLORATION_PROBA + (1 - MIN_EXPLORATION_PROBA) * \
+                        math.exp(-1. * steps_done / EXPLORATION_DECREASING_DECAY)
+
+        if sample > eps_threshold:
+            with torch.no_grad():  # exploitation
+                # t.max(1) will return the largest column value of each row.
+                # second column on max result is index of where max element was
+                # found, so we pick action with the larger expected reward.
+                return policy_net(state).max(1).indices.view(1, 1)
+        else:  # exploration
+            possible_actions = [s for s in range(n_act_agents)]
+            possible_actions = causal_model_gameover(causal_table, possible_actions, enemies_nearby_agent,
+                                                     enemies_attached_agent)
+            if len(possible_actions) > 0:
+                return torch.tensor([[random.sample(possible_actions, 1)[0]]], device=device, dtype=torch.long)
+            else:
+                return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
+
+    def optimize_model():
+        if len(memory) < BATCH_SIZE:
+            return
+        transitions = memory.sample(BATCH_SIZE)
+        batch = Transition(*zip(*transitions))
+
+        # Compute a mask of non-final states and concatenate the batch elements
+        # (a final state would've been the one after which simulation ended)
+        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
+                                                batch.next_state)), device=device, dtype=torch.bool)
+        non_final_next_states = torch.cat([s for s in batch.next_state
+                                           if s is not None])
+        state_batch = torch.cat(batch.state)
+        action_batch = torch.cat(batch.action)
+        reward_batch = torch.cat(batch.reward)
+
+        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the columns of actions taken.
+        # These are the actions which would've been taken for each batch state according to policy_net
+        state_action_values = policy_net(state_batch).gather(1, action_batch)
+
+        # Compute V(s_{t+1}) for all next states.
+        # Expected values of actions for non_final_next_states are computed based on the "older" target_net;
+        # selecting their best reward with max(1).values
+        # This is merged based on the mask, such that we'll have either the expected state value or 0 in
+        # case the state was final.
+        next_state_values = torch.zeros(BATCH_SIZE, device=device)
+        with torch.no_grad():
+            next_state_values[non_final_mask] = target_net(non_final_next_states).max(1).values
+        # Compute the expected Q values
+        expected_state_action_values = (next_state_values * GAMMA) + reward_batch
+
+        # Compute Huber loss
+        criterion = nn.SmoothL1Loss()
+        loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
+
+        # Optimize the model
+        optimizer.zero_grad()
+        loss.backward()
+        # In-place gradient clipping
+        torch.nn.utils.clip_grad_value_(policy_net.parameters(), 100)
+        optimizer.step()
+
+    average_episodes_rewards = []
+    steps_for_episode = []
+
+    pbar = tqdm(range(n_episodes))
+    time.sleep(1)
+    for e in pbar:
+        agent = 0
+        if e == 0:
+            res_loser = True
+        else:
+            res_loser = False
+
+        env.reset(res_loser)
+
+        total_episode_reward = 0
+        step_for_episode = 0
+        done = False
+
+        while not done:
+            current_stateX = env.pos_agents[-1][agent][0]
+            current_stateY = env.pos_agents[-1][agent][1]
+
+            # One-hot encoding the current state
+            current_state = np.zeros(env.rows*env.cols)
+            current_state[current_stateY*env.cols+current_stateX] = 1
+            current_state = torch.tensor(current_state, dtype=torch.float32,
+                                         device=device).unsqueeze(0)
+
+            step_for_episode += 1
+            enemies_nearby_all_agents, enemies_attached_all_agents, new_en_coord = env.step_enemies()
+            enemies_nearby_agent = enemies_nearby_all_agents[0]  # only one agent
+            enemies_attached_agent = enemies_attached_all_agents[0]  # only one agent
+
+            action = select_action(current_state, e, enemies_nearby_agent, enemies_attached_agent)
+
+            result = env.step_agent(action)
+            # print('result:', result)
+            next_stateX = int(result[0][agent][0])
+            next_stateY = int(result[0][agent][0])
+            reward = int(result[1][agent])
+            total_episode_reward += reward
+            done = result[2][agent]  # If agent wins, end loop and restart
+            if_lose = result[3]
+
+            reward = torch.tensor([reward], device=device)
+            next_state = np.zeros(env.rows * env.cols)
+            next_state[next_stateY * env.cols + next_stateX] = 1
+            next_state = torch.tensor(next_state, dtype=torch.float32,
+                                         device=device).unsqueeze(0)
+
+            memory.push(current_state, action, next_state, reward, Transition=Transition)
 
             optimize_model()
 
@@ -611,34 +765,6 @@ def DeepQNetwork_Mod(env, n_act_agents, n_episodes):
         print('Device: ', torch.cuda.get_device_name(0))
 
     Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
-
-    class ReplayMemory(object):
-
-        def __init__(self, capacity):
-            self.memory = deque([], maxlen=capacity)
-
-        def push(self, *args):
-            """Save a transition"""
-            self.memory.append(Transition(*args))
-
-        def sample(self, batch_size):
-            return random.sample(self.memory, batch_size)
-
-        def __len__(self):
-            return len(self.memory)
-
-    class DQN(nn.Module):
-
-        def __init__(self, n_observations, n_actions):
-            super(DQN, self).__init__()
-            self.layer1 = nn.Linear(n_observations, 128)
-            self.layer2 = nn.Linear(128, 128)
-            self.layer3 = nn.Linear(128, n_actions)
-
-        def forward(self, x):
-            x = F.relu(self.layer1(x))
-            x = F.relu(self.layer2(x))
-            return self.layer3(x)
 
     policy_net = DQN(env.cols*env.rows, n_act_agents).to(device)
     target_net = DQN(env.cols*env.rows, n_act_agents).to(device)
@@ -723,7 +849,7 @@ def DeepQNetwork_Mod(env, n_act_agents, n_episodes):
 
         while not done:
             step_for_episode += 1
-            enemies_nearby_all_agents, enemies_attached_all_agents, new_en_coord = env.step_enemies()
+            _, _, new_en_coord = env.step_enemies()
 
             general_state = np.zeros(env.rows * env.cols)
 
@@ -755,7 +881,7 @@ def DeepQNetwork_Mod(env, n_act_agents, n_episodes):
             next_state = torch.tensor(next_state, dtype=torch.float32,
                                          device=device).unsqueeze(0)
 
-            memory.push(general_state, action, next_state, reward)
+            memory.push(general_state, action, next_state, reward, Transition=Transition)
 
             optimize_model()
 
