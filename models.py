@@ -20,7 +20,6 @@ EXPLORATION_PROBA = 1
 MIN_EXPLORATION_PROBA = 0.001
 BATCH_SIZE = 128
 TAU = 0.005
-exploration_actions_threshold = 10
 
 causal_table = pd.read_pickle('final_causal_table.pkl')
 
@@ -176,6 +175,8 @@ def QL(env, n_act_agents, n_episodes):
 
 def CQL3(env, n_act_agents, n_episodes):
     global EXPLORATION_PROBA
+    EXPLORATION_ACTIONS_TH = 10
+
     rows = env.rows
     cols = env.cols
     # initialize the Q-Table
@@ -233,7 +234,7 @@ def CQL3(env, n_act_agents, n_episodes):
                             Q_table_track[next_stateX, next_stateY] = 1
                         else:
                             check_tries += 1
-                            if check_tries == exploration_actions_threshold:
+                            if check_tries == EXPLORATION_ACTIONS_TH:
                                 new = True
                                 reward = 0  # reward to have not found a new state
                                 action = random.sample(possible_actions, 1)[0]
@@ -340,9 +341,8 @@ def CQL4(env, n_act_agents, n_episodes):
             res_loser = True
         else:
             res_loser = False
-        current_state, rewards, dones, enemies_nearby_all_agents, enemies_attached_all_agents = env.reset(res_loser)
-        current_stateX = current_state[agent][0]
-        current_stateY = current_state[agent][1]
+
+        env.reset(res_loser)
 
         total_episode_reward = 0
         step_for_episode = 0
@@ -355,7 +355,7 @@ def CQL4(env, n_act_agents, n_episodes):
             # print('current acquired', [current_stateX, current_stateY])
             step_for_episode += 1
             enemies_nearby_all_agents, enemies_attached_all_agents, new_en_coord = env.step_enemies()
-            " epsiilon-greedy "
+            " epsilon-greedy "
             if np.random.uniform(0, 1) < EXPLORATION_PROBA:  # exploration
                 enemies_nearby_agent = enemies_nearby_all_agents[agent]
                 enemies_attached_agent = enemies_attached_all_agents[agent]
@@ -381,10 +381,11 @@ def CQL4(env, n_act_agents, n_episodes):
                     print('Exploration: problem in action selection with nearby model -> action taken', action)
 
                 reward = 0
-                # additional Q-Table udpate
+                # additional Q-Table update
                 Q_table[current_stateX, current_stateY, action] = (1 - LEARNING_RATE) * Q_table[
                     current_stateX, current_stateY, action] + LEARNING_RATE * (reward + GAMMA * max(
                     Q_table[next_stateX, next_stateY, :]))
+
             else:  # exploitation
                 enemies_nearby_agent = enemies_nearby_all_agents[agent]
                 enemies_attached_agent = enemies_attached_all_agents[agent]

@@ -5,14 +5,15 @@ import env_game
 import os
 import models
 from scipy.ndimage import gaussian_filter1d
+from plots import plot_av_rew_steps
 
 # QL, CQL3, CQL4, DeepQNetwork, CausalDeepQNetwork, DeepQNetwork_Mod, CausalDeepQNetwork_Mod
-algorithms = ['CQL4', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod']
-n_games = 3
-vect_rows = [5]
-vect_n_enemies = [1]
-n_episodes = 1000
-vect_if_maze = [False]
+algorithms = ['CQL3', 'CQL4']
+n_games = 1
+vect_rows = [10]
+vect_n_enemies = [3]
+n_episodes = 2000
+vect_if_maze = [True]
 vect_if_same_enemies_actions = [False]
 dir_start = 'Results'
 
@@ -40,7 +41,7 @@ for if_maze in vect_if_maze:
                 directory += f'/{rows}x{cols}'
                 os.makedirs(directory, exist_ok=True)
 
-                for game_n in range(1, n_games+1, 1):
+                for game_n in range(1, n_games + 1, 1):
                     n_agents = 1
                     n_act_agents = 5
                     n_act_enemies = 5
@@ -73,15 +74,15 @@ for if_maze in vect_if_maze:
                         elif alg == 'CausalDeepQNetwork_Mod':
                             rewards, steps = models.CausalDeepQNetwork_Mod(env_for_alg, n_act_agents, n_episodes)
 
-
                         np.save(f"{directory}/{alg}_rewards_game{game_n}.npy", rewards)
                         np.save(f"{directory}/{alg}_steps_game{game_n}.npy", steps)
 
+                        cumulative_rewards = np.cumsum(rewards, dtype=int)
                         x = np.arange(0, n_episodes, 1)
-                        ax1.plot(x, gaussian_filter1d(rewards, 1), label=f'{alg} = {round(np.mean(rewards), 3)}')
-                        confidence_interval_rew = np.std(rewards)
-                        ax1.fill_between(x, (rewards - confidence_interval_rew), (rewards + confidence_interval_rew), alpha=0.1)
-                        ax1.set_ylim(min(rewards), 1.01)
+                        ax1.plot(x, cumulative_rewards, label=f'{alg} = {round(np.mean(rewards), 3)}')
+                        confidence_interval_rew = np.std(cumulative_rewards)
+                        ax1.fill_between(x, (cumulative_rewards - confidence_interval_rew), (cumulative_rewards + confidence_interval_rew),
+                                         alpha=0.2)
                         ax1.set_title('Average reward on episode steps')
                         ax1.legend(fontsize='x-small')
 
@@ -93,4 +94,5 @@ for if_maze in vect_if_maze:
                     plt.savefig(f'{directory}/Comparison_Game{n_games}.pdf')
                     plt.show()
 
-
+                if n_games > 1:
+                    plot_av_rew_steps(directory, algorithms, n_games, n_episodes)
