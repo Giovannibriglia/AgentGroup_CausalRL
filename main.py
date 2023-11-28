@@ -7,15 +7,16 @@ import models
 from scipy.ndimage import gaussian_filter1d
 from plots import plot_av_rew_steps
 
-# QL, CQL3, CQL4, DeepQNetwork, CausalDeepQNetwork, DeepQNetwork_Mod, CausalDeepQNetwork_Mod
-algorithms = ['CQL3', 'CQL4']
-n_games = 1
-vect_rows = [10]
+# 'QL', 'CQL3', 'CQL4', 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod'
+algorithms = ['CQL3', 'CQL4', 'CausalDeepQNetwork_Mod']
+n_games = 3
+vect_rows = [7]
 vect_n_enemies = [3]
-n_episodes = 2000
-vect_if_maze = [True]
+n_episodes = 500
+vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
-dir_start = 'Results'
+dir_start = 'Results2'
+
 
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:
@@ -50,7 +51,7 @@ for if_maze in vect_if_maze:
                                              if_maze, if_same_enemies_actions)
 
                     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, dpi=500)
-                    fig.suptitle(f'{env_name} {rows}x{cols} - {n_enemies} enemies - Game {n_games}', fontsize=15)
+                    fig.suptitle(f'{env_name} {rows}x{cols} - {n_enemies} enemies - Game {game_n}/{n_games}', fontsize=15)
 
                     for alg in algorithms:
                         print(f'\n*** {alg} - Game {game_n}/{n_games} ****')
@@ -91,7 +92,7 @@ for if_maze in vect_if_maze:
                         ax2.set_title('Steps needed to complete the episode')
                         ax2.set_xlabel('Episode', fontsize=12)
 
-                    plt.savefig(f'{directory}/Comparison_Game{n_games}.pdf')
+                    plt.savefig(f'{directory}/Comparison_Game{game_n}.pdf')
                     plt.show()
 
                 if n_games > 1:

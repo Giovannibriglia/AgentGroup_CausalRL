@@ -11,15 +11,17 @@ import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 import warnings
+
 warnings.filterwarnings("ignore")
 
-
 GAMMA = 0.99
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.0001
 EXPLORATION_PROBA = 1
-MIN_EXPLORATION_PROBA = 0.001
-BATCH_SIZE = 128
+MIN_EXPLORATION_PROBA = 0.01
+EXPLORATION_GAME_PERCENT = 0.6
+BATCH_SIZE = 32
 TAU = 0.005
+HIDDEN_LAYERS = 64
 
 causal_table = pd.read_pickle('final_causal_table.pkl')
 
@@ -72,6 +74,7 @@ def causal_model_gameover(causal_table, possible_actions_in, nearbies, attached)
 
     return possible_actions
 
+
 class ReplayMemory(object):
 
     def __init__(self, capacity):
@@ -87,18 +90,19 @@ class ReplayMemory(object):
     def __len__(self):
         return len(self.memory)
 
+
 class DQN(nn.Module):
 
     def __init__(self, n_observations, n_actions):
         super(DQN, self).__init__()
-        self.layer1 = nn.Linear(n_observations, 128)
-        self.layer2 = nn.Linear(128, 128)
-        self.layer3 = nn.Linear(128, n_actions)
+        self.layer1 = nn.Linear(n_observations, HIDDEN_LAYERS)
+        self.layer2 = nn.Linear(HIDDEN_LAYERS, HIDDEN_LAYERS)
+        self.final_layer = nn.Linear(HIDDEN_LAYERS, n_actions)
 
     def forward(self, x):
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
-        return self.layer3(x)
+        return self.final_layer(x)
 
 
 def QL(env, n_act_agents, n_episodes):
@@ -107,7 +111,7 @@ def QL(env, n_act_agents, n_episodes):
     cols = env.cols
     Q_table = np.zeros((rows, cols, n_act_agents))
 
-    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (0.6 * n_episodes)
+    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (EXPLORATION_GAME_PERCENT * n_episodes)
 
     average_episodes_rewards = []
     steps_for_episode = []
@@ -117,11 +121,9 @@ def QL(env, n_act_agents, n_episodes):
     for e in pbar:
         agent = 0
         if e == 0:
-            res_loser = True
+            env.reset(reset_n_times_loser=True)
         else:
-            res_loser = False
-
-        env.reset(res_loser)
+            env.reset(reset_n_times_loser=False)
 
         total_episode_reward = 0
         step_for_episode = 0
@@ -167,7 +169,8 @@ def QL(env, n_act_agents, n_episodes):
         # updating the exploration proba using exponential decay formula
         EXPLORATION_PROBA = max(MIN_EXPLORATION_PROBA, np.exp(-EXPLORATION_DECREASING_DECAY * e))
 
-        pbar.set_postfix_str(f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
+        pbar.set_postfix_str(
+            f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
 
     print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
     return average_episodes_rewards, steps_for_episode
@@ -184,7 +187,7 @@ def CQL3(env, n_act_agents, n_episodes):
     # initialize table to keep track of the explored states
     Q_table_track = np.zeros((rows, cols))  # x, y, actions
 
-    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (0.6 * n_episodes)
+    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (EXPLORATION_GAME_PERCENT * n_episodes)
 
     average_episodes_rewards = []
     steps_for_episode = []
@@ -194,11 +197,9 @@ def CQL3(env, n_act_agents, n_episodes):
     for e in pbar:
         agent = 0
         if e == 0:
-            res_loser = True
+            env.reset(reset_n_times_loser=True)
         else:
-            res_loser = False
-
-        env.reset(res_loser)
+            env.reset(reset_n_times_loser=False)
 
         total_episode_reward = 0
         step_for_episode = 0
@@ -316,7 +317,8 @@ def CQL3(env, n_act_agents, n_episodes):
         # updating the exploration proba using exponential decay formula
         EXPLORATION_PROBA = max(MIN_EXPLORATION_PROBA, np.exp(-EXPLORATION_DECREASING_DECAY * e))
 
-        pbar.set_postfix_str(f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
+        pbar.set_postfix_str(
+            f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
 
     print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
     return average_episodes_rewards, steps_for_episode
@@ -324,11 +326,16 @@ def CQL3(env, n_act_agents, n_episodes):
 
 def CQL4(env, n_act_agents, n_episodes):
     global EXPLORATION_PROBA
+    EXPLORATION_ACTIONS_TH = 10
+
     rows = env.rows
     cols = env.cols
-    Q_table = np.zeros((rows, cols, n_act_agents))
+    # initialize the Q-Table
+    Q_table = np.zeros((rows, cols, n_act_agents))  # x, y, actions
+    # initialize table to keep track of the explored states
+    Q_table_track = np.zeros((rows, cols))  # x, y, actions
 
-    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (0.6 * n_episodes)
+    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (EXPLORATION_GAME_PERCENT * n_episodes)
 
     average_episodes_rewards = []
     steps_for_episode = []
@@ -338,11 +345,9 @@ def CQL4(env, n_act_agents, n_episodes):
     for e in pbar:
         agent = 0
         if e == 0:
-            res_loser = True
+            env.reset(reset_n_times_loser=True)
         else:
-            res_loser = False
-
-        env.reset(res_loser)
+            env.reset(reset_n_times_loser=False)
 
         total_episode_reward = 0
         step_for_episode = 0
@@ -361,9 +366,7 @@ def CQL4(env, n_act_agents, n_episodes):
                 enemies_attached_agent = enemies_attached_all_agents[agent]
                 possible_actions = [s for s in range(n_act_agents)]
 
-                possible_actions = causal_model_gameover(causal_table,
-                                                         possible_actions,
-                                                         enemies_nearby_agent,
+                possible_actions = causal_model_gameover(causal_table, possible_actions, enemies_nearby_agent,
                                                          enemies_attached_agent)
 
                 if len(possible_actions) > 0:
@@ -374,14 +377,14 @@ def CQL4(env, n_act_agents, n_episodes):
                 next_stateX, next_stateY = causal_model_movement(causal_table, action, current_stateY, current_stateX,
                                                                  rows, cols)
 
-                if enemies_nearby_agent[0] == action and len(possible_actions) > 0:
+                if enemies_nearby_agent[0] == action and len(possible_actions) > 0:  # for debugging
                     print('Enemies nearby: ', enemies_nearby_agent)
                     print('Enemies attached: ', enemies_attached_agent)
                     print('Possible actions: ', possible_actions)
                     print('Exploration: problem in action selection with nearby model -> action taken', action)
 
+                # additional Q-Table udpate
                 reward = 0
-                # additional Q-Table update
                 Q_table[current_stateX, current_stateY, action] = (1 - LEARNING_RATE) * Q_table[
                     current_stateX, current_stateY, action] + LEARNING_RATE * (reward + GAMMA * max(
                     Q_table[next_stateX, next_stateY, :]))
@@ -447,42 +450,39 @@ def CQL4(env, n_act_agents, n_episodes):
         # updating the exploration proba using exponential decay formula
         EXPLORATION_PROBA = max(MIN_EXPLORATION_PROBA, np.exp(-EXPLORATION_DECREASING_DECAY * e))
 
-        pbar.set_postfix_str(f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
+        pbar.set_postfix_str(
+            f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
 
     print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
     return average_episodes_rewards, steps_for_episode
 
 
 def DeepQNetwork(env, n_act_agents, n_episodes):
-
-    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (0.6 * n_episodes)
+    global EXPLORATION_PROBA
+    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (EXPLORATION_GAME_PERCENT * n_episodes)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == 'cuda':
-        print('Device: ', torch.cuda.get_device_name(0))
+        # print('Device: ', torch.cuda.get_device_name(0))
+        pass
 
     Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
-    policy_net = DQN(env.cols*env.rows, n_act_agents).to(device)
-    target_net = DQN(env.cols*env.rows, n_act_agents).to(device)
+    policy_net: DQN = DQN(env.cols * env.rows, n_act_agents).to(device)
+    target_net = DQN(env.cols * env.rows, n_act_agents).to(device)
     target_net.load_state_dict(policy_net.state_dict())
 
     optimizer = optim.AdamW(policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
     memory = ReplayMemory(10000)
 
-    def select_action(state, steps_done):
-        sample = random.random()
-        eps_threshold = MIN_EXPLORATION_PROBA + (1 - MIN_EXPLORATION_PROBA) * \
-                        math.exp(-1. * steps_done / EXPLORATION_DECREASING_DECAY)
+    def select_action(state, exp_proba):
 
-        if sample > eps_threshold:
-            with torch.no_grad():
-                # t.max(1) will return the largest column value of each row.
-                # second column on max result is index of where max element was
-                # found, so we pick action with the larger expected reward.
-                return policy_net(state).max(1).indices.view(1, 1)
-        else:
+        if np.random.uniform(0, 1) < exp_proba:  # exploration
             return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
+        else:
+            with torch.no_grad():
+                actions_values = policy_net(state)
+                return actions_values.max(1).indices.view(1, 1)
 
     def optimize_model():
         if len(memory) < BATCH_SIZE:
@@ -534,30 +534,28 @@ def DeepQNetwork(env, n_act_agents, n_episodes):
     for e in pbar:
         agent = 0
         if e == 0:
-            res_loser = True
+            env.reset(reset_n_times_loser=True)
         else:
-            res_loser = False
-
-        env.reset(res_loser)
+            env.reset(reset_n_times_loser=False)
 
         total_episode_reward = 0
         step_for_episode = 0
         done = False
 
         while not done:
+            step_for_episode += 1
+            _, _, new_en_coord = env.step_enemies()
+
+            general_state = np.zeros(env.rows * env.cols)
+
             current_stateX = env.pos_agents[-1][agent][0]
             current_stateY = env.pos_agents[-1][agent][1]
 
-            # One-hot encoding the current state
-            current_state = np.zeros(env.rows*env.cols)
-            current_state[current_stateY*env.cols+current_stateX] = 1
-            current_state = torch.tensor(current_state, dtype=torch.float32,
+            general_state[current_stateY * env.cols + current_stateX] = 1
+            general_state = torch.tensor(general_state, dtype=torch.float32,
                                          device=device).unsqueeze(0)
 
-            step_for_episode += 1
-            _, _, _ = env.step_enemies()
-
-            action = select_action(current_state, e)
+            action = select_action(general_state, EXPLORATION_PROBA)
 
             result = env.step_agent(action)
             # print('result:', result)
@@ -572,9 +570,9 @@ def DeepQNetwork(env, n_act_agents, n_episodes):
             next_state = np.zeros(env.rows * env.cols)
             next_state[next_stateY * env.cols + next_stateX] = 1
             next_state = torch.tensor(next_state, dtype=torch.float32,
-                                         device=device).unsqueeze(0)
+                                      device=device).unsqueeze(0)
 
-            memory.push(current_state, action, next_state, reward, Transition=Transition)
+            memory.push(general_state, action, next_state, reward, Transition=Transition)
 
             optimize_model()
 
@@ -585,7 +583,7 @@ def DeepQNetwork(env, n_act_agents, n_episodes):
             target_net.load_state_dict(target_net_state_dict)
 
             if if_lose:
-                current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
+                general_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
             if (abs(current_stateX - next_stateX) + abs(current_stateY - next_stateY)) > 1 and env.n_act_agents < 5:
                 print('movement control problem:', [current_stateX, current_stateY], [next_stateX, next_stateY])
 
@@ -602,41 +600,47 @@ def DeepQNetwork(env, n_act_agents, n_episodes):
 
 
 def CausalDeepQNetwork(env, n_act_agents, n_episodes):
-
-    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (0.6 * n_episodes)
+    global EXPLORATION_PROBA
+    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (EXPLORATION_GAME_PERCENT * n_episodes)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == 'cuda':
-        print('Device: ', torch.cuda.get_device_name(0))
+        # print('Device: ', torch.cuda.get_device_name(0))
+        pass
 
     Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
-    policy_net = DQN(env.cols*env.rows, n_act_agents).to(device)
-    target_net = DQN(env.cols*env.rows, n_act_agents).to(device)
+    policy_net: DQN = DQN(env.cols * env.rows, n_act_agents).to(device)
+    target_net = DQN(env.cols * env.rows, n_act_agents).to(device)
     target_net.load_state_dict(policy_net.state_dict())
 
     optimizer = optim.AdamW(policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
     memory = ReplayMemory(10000)
 
-    def select_action(state, steps_done, enemies_nearby_agent, enemies_attached_agent):
-        sample = random.random()
-        eps_threshold = MIN_EXPLORATION_PROBA + (1 - MIN_EXPLORATION_PROBA) * \
-                        math.exp(-1. * steps_done / EXPLORATION_DECREASING_DECAY)
+    def select_action(state, exp_proba, possible_actions):
 
-        if sample > eps_threshold:
-            with torch.no_grad():  # exploitation
-                # t.max(1) will return the largest column value of each row.
-                # second column on max result is index of where max element was
-                # found, so we pick action with the larger expected reward.
-                return policy_net(state).max(1).indices.view(1, 1)
-        else:  # exploration
-            possible_actions = [s for s in range(n_act_agents)]
-            possible_actions = causal_model_gameover(causal_table, possible_actions, enemies_nearby_agent,
-                                                     enemies_attached_agent)
+        if np.random.uniform(0, 1) < exp_proba:  # exploration
             if len(possible_actions) > 0:
-                return torch.tensor([[random.sample(possible_actions, 1)[0]]], device=device, dtype=torch.long)
+                return torch.tensor([[possible_actions[torch.randint(0, len(possible_actions), (1,)).item()]]],
+                                    device=device, dtype=torch.long)
             else:
                 return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
+        else:  # exploitation
+
+            not_possible_actions = [s for s in range(n_act_agents) if s not in possible_actions]
+
+            with torch.no_grad():
+                copy_weights = policy_net.final_layer.weight[:, not_possible_actions].clone()
+                copy_biases = policy_net.final_layer.bias[not_possible_actions].clone()
+                policy_net.final_layer.weight[:, not_possible_actions] = 0
+                policy_net.final_layer.bias[not_possible_actions] = -1000
+
+                actions_values = policy_net(state)
+
+                policy_net.final_layer.weight[:, not_possible_actions] = copy_weights
+                policy_net.final_layer.bias[not_possible_actions] = copy_biases
+
+                return actions_values.max(1).indices.view(1, 1)
 
     def optimize_model():
         if len(memory) < BATCH_SIZE:
@@ -688,32 +692,34 @@ def CausalDeepQNetwork(env, n_act_agents, n_episodes):
     for e in pbar:
         agent = 0
         if e == 0:
-            res_loser = True
+            env.reset(reset_n_times_loser=True)
         else:
-            res_loser = False
-
-        env.reset(res_loser)
+            env.reset(reset_n_times_loser=False)
 
         total_episode_reward = 0
         step_for_episode = 0
         done = False
 
         while not done:
-            current_stateX = env.pos_agents[-1][agent][0]
-            current_stateY = env.pos_agents[-1][agent][1]
-
-            # One-hot encoding the current state
-            current_state = np.zeros(env.rows*env.cols)
-            current_state[current_stateY*env.cols+current_stateX] = 1
-            current_state = torch.tensor(current_state, dtype=torch.float32,
-                                         device=device).unsqueeze(0)
-
             step_for_episode += 1
             enemies_nearby_all_agents, enemies_attached_all_agents, new_en_coord = env.step_enemies()
             enemies_nearby_agent = enemies_nearby_all_agents[0]  # only one agent
             enemies_attached_agent = enemies_attached_all_agents[0]  # only one agent
+            possible_actions = [s for s in range(n_act_agents)]
+            possible_actions = causal_model_gameover(causal_table, possible_actions, enemies_nearby_agent,
+                                                     enemies_attached_agent)
+            possible_actions = torch.tensor(possible_actions, device=device)
 
-            action = select_action(current_state, e, enemies_nearby_agent, enemies_attached_agent)
+            general_state = np.zeros(env.rows * env.cols)
+
+            current_stateX = env.pos_agents[-1][agent][0]
+            current_stateY = env.pos_agents[-1][agent][1]
+
+            general_state[current_stateY * env.cols + current_stateX] = 1
+            general_state = torch.tensor(general_state, dtype=torch.float32,
+                                         device=device).unsqueeze(0)
+
+            action = select_action(general_state, EXPLORATION_PROBA, possible_actions)
 
             result = env.step_agent(action)
             # print('result:', result)
@@ -728,9 +734,9 @@ def CausalDeepQNetwork(env, n_act_agents, n_episodes):
             next_state = np.zeros(env.rows * env.cols)
             next_state[next_stateY * env.cols + next_stateX] = 1
             next_state = torch.tensor(next_state, dtype=torch.float32,
-                                         device=device).unsqueeze(0)
+                                      device=device).unsqueeze(0)
 
-            memory.push(current_state, action, next_state, reward, Transition=Transition)
+            memory.push(general_state, action, next_state, reward, Transition=Transition)
 
             optimize_model()
 
@@ -741,7 +747,7 @@ def CausalDeepQNetwork(env, n_act_agents, n_episodes):
             target_net.load_state_dict(target_net_state_dict)
 
             if if_lose:
-                current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
+                general_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
             if (abs(current_stateX - next_stateX) + abs(current_stateY - next_stateY)) > 1 and env.n_act_agents < 5:
                 print('movement control problem:', [current_stateX, current_stateY], [next_stateX, next_stateY])
 
@@ -758,35 +764,31 @@ def CausalDeepQNetwork(env, n_act_agents, n_episodes):
 
 
 def DeepQNetwork_Mod(env, n_act_agents, n_episodes):
-
-    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (0.6 * n_episodes)
+    global EXPLORATION_PROBA
+    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (EXPLORATION_GAME_PERCENT * n_episodes)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == 'cuda':
-        print('Device: ', torch.cuda.get_device_name(0))
+        # print('Device: ', torch.cuda.get_device_name(0))
+        pass
 
     Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
-    policy_net = DQN(env.cols*env.rows, n_act_agents).to(device)
-    target_net = DQN(env.cols*env.rows, n_act_agents).to(device)
+    policy_net: DQN = DQN(env.cols * env.rows, n_act_agents).to(device)
+    target_net = DQN(env.cols * env.rows, n_act_agents).to(device)
     target_net.load_state_dict(policy_net.state_dict())
 
     optimizer = optim.AdamW(policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
     memory = ReplayMemory(10000)
 
-    def select_action(state, steps_done):
-        sample = random.random()
-        eps_threshold = MIN_EXPLORATION_PROBA + (1 - MIN_EXPLORATION_PROBA) * \
-                        math.exp(-1. * steps_done / EXPLORATION_DECREASING_DECAY)
+    def select_action(state, exp_proba):
 
-        if sample > eps_threshold:
-            with torch.no_grad():
-                # t.max(1) will return the largest column value of each row.
-                # second column on max result is index of where max element was
-                # found, so we pick action with the larger expected reward.
-                return policy_net(state).max(1).indices.view(1, 1)
-        else:
+        if np.random.uniform(0, 1) < exp_proba:  # exploration
             return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
+        else:
+            with torch.no_grad():
+                actions_values = policy_net(state)
+                return actions_values.max(1).indices.view(1, 1)
 
     def optimize_model():
         if len(memory) < BATCH_SIZE:
@@ -838,11 +840,9 @@ def DeepQNetwork_Mod(env, n_act_agents, n_episodes):
     for e in pbar:
         agent = 0
         if e == 0:
-            res_loser = True
+            env.reset(reset_n_times_loser=True)
         else:
-            res_loser = False
-
-        env.reset(res_loser)
+            env.reset(reset_n_times_loser=False)
 
         total_episode_reward = 0
         step_for_episode = 0
@@ -851,6 +851,7 @@ def DeepQNetwork_Mod(env, n_act_agents, n_episodes):
         while not done:
             step_for_episode += 1
             _, _, new_en_coord = env.step_enemies()
+
 
             general_state = np.zeros(env.rows * env.cols)
 
@@ -861,11 +862,10 @@ def DeepQNetwork_Mod(env, n_act_agents, n_episodes):
             current_stateY = env.pos_agents[-1][agent][1]
 
             general_state[current_stateY * env.cols + current_stateX] = 1
-
             general_state = torch.tensor(general_state, dtype=torch.float32,
                                          device=device).unsqueeze(0)
 
-            action = select_action(general_state, e)
+            action = select_action(general_state, EXPLORATION_PROBA)
 
             result = env.step_agent(action)
             # print('result:', result)
@@ -880,7 +880,7 @@ def DeepQNetwork_Mod(env, n_act_agents, n_episodes):
             next_state = np.zeros(env.rows * env.cols)
             next_state[next_stateY * env.cols + next_stateX] = 1
             next_state = torch.tensor(next_state, dtype=torch.float32,
-                                         device=device).unsqueeze(0)
+                                      device=device).unsqueeze(0)
 
             memory.push(general_state, action, next_state, reward, Transition=Transition)
 
@@ -910,41 +910,47 @@ def DeepQNetwork_Mod(env, n_act_agents, n_episodes):
 
 
 def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
-
-    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (0.6 * n_episodes)
+    global EXPLORATION_PROBA
+    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (EXPLORATION_GAME_PERCENT * n_episodes)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == 'cuda':
-        print('Device: ', torch.cuda.get_device_name(0))
+        # print('Device: ', torch.cuda.get_device_name(0))
+        pass
 
     Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
-    policy_net = DQN(env.cols*env.rows, n_act_agents).to(device)
-    target_net = DQN(env.cols*env.rows, n_act_agents).to(device)
+    policy_net: DQN = DQN(env.cols * env.rows, n_act_agents).to(device)
+    target_net = DQN(env.cols * env.rows, n_act_agents).to(device)
     target_net.load_state_dict(policy_net.state_dict())
 
     optimizer = optim.AdamW(policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
     memory = ReplayMemory(10000)
 
-    def select_action(state, steps_done, enemies_nearby_agent, enemies_attached_agent):
-        sample = random.random()
-        eps_threshold = MIN_EXPLORATION_PROBA + (1 - MIN_EXPLORATION_PROBA) * \
-                        math.exp(-1. * steps_done / EXPLORATION_DECREASING_DECAY)
+    def select_action(state, exp_proba, possible_actions):
 
-        if sample > eps_threshold:
-            with torch.no_grad():  # exploitation
-                # t.max(1) will return the largest column value of each row.
-                # second column on max result is index of where max element was
-                # found, so we pick action with the larger expected reward.
-                return policy_net(state).max(1).indices.view(1, 1)
-        else:  # exploration
-            possible_actions = [s for s in range(n_act_agents)]
-            possible_actions = causal_model_gameover(causal_table, possible_actions, enemies_nearby_agent,
-                                                     enemies_attached_agent)
+        if np.random.uniform(0, 1) < exp_proba:  # exploration
             if len(possible_actions) > 0:
-                return torch.tensor([[random.sample(possible_actions, 1)[0]]], device=device, dtype=torch.long)
+                return torch.tensor([[possible_actions[torch.randint(0, len(possible_actions), (1,)).item()]]],
+                                    device=device, dtype=torch.long)
             else:
                 return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
+        else:  # exploitation
+
+            not_possible_actions = [s for s in range(n_act_agents) if s not in possible_actions]
+
+            with torch.no_grad():
+                copy_weights = policy_net.final_layer.weight[:, not_possible_actions].clone()
+                copy_biases = policy_net.final_layer.bias[not_possible_actions].clone()
+                policy_net.final_layer.weight[:, not_possible_actions] = 0
+                policy_net.final_layer.bias[not_possible_actions] = -1000
+
+                actions_values = policy_net(state)
+
+                policy_net.final_layer.weight[:, not_possible_actions] = copy_weights
+                policy_net.final_layer.bias[not_possible_actions] = copy_biases
+
+                return actions_values.max(1).indices.view(1, 1)
 
     def optimize_model():
         if len(memory) < BATCH_SIZE:
@@ -996,11 +1002,9 @@ def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
     for e in pbar:
         agent = 0
         if e == 0:
-            res_loser = True
+            env.reset(reset_n_times_loser=True)
         else:
-            res_loser = False
-
-        env.reset(res_loser)
+            env.reset(reset_n_times_loser=False)
 
         total_episode_reward = 0
         step_for_episode = 0
@@ -1011,6 +1015,10 @@ def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
             enemies_nearby_all_agents, enemies_attached_all_agents, new_en_coord = env.step_enemies()
             enemies_nearby_agent = enemies_nearby_all_agents[0]  # only one agent
             enemies_attached_agent = enemies_attached_all_agents[0]  # only one agent
+            possible_actions = [s for s in range(n_act_agents)]
+            possible_actions = causal_model_gameover(causal_table, possible_actions, enemies_nearby_agent,
+                                                     enemies_attached_agent)
+            possible_actions = torch.tensor(possible_actions, device=device)
 
             general_state = np.zeros(env.rows * env.cols)
 
@@ -1021,13 +1029,10 @@ def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
             current_stateY = env.pos_agents[-1][agent][1]
 
             general_state[current_stateY * env.cols + current_stateX] = 1
-
             general_state = torch.tensor(general_state, dtype=torch.float32,
                                          device=device).unsqueeze(0)
 
-            step_for_episode += 1
-
-            action = select_action(general_state, e, enemies_nearby_agent, enemies_attached_agent)
+            action = select_action(general_state, EXPLORATION_PROBA, possible_actions)
 
             result = env.step_agent(action)
             # print('result:', result)
@@ -1042,7 +1047,7 @@ def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
             next_state = np.zeros(env.rows * env.cols)
             next_state[next_stateY * env.cols + next_stateX] = 1
             next_state = torch.tensor(next_state, dtype=torch.float32,
-                                         device=device).unsqueeze(0)
+                                      device=device).unsqueeze(0)
 
             memory.push(general_state, action, next_state, reward, Transition=Transition)
 
@@ -1069,6 +1074,3 @@ def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
 
     print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
     return average_episodes_rewards, steps_for_episode
-
-
-

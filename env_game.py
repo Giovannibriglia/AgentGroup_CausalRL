@@ -296,7 +296,7 @@ class CustomEnv:
                         self.n_times_loser += 1
                         done = False
                         self.n_steps_enemies_actions = 0
-                        # print('loser', [X_en, Y_en], [new_stateX_ag, new_stateY_ag], action, res_action)
+                        # print(f'Loser) En: {[X_en, Y_en]}, Ag before: {[last_stateX_ag, last_stateY_ag]}, Action: {action} -> ResAction: {res_action}, Ag after: {[new_stateX_ag, new_stateY_ag]}')
                 # otherwise agent is alive
                 if not if_lose:
                     # print('alive')

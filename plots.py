@@ -28,7 +28,7 @@ def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes):
         av_rewards = np.cumsum(av_rew, dtype=int)
 
         x = np.arange(0, len(av_rewards), 1)
-        ax1.plot(x, av_rewards, label=f'{alg} = {round(np.mean(av_rew), 3)}')
+        ax1.plot(x, av_rewards, label=f'{alg} = {round(np.mean(av_rew)/n_games, 3)}')
         confidence_interval_rew = np.std(av_rewards)
         ax1.fill_between(x, (av_rewards - confidence_interval_rew), (av_rewards + confidence_interval_rew), alpha=0.2)
         ax1.set_title('Average reward on episode steps')
