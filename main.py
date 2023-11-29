@@ -8,14 +8,14 @@ from scipy.ndimage import gaussian_filter1d
 from plots import plot_av_rew_steps
 
 # 'QL', 'CQL3', 'CQL4', 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod'
-algorithms = ['CQL3', 'CQL4', 'CausalDeepQNetwork_Mod']
-n_games = 3
-vect_rows = [7]
-vect_n_enemies = [3]
+algorithms = ['CQL3', 'CQL4', 'CausalDeepQNetwork', 'CausalDeepQNetwork_Mod']
+n_games = 1
+vect_rows = [20]
+vect_n_enemies = [5]
 n_episodes = 500
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
-dir_start = 'Results2'
+dir_start = f'Results_{len(algorithms)}'
 
 
 os.makedirs(dir_start, exist_ok=True)
@@ -59,6 +59,7 @@ for if_maze in vect_if_maze:
                         env_for_alg = env
                         rewards = []
                         steps = []
+
                         # returned: reward for episode and steps for episode
                         if alg == 'QL':
                             rewards, steps = models.QL(env_for_alg, n_act_agents, n_episodes)

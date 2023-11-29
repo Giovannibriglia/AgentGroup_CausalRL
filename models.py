@@ -601,21 +601,6 @@ def DeepQNetwork(env, n_act_agents, n_episodes):
 
 def CausalDeepQNetwork(env, n_act_agents, n_episodes):
     global EXPLORATION_PROBA
-    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (EXPLORATION_GAME_PERCENT * n_episodes)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type == 'cuda':
-        # print('Device: ', torch.cuda.get_device_name(0))
-        pass
-
-    Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
-
-    policy_net: DQN = DQN(env.cols * env.rows, n_act_agents).to(device)
-    target_net = DQN(env.cols * env.rows, n_act_agents).to(device)
-    target_net.load_state_dict(policy_net.state_dict())
-
-    optimizer = optim.AdamW(policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
-    memory = ReplayMemory(10000)
 
     def select_action(state, exp_proba, possible_actions):
 
@@ -627,20 +612,13 @@ def CausalDeepQNetwork(env, n_act_agents, n_episodes):
                 return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
         else:  # exploitation
 
-            not_possible_actions = [s for s in range(n_act_agents) if s not in possible_actions]
+            actions_to_avoid = [s for s in range(n_act_agents) if s not in possible_actions]
 
-            with torch.no_grad():
-                copy_weights = policy_net.final_layer.weight[:, not_possible_actions].clone()
-                copy_biases = policy_net.final_layer.bias[not_possible_actions].clone()
-                policy_net.final_layer.weight[:, not_possible_actions] = 0
-                policy_net.final_layer.bias[not_possible_actions] = -1000
+            actions_values = policy_net(state)
+            for act_to_avoid in actions_to_avoid:
+                actions_values[:, act_to_avoid] = - 10000
 
-                actions_values = policy_net(state)
-
-                policy_net.final_layer.weight[:, not_possible_actions] = copy_weights
-                policy_net.final_layer.bias[not_possible_actions] = copy_biases
-
-                return actions_values.max(1).indices.view(1, 1)
+            return actions_values.max(1).indices.view(1, 1)
 
     def optimize_model():
         if len(memory) < BATCH_SIZE:
@@ -684,6 +662,22 @@ def CausalDeepQNetwork(env, n_act_agents, n_episodes):
         torch.nn.utils.clip_grad_value_(policy_net.parameters(), 100)
         optimizer.step()
 
+    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (EXPLORATION_GAME_PERCENT * n_episodes)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type == 'cuda':
+        # print('Device: ', torch.cuda.get_device_name(0))
+        pass
+
+    Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+
+    policy_net: DQN = DQN(env.cols * env.rows, n_act_agents).to(device)
+    target_net = DQN(env.cols * env.rows, n_act_agents).to(device)
+    target_net.load_state_dict(policy_net.state_dict())
+
+    optimizer = optim.AdamW(policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
+    memory = ReplayMemory(10000)
+
     average_episodes_rewards = []
     steps_for_episode = []
 
@@ -720,6 +714,9 @@ def CausalDeepQNetwork(env, n_act_agents, n_episodes):
                                          device=device).unsqueeze(0)
 
             action = select_action(general_state, EXPLORATION_PROBA, possible_actions)
+
+            if action not in possible_actions:
+                print(f'PROBLEM) Action: {action} - Nearbies: {enemies_nearby_agent} - Pos Act: {possible_actions}')
 
             result = env.step_agent(action)
             # print('result:', result)
@@ -852,7 +849,6 @@ def DeepQNetwork_Mod(env, n_act_agents, n_episodes):
             step_for_episode += 1
             _, _, new_en_coord = env.step_enemies()
 
-
             general_state = np.zeros(env.rows * env.cols)
 
             for coord_en in new_en_coord:
@@ -911,21 +907,6 @@ def DeepQNetwork_Mod(env, n_act_agents, n_episodes):
 
 def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
     global EXPLORATION_PROBA
-    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (EXPLORATION_GAME_PERCENT * n_episodes)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type == 'cuda':
-        # print('Device: ', torch.cuda.get_device_name(0))
-        pass
-
-    Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
-
-    policy_net: DQN = DQN(env.cols * env.rows, n_act_agents).to(device)
-    target_net = DQN(env.cols * env.rows, n_act_agents).to(device)
-    target_net.load_state_dict(policy_net.state_dict())
-
-    optimizer = optim.AdamW(policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
-    memory = ReplayMemory(10000)
 
     def select_action(state, exp_proba, possible_actions):
 
@@ -937,9 +918,15 @@ def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
                 return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
         else:  # exploitation
 
-            not_possible_actions = [s for s in range(n_act_agents) if s not in possible_actions]
+            actions_to_avoid = [s for s in range(n_act_agents) if s not in possible_actions]
 
-            with torch.no_grad():
+            actions_values = policy_net(state)
+            for act_to_avoid in actions_to_avoid:
+                actions_values[:, act_to_avoid] = - 10000
+
+            return actions_values.max(1).indices.view(1, 1)
+
+            """with torch.no_grad():
                 copy_weights = policy_net.final_layer.weight[:, not_possible_actions].clone()
                 copy_biases = policy_net.final_layer.bias[not_possible_actions].clone()
                 policy_net.final_layer.weight[:, not_possible_actions] = 0
@@ -950,7 +937,7 @@ def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
                 policy_net.final_layer.weight[:, not_possible_actions] = copy_weights
                 policy_net.final_layer.bias[not_possible_actions] = copy_biases
 
-                return actions_values.max(1).indices.view(1, 1)
+                return actions_values.max(1).indices.view(1, 1)"""
 
     def optimize_model():
         if len(memory) < BATCH_SIZE:
@@ -994,6 +981,22 @@ def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
         torch.nn.utils.clip_grad_value_(policy_net.parameters(), 100)
         optimizer.step()
 
+    EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (EXPLORATION_GAME_PERCENT * n_episodes)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type == 'cuda':
+        # print('Device: ', torch.cuda.get_device_name(0))
+        pass
+
+    Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+
+    policy_net: DQN = DQN(env.cols * env.rows, n_act_agents).to(device)
+    target_net = DQN(env.cols * env.rows, n_act_agents).to(device)
+    target_net.load_state_dict(policy_net.state_dict())
+
+    optimizer = optim.AdamW(policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
+    memory = ReplayMemory(10000)
+
     average_episodes_rewards = []
     steps_for_episode = []
 
@@ -1033,6 +1036,9 @@ def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
                                          device=device).unsqueeze(0)
 
             action = select_action(general_state, EXPLORATION_PROBA, possible_actions)
+
+            if action not in possible_actions:
+                print(f'PROBLEM) Action: {action} - Nearbies: {enemies_nearby_agent} - Pos Act: {possible_actions}')
 
             result = env.step_agent(action)
             # print('result:', result)
