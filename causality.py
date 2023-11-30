@@ -2,11 +2,7 @@ import random
 import os
 import re
 import time
-import operator
-
-from pyAgrum import pyAgrum
 from tqdm import tqdm
-import dowhy
 import matplotlib.pyplot as plt
 import networkx
 import numpy as np
@@ -16,18 +12,18 @@ from causalnex.network import BayesianNetwork
 from causalnex.structure import StructureModel
 from causalnex.structure.notears import from_pandas
 import warnings
-from scipy.stats import chi2_contingency, cramervonmises_2samp
+from scipy.stats import chi2_contingency, cramervonmises_2samp, pearsonr
 
 warnings.filterwarnings("ignore")
 
 visualization = False
 
 
-class CreateDf:
+class MiniGame:
 
     def __init__(self, n_goals):
-        self.rows = 4
-        self.cols = 4
+        self.rows = 3
+        self.cols = 3
         self.n_agents = 1
         self.n_actions = 5
         self.n_enemies = 1
@@ -58,11 +54,11 @@ class CreateDf:
         print('creating dataframe...')
         time.sleep(2)
 
-        for e in tqdm(range(n_episodes)):
+        counter = 0
+        for _ in tqdm(range(n_episodes)):
             done = False
+            agents_coord, enemies_coord, goals_coord = self.create_env()
             while not done:
-                if e == 0:
-                    agents_coord, enemies_coord, goals_coord = self.create_env()
 
                 # enemies movement
                 for enemy in range(self.n_enemies):
@@ -81,7 +77,7 @@ class CreateDf:
                         y_ag = agents_coord[agent][1]
 
                         nearby_distance = self.get_direction(x_ag, y_ag, x_en, y_en)
-                        self.df.at[e, f'Enemy{enemy}_Nearby_Agent{agent}'] = nearby_distance
+                        self.df.at[counter, f'Enemy{enemy}_Nearby_Agent{agent}'] = nearby_distance
 
                 # goal nearbies direction
                 for goal in range(self.n_goals):
@@ -92,7 +88,7 @@ class CreateDf:
                         y_ag = agents_coord[agent][1]
 
                         nearby_distance = self.get_direction(x_ag, y_ag, x_goal, y_goal)
-                        self.df.at[e, f'Goal{goal}_Nearby_Agent{agent}'] = nearby_distance
+                        self.df.at[counter, f'Goal{goal}_Nearby_Agent{agent}'] = nearby_distance
 
                 # agents movement
                 for agent in range(self.n_agents):
@@ -102,22 +98,40 @@ class CreateDf:
                     agents_coord[agent][0] = newX_ag
                     agents_coord[agent][1] = newY_ag
 
-                    self.df.at[e, f'Action_Agent{agent}'] = action_ag
-                    self.df.at[e, f'DeltaX_Agent{agent}'] = deltaX_ag
-                    self.df.at[e, f'DeltaY_Agent{agent}'] = deltaY_ag
+                    self.df.at[counter, f'Action_Agent{agent}'] = action_ag
+                    self.df.at[counter, f'DeltaX_Agent{agent}'] = deltaX_ag
+                    self.df.at[counter, f'DeltaY_Agent{agent}'] = deltaY_ag
 
                 # check game over, winner, nothing
-                done = self.check_gameover_or_winner(agents_coord, enemies_coord, goals_coord, e)
+                done = self.check_gameover_or_winner(agents_coord, enemies_coord, goals_coord, counter)
+                counter += 1
+
+        indep_var_names = []
+        for feat1 in self.cols_df:
+            p_values = []
+            for feat2 in self.cols_df:
+                if feat1.split('_')[0] != feat2.split('_')[0]:
+                    res = cramervonmises_2samp(self.df[feat1], self.df[feat2])
+                    p_values.append(res.pvalue)
+            av = np.mean(p_values)
+
+            if -0.05 < av < 0.05:
+                indep_var_names.append(feat1)
+
+        dep_var_names = [s for s in self.cols_df if s not in indep_var_names]
+        print(f'Dependents features: {dep_var_names}')
+        print(f'Independents features: {indep_var_names}')
+        print('\n')
 
         if if_binary_df:
             df_bin = self.binarize_dataframe()
             for col in df_bin.columns:
                 df_bin[str(col)] = df_bin[str(col)].astype(str).str.replace(',', '').astype(float)
-            return df_bin
+            return df_bin, dep_var_names, indep_var_names
         else:
             for col in self.df.columns:
                 self.df[str(col)] = self.df[str(col)].astype(str).str.replace(',', '').astype(float)
-            return self.df
+            return self.df, dep_var_names, indep_var_names
 
     def create_env(self):
         """ 0.0  1.0  2.0
@@ -146,32 +160,30 @@ class CreateDf:
         deltaX = x2 - x1
         deltaY = y2 - y1
 
-        direction_ag_en = -1
-
         if deltaX == 0 and deltaY == 0:  # stop
-            direction_ag_en = 0
+            direction_1_respect_2 = 0
         elif deltaX == 1 and deltaY == 0:  # right
-            direction_ag_en = 1
+            direction_1_respect_2 = 1
         elif deltaX == -1 and deltaY == 0:  # left
-            direction_ag_en = 2
+            direction_1_respect_2 = 2
         elif deltaX == 0 and deltaY == 1:  # up
-            direction_ag_en = 3
+            direction_1_respect_2 = 3
         elif deltaX == 0 and deltaY == -1:  # down
-            direction_ag_en = 4
+            direction_1_respect_2 = 4
         elif deltaX == 1 and deltaY == 1 and self.n_actions > 5:  # diag up right
-            direction_ag_en = 5
+            direction_1_respect_2 = 5
         elif deltaX == 1 and deltaY == -1 and self.n_actions > 5:  # diag down right
-            direction_ag_en = 6
+            direction_1_respect_2 = 6
         elif deltaX == -1 and deltaY == 1 and self.n_actions > 5:  # diag up left
-            direction_ag_en = 7
+            direction_1_respect_2 = 7
         elif deltaX == -1 and deltaY == -1 and self.n_actions > 5:  # diag down left
-            direction_ag_en = 8
+            direction_1_respect_2 = 8
         else:  # otherwise
-            direction_ag_en = 50
+            direction_1_respect_2 = 50
 
-        # print([x_ag, y_ag], [x_en, y_en], direction_ag_en)
+        # print([x_ag, y_ag], [x_en, y_en], direction_1_respect_2)
 
-        return direction_ag_en
+        return direction_1_respect_2
 
     def get_action(self, last_stateX, last_stateY):
 
@@ -229,7 +241,7 @@ class CreateDf:
 
         return new_stateX, new_stateY, action, deltaX, deltaY
 
-    def check_gameover_or_winner(self, agents_coord, enemies_coord, goals_coord, e):
+    def check_gameover_or_winner(self, agents_coord, enemies_coord, goals_coord, row_number):
         done = False
         for agent in range(self.n_agents):
             x_ag = agents_coord[agent][0]
@@ -241,23 +253,28 @@ class CreateDf:
                     y_goal = goals_coord[goal][1]
 
                     if [x_ag, y_ag] == [x_goal, y_goal]:
-                        self.df.at[e, f'Winner_Agent{agent}'] = 1
                         done = True
-                        break
-                    else:
-                        self.df.at[e, f'Winner_Agent{agent}'] = 0
+                        self.df.at[row_number, f'Winner_Agent{agent}'] = 1
 
-            if self.n_enemies > 0:
-                for enemy in range(self.n_enemies):
-                    x_en = enemies_coord[enemy][0]
-                    y_en = enemies_coord[enemy][1]
+            if done:
+                if self.n_enemies > 0:
+                    self.df.at[row_number, f'GameOver_Agent{agent}'] = 0
+            else:
+                if self.n_goals > 0:
+                    self.df.at[row_number, f'Winner_Agent{agent}'] = 0
+                if self.n_enemies > 0:
 
-                    if [x_ag, y_ag] == [x_en, y_en]:
-                        self.df.at[e, f'GameOver_Agent{agent}'] = 1
-                        done = True
-                        break
+                    for enemy in range(self.n_enemies):
+                        x_en = enemies_coord[enemy][0]
+                        y_en = enemies_coord[enemy][1]
+
+                        if [x_ag, y_ag] == [x_en, y_en]:
+                            done = True
+
+                    if done:
+                        self.df.at[row_number, f'GameOver_Agent{agent}'] = 1
                     else:
-                        self.df.at[e, f'GameOver_Agent{agent}'] = 0
+                        self.df.at[row_number, f'GameOver_Agent{agent}'] = 0
 
         return done
 
@@ -275,7 +292,7 @@ class CreateDf:
                 bins.insert(0, -100000)
                 labels = []
                 for bin in bins[1:]:
-                    if bin > 0:
+                    if bin >= 0:
                         labels.append('Value' + str(bin))
                     else:
                         labels.append('Value_' + str(abs(bin)))
@@ -289,35 +306,38 @@ class CreateDf:
 
 class Causality:
 
-    def __init__(self, df):
+    def __init__(self, df, dep_var_names, indep_var_names):
         self.df = df
         self.features_names = self.df.columns.to_list()
-        self.children_names = ['Action', 'Nearby']
+
+        self.dependent_vars = []
+        for col in self.df.columns.to_list():
+            for name in dep_var_names:
+                if name in col:
+                    self.dependent_vars.append(col)
+
+        self.independent_vars = []
+        for col in self.df.columns.to_list():
+            for name in indep_var_names:
+                if name in col:
+                    self.independent_vars.append(col)
+
         self.structureModel = None
         self.bn = None
         self.ie = None
 
-
     def training(self):
         print(f'structuring model...')
 
-        children = []
-        for col in self.df.columns.to_list():
-            for par_name in self.children_names:
-                if par_name in col:
-                    children.append(col)
-
-        self.structureModel = from_pandas(self.df, tabu_child_nodes=children)
+        self.structureModel = from_pandas(self.df)
         self.structureModel.remove_edges_below_threshold(0.3)
 
         " Plot structure "
         plt.figure(dpi=500)
         plt.title(f'Initial {self.structureModel}')
-        networkx.draw(self.structureModel, pos=networkx.spring_layout(self.structureModel), with_labels=True, font_size=4, edge_color='orange')
-        # networkx.draw(self.structureModel, with_labels=True, font_size=4, edge_color='orange')
+        # networkx.draw(self.structureModel, pos=networkx.circular_layout(self.structureModel), with_labels=True, font_size=4, edge_color='orange')
+        networkx.draw(self.structureModel, with_labels=True, font_size=4, edge_color='orange')
         plt.show()
-
-        features_work = self.structureModel.nodes
 
         print(f'training bayesian network...')
         self.bn = BayesianNetwork(self.structureModel)
@@ -327,36 +347,24 @@ class Causality:
         if bad_nodes:
             print('Bad nodes: ', bad_nodes)
 
-        """evidence = {'Node1': 0, 'Node2': 1}
-
-        # Create an inference engine
-        ie = pyAgrum.LazyPropagation(self.bn)
-
-        # Set evidence
-        for node, value in evidence.items():
-            ie.setEvidence(self.bn.idFromName(node), value)
-
-        # Perform inference
-        ie.makeInference()
-
-        # Get the posterior probabilities
-        posterior_probs = ie.posterior(self.bn.idFromName('TargetNode'))"""
-
-        print(self.bn.cpds)
-
         self.ie = InferenceEngine(self.bn)
 
     def counterfactual(self):
+
         print('do-calculus...')
-        print(self.ie.query())
-        print(self.ie.query()['GameOver_Agent0'])
+        before = self.ie.query()
 
-        # self.ie.do_intervention('Enemy0_Nearby_Agent0_Value1', True)
+        for ind_var in self.independent_vars:
+            try:
+                self.ie.do_intervention(ind_var, 1)
+                after = self.ie.query()
+                print('\n')
+                for dep_var in self.dependent_vars:
+                    print(f'{ind_var} = 1 --> {dep_var}: before = {before[dep_var][1]} | after = {after[dep_var][1]}')
 
-        self.ie.do_intervention('Action_Agent0_Value1', True)
-
-        print(self.ie.query()['GameOver_Agent0'])
-        return 0
+                self.ie.reset_do(ind_var)
+            except:
+                pass
 
 
 def get_CausaltablesXY(causal_table, rows, cols):
@@ -420,48 +428,18 @@ def get_CausaltablesXY(causal_table, rows, cols):
 
 """ ************************************************************************************************************* """
 " Dataframe "
-"""create = CreateDf(n_goals=1)  # grid 4x4, one agent, one enemy, no goal
-df = create.create_df(n_episodes=10000)
-df.to_pickle('sample_df_causality_1goals.pkl')"""
+n_goals = 0
+obj_minigame = MiniGame(n_goals=n_goals)  # grid 3x3, one agent, one enemy
+df, dep_var_names, indep_var_names = obj_minigame.create_df(n_episodes=1000)
+df.to_pickle(f'sample_df_causality_{n_goals}goals.pkl')
 
 " Causal Model "
-df = pd.read_pickle('sample_df_causality_0goals.pkl')
-# print(df.columns)
-causal_model = Causality(df)
+df = pd.read_pickle(f'sample_df_causality_{n_goals}goals.pkl')
+
+causal_model = Causality(df, dep_var_names, indep_var_names)
 causal_model.training()
 causal_model.counterfactual()
 
-"""cols = df.columns.to_list()
-contacts = [s for s in cols if 'Contact' in s]
-actions = [s for s in cols if 'Action' in s]
-states = [s for s in cols if 'State' in s]
-nearbies = [s for s in cols if 'Nearby' in s]
-others = [s for s in cols if s not in contacts and s not in actions and s not in states and s not in nearbies]
 
-vets = [contacts, actions, states, nearbies, others]
-deps = []
-inds = []
-for vet in vets:
-    for feat1 in vet:
-        pvalues = []
-        cols_2 = [s for s in cols if s not in contacts]
-        for feat2 in cols_2:
-            res = cramervonmises_2samp(df[feat1], df[feat2])
-            pvalues.append(res.pvalue)
-        av = np.mean(pvalues)
-        if av < 0.05:
-            # print(f'dep) {feat1}: {av}')
-            deps.append(feat1)
-        else:
-            # print(f'ind) {feat1}: {av}')
-            inds.append(feat1)
 
-print(f'Dependent features: {deps}')
-print(f'Indipendent features: {inds}')
 
-for var_dep in deps:
-    cols_new = [s for s in cols if s not in deps]
-    for feat3 in cols_new:
-        res = cramervonmises_2samp(df[var_dep], df[feat3])
-        if res.pvalue > 0.05:
-            print(f'{var_dep} -- {feat3}: {res.pvalue}')"""
