@@ -8,14 +8,14 @@ from scipy.ndimage import gaussian_filter1d
 from plots import plot_av_rew_steps
 
 # 'QL', 'CQL3', 'CQL4', 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod'
-algorithms = ['CQL3', 'CQL4', 'CausalDeepQNetwork', 'CausalDeepQNetwork_Mod']
-n_games = 1
-vect_rows = [20]
-vect_n_enemies = [5]
-n_episodes = 500
+algorithms = ['QL', 'CQL3', 'CQL4', 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod']
+n_games = 5
+vect_rows = [10]
+vect_n_enemies = [2]
+n_episodes = 100
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
-dir_start = f'Results_{len(algorithms)}'
+dir_start = f'Results2_{len(algorithms)}Algs'
 
 
 os.makedirs(dir_start, exist_ok=True)

@@ -21,7 +21,7 @@ MIN_EXPLORATION_PROBA = 0.01
 EXPLORATION_GAME_PERCENT = 0.6
 BATCH_SIZE = 32
 TAU = 0.005
-HIDDEN_LAYERS = 64
+HIDDEN_LAYERS = 128
 
 causal_table = pd.read_pickle('final_causal_table.pkl')
 
