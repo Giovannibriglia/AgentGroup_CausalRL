@@ -2,6 +2,8 @@ import random
 import os
 import re
 import time
+from itertools import combinations
+import networkx as nx
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import networkx
@@ -32,7 +34,7 @@ class MiniGame:
         # predefined action state
         self.predefined_delta_state = 50
 
-        # Action_Agent..,  DeltaX_Agent.., DeltaY_Agent.., GameOver_Agent.., Winner_Agent.., Enemy.._Nearby_Agent..
+        # Action_Agent,  DeltaX_Agent, DeltaY_Agent, Alive_Agent, GameOver_Agent, Winner_Agent, Enemy_Nearby_Agent
         self.cols_df = []
         for agent in range(self.n_agents):
             self.cols_df.append(f'Action_Agent{agent}')
@@ -283,7 +285,7 @@ class MiniGame:
         new_df = pd.DataFrame()
 
         for col in self.df.columns.to_list():
-            if len(self.df[col].unique()) <= 2:
+            if len(self.df[col].unique()) <= 1:
                 col_ok = self.df[col]
                 new_df.insert(loc=0, column=col_ok.name, value=col_ok)
             else:
@@ -306,7 +308,7 @@ class MiniGame:
 
 class Causality:
 
-    def __init__(self, df, dep_var_names, indep_var_names):
+    def __init__(self, df, dep_var_names=None, indep_var_names=None):
         self.df = df
         self.features_names = self.df.columns.to_list()
 
@@ -328,15 +330,40 @@ class Causality:
 
     def training(self):
         print(f'structuring model...')
+        print(self.independent_vars)
+        self.structureModel = from_pandas(self.df, tabu_parent_nodes=self.independent_vars)
+        self.structureModel.remove_edges_below_threshold(0.1)
 
-        self.structureModel = from_pandas(self.df)
-        self.structureModel.remove_edges_below_threshold(0.3)
+        """for edge in self.structureModel.edges:
+            source, target = edge
+            weight = df[source].corr(df[target])
+            # self.structureModel.add_edge(source, target, weight=weight)
+            if abs(weight) < 0.1:
+                print(source, target, weight)"""
+        """if len(networkx.weakly_connected_components(self.structureModel)) > 1:
+            for component in networkx.weakly_connected_components(self.structureModel):
+                subgraph = self.structureModel.subgraph(component)
+                " Plot structure "
+                plt.figure(dpi=500)
+                plt.title(f'Initial {subgraph}')
+                nx.draw(subgraph, with_labels=True, font_size=4, edge_color='orange')
+                plt.show()"""
+        """for edge in self.structureModel.edges:
+            source, target = edge
+            weight = df[source].corr(df[target])
+            self.structureModel.add_edge(source, target, weight=weight)
+
+        # Print the learned edges and weights
+        print("Learned Causal Edges with Weights:")
+        for edge in self.structureModel.edges:
+            source, target, weight = edge[0], edge[1], self.structureModel.get_edge_data(source, target).get('weight')
+            print(f"{source} -> {target}, Weight: {weight}")"""
 
         " Plot structure "
         plt.figure(dpi=500)
         plt.title(f'Initial {self.structureModel}')
-        # networkx.draw(self.structureModel, pos=networkx.circular_layout(self.structureModel), with_labels=True, font_size=4, edge_color='orange')
-        networkx.draw(self.structureModel, with_labels=True, font_size=4, edge_color='orange')
+        nx.draw(self.structureModel, pos=networkx.circular_layout(self.structureModel), with_labels=True, font_size=4, edge_color='orange')
+        # nx.draw(self.structureModel, with_labels=True, font_size=4, edge_color='orange')
         plt.show()
 
         print(f'training bayesian network...')
@@ -353,18 +380,51 @@ class Causality:
 
         print('do-calculus...')
         before = self.ie.query()
+        print(before)
 
-        for ind_var in self.independent_vars:
+        """action_indep = [s for s in self.independent_vars if 'Action' in s]
+        nearby_indep = [s for s in self.independent_vars if 'Nearby' in s]
+
+        for act in action_indep:
             try:
-                self.ie.do_intervention(ind_var, 1)
-                after = self.ie.query()
+                self.ie.do_intervention(act, 1)
                 print('\n')
-                for dep_var in self.dependent_vars:
-                    print(f'{ind_var} = 1 --> {dep_var}: before = {before[dep_var][1]} | after = {after[dep_var][1]}')
-
-                self.ie.reset_do(ind_var)
+                for nearby in nearby_indep:
+                    self.ie.do_intervention(nearby, 1)
+                    after = self.ie.query()
+                    print(f'{act} and {nearby}')
+                    print(before['GameOver_Agent0'], ' -->', after['GameOver_Agent0'])
+                    self.ie.reset_do(nearby)
+                self.ie.reset_do(act)
+            except:
+                pass"""
+        for feat in self.features_names:
+            try:
+                self.ie.do_intervention(feat, 1)
+                after = self.ie.query()
+                print(f'{feat} --> {after}')
+                self.ie.reset_do(feat)
             except:
                 pass
+        """for ind_var in self.independent_vars:
+            try:
+                self.ie.do_intervention(ind_var, 1)
+                for ind_var2 in self.independent_vars:
+                    try:
+                        if ind_var != ind_var2:
+                            self.ie.do_intervention(ind_var2, 1)
+                            after = self.ie.query()
+                            print('\n')
+                            for dep_var in self.dependent_vars:
+                                if round(before[dep_var][1], 2) != round(after[dep_var][1], 2):
+                                    print(f'{ind_var}-{ind_var2} = 1 --> {dep_var}: before = {before[dep_var][1]} | after = {after[dep_var][1]}')
+
+                            self.ie.reset_do(ind_var2)
+                    except:
+                        pass
+                self.ie.reset_do(ind_var)
+            except:
+                pass"""
 
 
 def get_CausaltablesXY(causal_table, rows, cols):
@@ -430,11 +490,20 @@ def get_CausaltablesXY(causal_table, rows, cols):
 " Dataframe "
 n_goals = 0
 obj_minigame = MiniGame(n_goals=n_goals)  # grid 3x3, one agent, one enemy
-df, dep_var_names, indep_var_names = obj_minigame.create_df(n_episodes=1000)
+df, dep_var_names, indep_var_names = obj_minigame.create_df(n_episodes=1000, if_binary_df=True)
 df.to_pickle(f'sample_df_causality_{n_goals}goals.pkl')
 
 " Causal Model "
+dep_var_names = ['DeltaX', 'DeltaY', 'Winner', 'GameOver']
+indep_var_names = ['Action', 'Nearby']
 df = pd.read_pickle(f'sample_df_causality_{n_goals}goals.pkl')
+
+to_drop = [s for s in df.columns.to_list() if 'Delta' in s]
+df = df.drop(to_drop, axis=1)
+
+"""df = df.drop('GameOver_Agent0_Value0', axis=1)
+df = df.drop('GameOver_Agent0_Value1', axis=1)"""
+# df = df.drop('Enemy0_Nearby_Agent0_Value50', axis=1)
 
 causal_model = Causality(df, dep_var_names, indep_var_names)
 causal_model.training()
