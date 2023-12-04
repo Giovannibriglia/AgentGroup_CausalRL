@@ -320,27 +320,15 @@ class MiniGame:
 
 class Causality:
 
-    def __init__(self, df, dep_var_names=None, indep_var_names=None, if_binary=True):
+    def __init__(self, df):
         self.df = df
         self.features_names = self.df.columns.to_list()
-        self.if_binary = if_binary
-
-        if dep_var_names != None:
-            self.dependent_vars = []
-            for col in self.df.columns.to_list():
-                for name in dep_var_names:
-                    if name in col:
-                        self.dependent_vars.append(col)
-        if indep_var_names != None:
-            self.independent_vars = []
-            for col in self.df.columns.to_list():
-                for name in indep_var_names:
-                    if name in col:
-                        self.independent_vars.append(col)
 
         self.structureModel = None
         self.bn = None
         self.ie = None
+        self.independents_var = None
+        self.dependents_var = None
 
         self.training()
 
@@ -348,10 +336,6 @@ class Causality:
         print(f'structuring model...')
         self.structureModel = from_pandas(self.df)
         self.structureModel.remove_edges_below_threshold(0.2)
-        for u, v, w in self.structureModel.edges(data="weight"):
-            if u == 'Action_Agent0_Value0' or v == 'Action_Agent0_Value0':
-                # print(u, v, w)
-                pass
 
         " Plot structure "
         plt.figure(dpi=500)
@@ -370,15 +354,17 @@ class Causality:
 
         self.ie = InferenceEngine(self.bn)
 
-        self.counterfactual(if_binary=self.if_binary)
+        self.counterfactual()
 
-    def counterfactual(self, if_binary=False):
+    def counterfactual(self):
 
-        # understand who influence who
+        print('do-calculus-1...\n')
+        self.dependents_var = []
+        self.independents_var = []
+        # understand who influences whom
         before = self.ie.query()
 
         for var in self.features_names:
-            print('\n')
             count_var = 0
             for value in self.df[var].unique():
                 try:
@@ -390,88 +376,47 @@ class Causality:
                         best_key_before, max_value_before = max(before[feat].items(), key=lambda x: x[1])
                         best_key_after, max_value_after = max(after[feat].items(), key=lambda x: x[1])
 
-                        if best_key_after != best_key_before and round(max_value_after,4) != round(1/len(after[feat]), 4):
+                        if best_key_after != best_key_before and round(max_value_after, 4) != round(1/len(after[feat]), 4):
                             count_var_value += 1
                     self.ie.reset_do(var)
 
-                    print(f'{var} = {value} --> {count_var_value} changes')
+                    # print(f'{var} = {value} --> {count_var_value} changes')
                     count_var += count_var_value
                 except:
                     pass
 
             if count_var > 0:
-                print(f'*** {var} --> {count_var} changes, dependent')
+                print(f'{var} --> {count_var} changes, internally caused ')
+                self.dependents_var.append(var)
             else:
-                print(f'*** {var} --> {count_var} changes, independent')
+                print(f'{var} --> externally caused')
+                self.independents_var.append(var)
 
+        print('\ndo-calculus-2...')
 
-        print('do-calculus...')
-        before = self.ie.query()
-        print(before)
+        arrays = []
+        for feat_ind in self.dependents_var:
+            arrays.append(self.df[feat_ind].unique())
+        var_combinations = list(product(*arrays))
 
-        self.deps = [s for s in self.features_names if 'Nearby' in s or 'Delta' in s]
-        self.inds = [s for s in self.features_names if s not in self.deps]
+        for comb_n in var_combinations:
+            print('\n')
+            for var_ind in range(len(self.dependents_var)):
+                try:
+                    self.ie.do_intervention(self.dependents_var[var_ind], int(comb_n[var_ind]))
+                    print(f'{self.dependents_var[var_ind]} = {int(comb_n[var_ind])}')
+                except:
+                    print(f'no {self.dependents_var[var_ind]} = {int(comb_n[var_ind])}')
+                    pass
 
-        if if_binary:
-            gameover_possibilities = [1]
-            actions_com = list(product([0, 1], repeat=len(self.inds)))
-            actions_com_ok = [combo for combo in actions_com if combo.count(1) == 1]
-            all_combinations = [(elem1, *array) for elem1, array in product(gameover_possibilities, actions_com_ok)]
+            after = self.ie.query()
+            for var_dep in self.independents_var:
+                # print(f'{var_dep}) {after[var_dep]}')
+                max_key, max_value = max(after[var_dep].items(), key=lambda x: x[1])
+                print(f'{var_dep}) -> {max_key}: {max_value}')
 
-            for comb_n in all_combinations:
-                print('\n')
-                for feat_ind in range(len(self.inds)):
-                    try:
-                        self.ie.do_intervention(self.inds[feat_ind], comb_n[feat_ind])
-                        print(f'{self.inds[feat_ind]} = {int(comb_n[feat_ind])}')
-                    except:
-                        print(f'no {self.inds[feat_ind]} = {int(comb_n[feat_ind])}')
-                        pass
-
-                after = self.ie.query()
-                for feat_dep in self.deps:
-                    max_key, max_value = max(after[feat_dep].items(), key=lambda x: x[1])
-                    print(f'{feat_dep}) -> {max_key}: {max_value}')
-
-                for var_ind in range(len(self.inds)):
-                    self.ie.reset_do(self.inds[var_ind])
-
-        else:
-            arrays = []
-            for feat_ind in self.inds:
-                arrays.append(self.df[feat_ind].unique())
-            comb_inds = list(product(*arrays))
-
-            for comb_n in comb_inds:
-                print('\n')
-                for var_ind in range(len(self.inds)):
-                    try:
-                        self.ie.do_intervention(self.inds[var_ind], int(comb_n[var_ind]))
-                        print(f'{self.inds[var_ind]} = {int(comb_n[var_ind])}')
-                    except:
-                        print(f'no {self.inds[var_ind]} = {int(comb_n[var_ind])}')
-                        pass
-
-                after = self.ie.query()
-                for var_dep in self.deps:
-                    # print(f'{var_dep}) {after[var_dep]}')
-                    max_key, max_value = max(after[var_dep].items(), key=lambda x: x[1])
-                    print(f'{var_dep}) -> {max_key}: {max_value}')
-
-                for var_ind in range(len(self.inds)):
-                    self.ie.reset_do(self.inds[var_ind])
-
-            for der_var in self.deps:
-                print('\n')
-                for value in self.df[der_var].unique():
-                    try:
-                        self.ie.do_intervention(der_var, int(value))
-                        after = self.ie.query()
-                        for ind_var in self.inds:
-                            print(f'{der_var} = {value} --> {ind_var} == {after[ind_var]}')
-                        self.ie.reset_do(der_var)
-                    except:
-                        pass
+            for var_ind in range(len(self.dependents_var)):
+                self.ie.reset_do(self.dependents_var[var_ind])
 
 
 def get_CausaltablesXY(causal_table, rows, cols):
@@ -545,7 +490,7 @@ df = pd.read_pickle(f'sample_df_causality_{n_goals}goals.pkl')
 
 df = df.drop(['Alive_Agent0', 'GameOver_Agent0', 'Winner_Agent0'], axis=1) # , 'Enemy0_Nearby_Agent0_Value50'
 
-causal_model = Causality(df, None, None, if_binary=False)
+causal_model = Causality(df)
 
 
 
