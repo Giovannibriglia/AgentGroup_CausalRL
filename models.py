@@ -146,7 +146,7 @@ def QL(env, n_act_agents, n_episodes):
             result = env.step_agent(action)
             # print('result:', result)
             next_stateX = int(result[0][agent][0])
-            next_stateY = int(result[0][agent][0])
+            next_stateY = int(result[0][agent][1])
             reward = int(result[1][agent])
             done = result[2][agent]  # If agent wins, end loop and restart
             if_lose = result[3]
@@ -294,7 +294,7 @@ def CQL3(env, n_act_agents, n_episodes):
             result = env.step_agent(action)
             # print('result:', result)
             next_stateX = int(result[0][agent][0])
-            next_stateY = int(result[0][agent][0])
+            next_stateY = int(result[0][agent][1])
             reward = int(result[1][agent])
             done = result[2][agent]  # If agent wins, end loop and restart
             if_lose = result[3]
@@ -427,7 +427,7 @@ def CQL4(env, n_act_agents, n_episodes):
             result = env.step_agent(action)
             # print('result:', result)
             next_stateX = int(result[0][agent][0])
-            next_stateY = int(result[0][agent][0])
+            next_stateY = int(result[0][agent][1])
             reward = int(result[1][agent])
             done = result[2][agent]  # If agent wins, end loop and restart
             if_lose = result[3]
@@ -560,7 +560,7 @@ def DeepQNetwork(env, n_act_agents, n_episodes):
             result = env.step_agent(action)
             # print('result:', result)
             next_stateX = int(result[0][agent][0])
-            next_stateY = int(result[0][agent][0])
+            next_stateY = int(result[0][agent][1])
             reward = int(result[1][agent])
             total_episode_reward += reward
             done = result[2][agent]  # If agent wins, end loop and restart
@@ -721,7 +721,7 @@ def CausalDeepQNetwork(env, n_act_agents, n_episodes):
             result = env.step_agent(action)
             # print('result:', result)
             next_stateX = int(result[0][agent][0])
-            next_stateY = int(result[0][agent][0])
+            next_stateY = int(result[0][agent][1])
             reward = int(result[1][agent])
             total_episode_reward += reward
             done = result[2][agent]  # If agent wins, end loop and restart
@@ -866,7 +866,7 @@ def DeepQNetwork_Mod(env, n_act_agents, n_episodes):
             result = env.step_agent(action)
             # print('result:', result)
             next_stateX = int(result[0][agent][0])
-            next_stateY = int(result[0][agent][0])
+            next_stateY = int(result[0][agent][1])
             reward = int(result[1][agent])
             total_episode_reward += reward
             done = result[2][agent]  # If agent wins, end loop and restart
@@ -1043,7 +1043,7 @@ def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
             result = env.step_agent(action)
             # print('result:', result)
             next_stateX = int(result[0][agent][0])
-            next_stateY = int(result[0][agent][0])
+            next_stateY = int(result[0][agent][1])
             reward = int(result[1][agent])
             total_episode_reward += reward
             done = result[2][agent]  # If agent wins, end loop and restart
