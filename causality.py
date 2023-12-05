@@ -10,10 +10,7 @@ from causalnex.inference import InferenceEngine
 from causalnex.network import BayesianNetwork
 from causalnex.structure.notears import from_pandas
 from tqdm import tqdm
-
 warnings.filterwarnings("ignore")
-
-visualization = False
 
 
 class MiniGame:
