@@ -1,19 +1,16 @@
 import random
-import os
 import re
 import time
-from itertools import combinations, product, permutations
-import networkx as nx
-from tqdm import tqdm
+import warnings
+from itertools import product
 import matplotlib.pyplot as plt
-import numpy as np
+import networkx as nx
 import pandas as pd
 from causalnex.inference import InferenceEngine
 from causalnex.network import BayesianNetwork
-from causalnex.structure import StructureModel
 from causalnex.structure.notears import from_pandas
-import warnings
-from scipy.stats import chi2_contingency, cramervonmises_2samp, pearsonr
+from tqdm import tqdm
+
 warnings.filterwarnings("ignore")
 
 visualization = False
@@ -57,10 +54,10 @@ class MiniGame:
 
         self.df = pd.DataFrame(columns=self.cols_df)
 
-    def create_df(self, n_episodes, if_binary_df=True):
+    def create_df(self, n_episodes, if_binary_df=False):
 
         print('creating dataframe...')
-        time.sleep(2)
+        time.sleep(1)
 
         counter = 0
         for _ in tqdm(range(n_episodes)):
@@ -114,7 +111,7 @@ class MiniGame:
                 done = self.check_gameover_or_winner(agents_coord, enemies_coord, goals_coord, counter)
                 counter += 1
 
-        indep_var_names = []
+        """indep_var_names = []
         for feat1 in self.cols_df:
             p_values = []
             for feat2 in self.cols_df:
@@ -129,17 +126,19 @@ class MiniGame:
         dep_var_names = [s for s in self.cols_df if s not in indep_var_names]
         print(f'Dependents features: {dep_var_names}')
         print(f'Independents features: {indep_var_names}')
-        print('\n')
+        print('\n')"""
+
+        self.df = self.df.drop(['Alive_Agent0', 'GameOver_Agent0', 'Winner_Agent0'], axis=1)
 
         if if_binary_df:
             df_bin = self.binarize_dataframe()
             for col in df_bin.columns:
                 df_bin[str(col)] = df_bin[str(col)].astype(str).str.replace(',', '').astype(float)
-            return df_bin, dep_var_names, indep_var_names
+            return df_bin
         else:
             for col in self.df.columns:
                 self.df[str(col)] = self.df[str(col)].astype(str).str.replace(',', '').astype(float)
-            return self.df, dep_var_names, indep_var_names
+            return self.df
 
     def create_env(self):
         """ 0.0  1.0  2.0
@@ -330,8 +329,6 @@ class Causality:
         self.independents_var = None
         self.dependents_var = None
 
-        self.training()
-
     def training(self):
         print(f'structuring model...')
         self.structureModel = from_pandas(self.df)
@@ -339,8 +336,9 @@ class Causality:
 
         " Plot structure "
         plt.figure(dpi=500)
-        plt.title(f'Initial {self.structureModel}')
-        nx.draw(self.structureModel, pos=nx.circular_layout(self.structureModel), with_labels=True, font_size=6, edge_color='orange')
+        plt.title(f'{self.structureModel}')
+        nx.draw(self.structureModel, pos=nx.circular_layout(self.structureModel), with_labels=True, font_size=6,
+                edge_color='orange')
         # nx.draw(self.structureModel, with_labels=True, font_size=4, edge_color='orange')
         plt.show()
 
@@ -354,16 +352,12 @@ class Causality:
 
         self.ie = InferenceEngine(self.bn)
 
-        self.counterfactual()
-
-    def counterfactual(self):
-
-        print('do-calculus-1...\n')
         self.dependents_var = []
         self.independents_var = []
-        # understand who influences whom
-        before = self.ie.query()
 
+        print('do-calculus-1...\n')
+        " understand who influences whom "
+        before = self.ie.query()
         for var in self.features_names:
             count_var = 0
             for value in self.df[var].unique():
@@ -376,122 +370,72 @@ class Causality:
                         best_key_before, max_value_before = max(before[feat].items(), key=lambda x: x[1])
                         best_key_after, max_value_after = max(after[feat].items(), key=lambda x: x[1])
 
-                        if best_key_after != best_key_before and round(max_value_after, 4) != round(1/len(after[feat]), 4):
+                        if best_key_after != best_key_before and round(max_value_after, 4) != round(
+                                1 / len(after[feat]), 4):
                             count_var_value += 1
                     self.ie.reset_do(var)
 
-                    # print(f'{var} = {value} --> {count_var_value} changes')
                     count_var += count_var_value
                 except:
                     pass
 
             if count_var > 0:
-                print(f'{var} --> {count_var} changes, internally caused ')
+                # print(f'{var} --> {count_var} changes, internally caused ')
                 self.dependents_var.append(var)
             else:
-                print(f'{var} --> externally caused')
+                # print(f'{var} --> externally caused')
                 self.independents_var.append(var)
 
+        print(f'**Externally caused: {self.independents_var}')
+        print(f'**Externally influenced: {self.dependents_var}')
         print('\ndo-calculus-2...')
+        causal_table = pd.DataFrame(columns=self.features_names)
 
         arrays = []
         for feat_ind in self.dependents_var:
             arrays.append(self.df[feat_ind].unique())
         var_combinations = list(product(*arrays))
 
-        for comb_n in var_combinations:
-            print('\n')
+        for n, comb_n in enumerate(var_combinations):
+            # print('\n')
             for var_ind in range(len(self.dependents_var)):
                 try:
                     self.ie.do_intervention(self.dependents_var[var_ind], int(comb_n[var_ind]))
-                    print(f'{self.dependents_var[var_ind]} = {int(comb_n[var_ind])}')
+                    # print(f'{self.dependents_var[var_ind]} = {int(comb_n[var_ind])}')
+                    causal_table.at[n, f'{self.dependents_var[var_ind]}'] = int(comb_n[var_ind])
                 except:
-                    print(f'no {self.dependents_var[var_ind]} = {int(comb_n[var_ind])}')
-                    pass
+                    # print(f'no {self.dependents_var[var_ind]} = {int(comb_n[var_ind])}')
+                    causal_table.at[n, f'{self.dependents_var[var_ind]}'] = pd.NA
 
             after = self.ie.query()
             for var_dep in self.independents_var:
                 # print(f'{var_dep}) {after[var_dep]}')
                 max_key, max_value = max(after[var_dep].items(), key=lambda x: x[1])
-                print(f'{var_dep}) -> {max_key}: {max_value}')
+                if round(max_value, 4) != round(1 / len(after[var_dep]), 4):
+                    causal_table.at[n, f'{var_dep}'] = int(max_key)
+                    # print(f'{var_dep}) -> {max_key}: {max_value}')
+                else:
+                    causal_table.at[n, f'{var_dep}'] = pd.NA
+                    # print(f'{var_dep}) -> unknown')
 
             for var_ind in range(len(self.dependents_var)):
                 self.ie.reset_do(self.dependents_var[var_ind])
 
-
-def get_CausaltablesXY(causal_table, rows, cols):
-    rows_table = causal_table.index.to_list()
-    cols_agents_actions = [s for s in causal_table.columns.to_list() if 'Agent' in s]
-    actions = len(cols_agents_actions)
-    Causal_TableX = np.zeros((rows, actions))
-    Causal_TableY = np.zeros((cols, actions))
-
-    rows_agents_actionsX_consequences = [s for s in rows_table if 'StateX' in s and 'Agent' in s]
-    rows_agents_actionsY_consequences = [s for s in rows_table if 'StateY' in s and 'Agent' in s]
-
-    for stateX in range(rows):
-        for stateY in range(cols):
-            for col_agent_action in cols_agents_actions:
-                if rows_agents_actionsX_consequences != []:
-                    value_most_probX = 0
-                    for row_actX in rows_agents_actionsX_consequences:
-                        valX = causal_table.loc[row_actX, col_agent_action]
-                        if valX >= value_most_probX:
-                            value_most_probX = valX
-                            ind_for_cutting = row_actX.index('val')
-                            action_most_probX_in = row_actX.replace(row_actX[:ind_for_cutting + 3], "")
-                            if action_most_probX_in.find('_') != -1:
-                                action_most_probX = -int(action_most_probX_in.replace('_', ''))
-                            else:
-                                action_most_probX = int(action_most_probX_in)
-                else:
-                    action_most_probX = 0
-
-                if 0 <= stateX + action_most_probX < cols - 1:
-                    update_stateX = stateX + action_most_probX
-                else:
-                    update_stateX = stateX
-
-                if rows_agents_actionsY_consequences != []:
-                    value_most_probY = 0
-                    for row_actY in rows_agents_actionsY_consequences:
-                        valY = causal_table.loc[row_actY, col_agent_action]
-                        if valY >= value_most_probY:
-                            value_most_probY = valY
-                            ind_for_cutting = row_actY.index('val')
-                            action_most_probY = row_actY.replace(row_actY[:ind_for_cutting + 3], "")
-                            if action_most_probY.find('_') != -1:
-                                action_most_probY = -int(action_most_probY.replace('_', ''))
-                            else:
-                                action_most_probY = int(action_most_probY)
-                else:
-                    action_most_probY = 0
-
-                if 0 <= stateY + action_most_probY < rows - 1:
-                    update_stateY = stateY + action_most_probY
-                else:
-                    update_stateY = stateY
-
-                Causal_TableX[stateX, cols_agents_actions.index(col_agent_action)] = update_stateX
-                Causal_TableY[stateY, cols_agents_actions.index(col_agent_action)] = update_stateY
-
-    return Causal_TableX, Causal_TableY
+        return causal_table
 
 
 """ ************************************************************************************************************* """
 " Dataframe "
 n_goals = 1
-"""obj_minigame = MiniGame(n_goals=n_goals)  # grid 3x3, one agent, one enemy
-df, dep_var_names, indep_var_names = obj_minigame.create_df(n_episodes=2000, if_binary_df=False)
-df.to_pickle(f'sample_df_causality_{n_goals}goals.pkl')"""
+obj_minigame = MiniGame(n_goals=n_goals)  # grid 3x3, one agent, one enemy
+df = obj_minigame.create_df(n_episodes=2000)
+df.to_pickle(f'sample_df_causality_{n_goals}goals.pkl')
 
 " Causal Model "
 df = pd.read_pickle(f'sample_df_causality_{n_goals}goals.pkl')
 
-df = df.drop(['Alive_Agent0', 'GameOver_Agent0', 'Winner_Agent0'], axis=1) # , 'Enemy0_Nearby_Agent0_Value50'
-
-causal_model = Causality(df)
-
-
-
-
+causality = Causality(df)
+causal_table = causality.training()
+causal_table.dropna(axis=0, how='any', inplace=True)
+causal_table.to_excel('heuristic_table.xlsx')
+causal_table.to_pickle('heuristic_table.pkl')
