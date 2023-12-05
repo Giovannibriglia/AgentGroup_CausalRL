@@ -552,8 +552,7 @@ def DeepQNetwork(env, n_act_agents, n_episodes):
             current_stateY = env.pos_agents[-1][agent][1]
 
             general_state[current_stateY * env.cols + current_stateX] = 1
-            general_state = torch.tensor(general_state, dtype=torch.float32,
-                                         device=device).unsqueeze(0)
+            general_state = torch.tensor(general_state, dtype=torch.float32, device=device).unsqueeze(0)
 
             action = select_action(general_state, EXPLORATION_PROBA)
 
@@ -875,8 +874,7 @@ def DeepQNetwork_Mod(env, n_act_agents, n_episodes):
             reward = torch.tensor([reward], device=device)
             next_state = np.zeros(env.rows * env.cols)
             next_state[next_stateY * env.cols + next_stateX] = 1
-            next_state = torch.tensor(next_state, dtype=torch.float32,
-                                      device=device).unsqueeze(0)
+            next_state = torch.tensor(next_state, dtype=torch.float32, device=device).unsqueeze(0)
 
             memory.push(general_state, action, next_state, reward, Transition=Transition)
 
