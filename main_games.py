@@ -1,22 +1,27 @@
 import time
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+
 import env_game
 import os
 import models
 from scipy.ndimage import gaussian_filter1d
 from plots import plot_av_rew_steps
+import time
+
 
 # 'QL', 'CQL3', 'CQL4', 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod'
-algorithms = ['QL', 'CQL4', 'CQL3', 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod']
+algorithms = ['QL', 'CQL3', 'CQL4', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod']
 n_games = 5
-vect_rows = [5]
-vect_n_enemies = [1]
+vect_rows = [10]
+vect_n_enemies = [15]
 n_episodes = 100
+timeout_condition = 5
 vect_if_maze = [False]
-vect_if_same_enemies_actions = [False]
+vect_if_same_enemies_actions = [True]
 dir_start = f'Results_{len(algorithms)}Algs'
-
+causal_table = pd.read_pickle('heuristic_table.pkl')
 
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:
@@ -51,11 +56,13 @@ for if_maze in vect_if_maze:
                                              if_maze, if_same_enemies_actions)
 
                     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, dpi=500)
-                    fig.suptitle(f'{env_name} {rows}x{cols} - {n_enemies} enemies - Game {game_n}/{n_games}', fontsize=15)
+                    fig.suptitle(f'{env_name} {rows}x{cols} - {n_enemies} enemies - Game {game_n}/{n_games}',
+                                 fontsize=15)
 
                     for alg in algorithms:
                         print(f'\n*** {alg} - Game {game_n}/{n_games} ****')
                         time.sleep(1)
+
                         env_for_alg = env
                         rewards = []
                         steps = []
@@ -64,17 +71,17 @@ for if_maze in vect_if_maze:
                         if alg == 'QL':
                             rewards, steps = models.QL(env_for_alg, n_act_agents, n_episodes)
                         elif alg == 'CQL3':
-                            rewards, steps = models.CQL3(env_for_alg, n_act_agents, n_episodes)
+                            rewards, steps = models.CQL3(env_for_alg, n_act_agents, n_episodes, causal_table)
                         elif alg == 'CQL4':
-                            rewards, steps = models.CQL4(env_for_alg, n_act_agents, n_episodes)
+                            rewards, steps = models.CQL4(env_for_alg, n_act_agents, n_episodes, causal_table)
                         elif alg == 'DeepQNetwork':
                             rewards, steps = models.DeepQNetwork(env_for_alg, n_act_agents, n_episodes)
                         elif alg == 'CausalDeepQNetwork':
-                            rewards, steps = models.CausalDeepQNetwork(env_for_alg, n_act_agents, n_episodes)
+                            rewards, steps = models.CausalDeepQNetwork(env_for_alg, n_act_agents, n_episodes, causal_table)
                         elif alg == 'DeepQNetwork_Mod':
                             rewards, steps = models.DeepQNetwork_Mod(env_for_alg, n_act_agents, n_episodes)
                         elif alg == 'CausalDeepQNetwork_Mod':
-                            rewards, steps = models.CausalDeepQNetwork_Mod(env_for_alg, n_act_agents, n_episodes)
+                            rewards, steps = models.CausalDeepQNetwork_Mod(env_for_alg, n_act_agents, n_episodes, causal_table)
 
                         np.save(f"{directory}/{alg}_rewards_game{game_n}.npy", rewards)
                         np.save(f"{directory}/{alg}_steps_game{game_n}.npy", steps)
@@ -83,7 +90,8 @@ for if_maze in vect_if_maze:
                         x = np.arange(0, n_episodes, 1)
                         ax1.plot(x, cumulative_rewards, label=f'{alg} = {round(np.mean(rewards), 3)}')
                         confidence_interval_rew = np.std(cumulative_rewards)
-                        ax1.fill_between(x, (cumulative_rewards - confidence_interval_rew), (cumulative_rewards + confidence_interval_rew),
+                        ax1.fill_between(x, (cumulative_rewards - confidence_interval_rew),
+                                         (cumulative_rewards + confidence_interval_rew),
                                          alpha=0.2)
                         ax1.set_title('Average reward on episode steps')
                         ax1.legend(fontsize='x-small')

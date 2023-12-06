@@ -1,8 +1,5 @@
-import math
 import random
-import time
 from collections import namedtuple, deque
-from itertools import count
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -11,6 +8,7 @@ import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 import warnings
+import time
 
 warnings.filterwarnings("ignore")
 
@@ -23,7 +21,6 @@ BATCH_SIZE = 32
 TAU = 0.005
 HIDDEN_LAYERS = 128
 
-causal_table = pd.read_pickle('heuristic_table.pkl')
 col_action = 'Action_Agent0'
 col_deltaX = 'DeltaX_Agent0'
 col_deltaY = 'DeltaY_Agent0'
@@ -136,6 +133,7 @@ def QL(env, n_act_agents, n_episodes):
         done = False
 
         while not done:
+
             current_stateX = env.pos_agents[-1][agent][0]
             current_stateY = env.pos_agents[-1][agent][1]
 
@@ -182,7 +180,7 @@ def QL(env, n_act_agents, n_episodes):
     return average_episodes_rewards, steps_for_episode
 
 
-def CQL3(env, n_act_agents, n_episodes):
+def CQL3(env, n_act_agents, n_episodes, causal_table):
     global EXPLORATION_PROBA
     EXPLORATION_ACTIONS_TH = 10
 
@@ -315,7 +313,7 @@ def CQL3(env, n_act_agents, n_episodes):
     return average_episodes_rewards, steps_for_episode
 
 
-def CQL4(env, n_act_agents, n_episodes):
+def CQL4(env, n_act_agents, n_episodes, causal_table):
     global EXPLORATION_PROBA
     EXPLORATION_ACTIONS_TH = 10
 
@@ -574,7 +572,7 @@ def DeepQNetwork(env, n_act_agents, n_episodes):
     return average_episodes_rewards, steps_for_episode
 
 
-def CausalDeepQNetwork(env, n_act_agents, n_episodes):
+def CausalDeepQNetwork(env, n_act_agents, n_episodes, causal_table):
     global EXPLORATION_PROBA
 
     def select_action(state, exp_proba, possible_actions):
@@ -880,7 +878,7 @@ def DeepQNetwork_Mod(env, n_act_agents, n_episodes):
     return average_episodes_rewards, steps_for_episode
 
 
-def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
+def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes, causal_table):
     global EXPLORATION_PROBA
 
     def select_action(state, exp_proba, possible_actions):
