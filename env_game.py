@@ -204,7 +204,7 @@ class CustomEnv:
     def step_enemies(self):
 
         self.n_steps = self.n_steps + 1
-        rewards, dones, enemies_nearby, enemies_attached = [], [], [], []
+        rewards, dones, enemies_nearby, goals_nearby = [], [], [], []
         " Enemies "
         " Setting enemies positions"
         new_enemies_pos = []
@@ -237,20 +237,25 @@ class CustomEnv:
         for agent in range(1, self.n_agents + 1, 1):
             x_ag = self.pos_agents[-1][agent - 1][0]
             y_ag = self.pos_agents[-1][agent - 1][1]
-            singol_agent = []
-            check_attached = False
+            single_agent_enemies = []
             for enemy in range(1, self.n_enemies + 1, 1):
                 x_en = self.pos_enemies[-1][enemy - 1][0]
                 y_en = self.pos_enemies[-1][enemy - 1][1]
-                direction_attached_nearby = self.get_direction(x_ag, y_ag, x_en, y_en)
-                singol_agent.append(direction_attached_nearby)
-                if direction_attached_nearby == 0:
-                    check_attached = True
+                direction_nearby_enemy = self.get_direction(x_ag, y_ag, x_en, y_en)
+                single_agent_enemies.append(direction_nearby_enemy)
 
-            enemies_attached.append(check_attached)
-            enemies_nearby.append(singol_agent)
+            enemies_nearby.append(single_agent_enemies)
 
-        return enemies_nearby, enemies_attached, new_enemies_pos
+            single_agent_goals = []
+            for goal in range(1, self.n_goals+1, 1):
+                x_goal = self.pos_goals[goal-1][0]
+                y_goal = self.pos_goals[goal-1][1]
+                direction_nearby_goal = self.get_direction(x_ag, y_ag, x_goal, y_goal)
+                single_agent_goals.append(direction_nearby_goal)
+
+            goals_nearby.append(single_agent_goals)
+
+        return enemies_nearby, goals_nearby, new_enemies_pos
 
     def step_agent(self, agents_actions):
         " Agents "

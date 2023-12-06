@@ -23,54 +23,60 @@ BATCH_SIZE = 32
 TAU = 0.005
 HIDDEN_LAYERS = 128
 
-causal_table = pd.read_pickle('final_causal_table.pkl')
+causal_table = pd.read_pickle('heuristic_table.pkl')
+col_action = 'Action_Agent0'
+col_deltaX = 'DeltaX_Agent0'
+col_deltaY = 'DeltaY_Agent0'
+col_reward = 'Reward_Agent0'
+col_nearby_enemy = 'Enemy0_Nearby_Agent0'
+col_nearby_goal = 'Goal0_Nearby_Agent0'
 
 
 def causal_model_movement(causal_table, action, oldX, oldY, rows, cols):
-    action = 'Action_Agent1_Act' + str(action)
+    row_action = causal_table[causal_table[col_action] == action].reset_index(drop=True)
 
-    row_causal_table = causal_table.loc[action, :]
+    deltaX = row_action.loc[0, col_deltaX]
+    deltaY = row_action.loc[0, col_deltaY]
 
     newX = oldX
     newY = oldY
 
-    for col in range(len(row_causal_table)):
-        if 'StateX_Agent' in row_causal_table.index[col]:
-            if 0 <= oldX + row_causal_table[col] <= cols - 1:
-                newX += row_causal_table[col]
-        if 'StateY_Agent' in row_causal_table.index[col]:
-            if 0 <= oldY + row_causal_table[col] <= rows - 1:
-                newY += row_causal_table[col]
+    if 0 <= oldX + deltaX <= cols - 1:
+        newX += deltaX
 
+    if 0 <= oldY + deltaY <= rows - 1:
+        newY += deltaY
+
+    # print(f'\nOldX: {oldX} , action {action} --> NewX {newX}')
+    #print(f'OldY: {oldY} , action {action} --> NewX {newY}')
     return newX, newY
 
 
-def causal_model_gameover(causal_table, possible_actions_in, nearbies, attached):
+def causal_model_winner_gameover(causal_table, possible_actions_in, nearbies_enemies, nearbies_goals):
     possible_actions = possible_actions_in
 
-    rows_colGameOverIsTrue = causal_table[causal_table['GameOver_Agent1'] == 1]
+    check_goal = False
+    possible_actions_for_goal = []
+    for nearby_goal in nearbies_goals:
+        action_to_do = causal_table[(causal_table[col_reward] == 1) & (causal_table[col_nearby_goal] == nearby_goal)].reset_index(drop=True)
+        if not action_to_do.empty:
+            action_to_do = action_to_do.loc[0, col_action]
+            if action_to_do in possible_actions:
+                possible_actions_for_goal.append(action_to_do)
+                check_goal = True
 
-    for nearby in nearbies:
-        if nearby != 50 and nearby != 0:
-            input = ['EnemiesNearby_Agent1_Dir' + str(nearby)]
-            row_nearby = rows_colGameOverIsTrue[input] == 1
-            index_colGameOver_int = np.where((row_nearby[input] == True).values == True)[0][0]
-            row_GameOver = causal_table.loc[row_nearby.index[index_colGameOver_int], :]
+    if not check_goal:
+        for nearby_enemy in nearbies_enemies:
+            action_to_remove = causal_table[(causal_table[col_reward] == -1) & (causal_table[col_nearby_enemy] == nearby_enemy)].reset_index(drop=True)
+            if not action_to_remove.empty:
+                action_to_remove = action_to_remove.loc[0, col_action]
+                if action_to_remove in possible_actions:
+                    possible_actions.remove(action_to_remove)
+        # print(f'Enemies nearby: {nearbies_enemies} -- Possible actions: {possible_actions}')
+    else:
+        possible_actions = possible_actions_for_goal
+        # print(f'Goals nearby: {nearbies_goals} -- Possible actions: {possible_actions}')
 
-            for action in possible_actions:
-                if row_GameOver['Action_Agent1_Act' + str(action)] == 1:
-                    possible_actions.remove(action)
-
-    if attached:
-        input = ['EnemiesAttached_Agent1']
-
-        row_nearby = rows_colGameOverIsTrue[input] == 1
-        index_colGameOver_int = np.where((row_nearby[input] == True).values == True)[0][0]
-        row_GameOver = causal_table.loc[row_nearby.index[index_colGameOver_int], :]
-
-        for action in possible_actions:
-            if row_GameOver['Action_Agent1_Act' + str(action)] == 1:
-                possible_actions.remove(action)
 
     return possible_actions
 
@@ -135,7 +141,7 @@ def QL(env, n_act_agents, n_episodes):
 
             # print('current acquired', [current_stateX, current_stateY])
             step_for_episode += 1
-            _, _, _ = env.step_enemies()
+            _, _, _= env.step_enemies()
 
             " epsilon-greedy "
             if np.random.uniform(0, 1) < EXPLORATION_PROBA:  # exploration
@@ -211,15 +217,14 @@ def CQL3(env, n_act_agents, n_episodes):
 
             # print('current acquired', [current_stateX, current_stateY])
             step_for_episode += 1
-            enemies_nearby_all_agents, enemies_attached_all_agents, new_en_coord = env.step_enemies()
+            enemies_nearby_all_agents, goals_nearby_all_agents, new_en_coord = env.step_enemies()
             " epsilon-greedy "
             if np.random.uniform(0, 1) < EXPLORATION_PROBA:  # exploration
                 enemies_nearby_agent = enemies_nearby_all_agents[agent]
-                enemies_attached_agent = enemies_attached_all_agents[agent]
+                goals_nearby_agent = goals_nearby_all_agents[agent]
                 possible_actions = [s for s in range(n_act_agents)]
 
-                possible_actions = causal_model_gameover(causal_table, possible_actions, enemies_nearby_agent,
-                                                         enemies_attached_agent)
+                possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent, goals_nearby_agent)
 
                 new = False
                 check_tries = 0
@@ -245,24 +250,17 @@ def CQL3(env, n_act_agents, n_episodes):
                 next_stateX, next_stateY = causal_model_movement(causal_table, action, current_stateY, current_stateX,
                                                                  rows, cols)
 
-                if enemies_nearby_agent[0] == action and len(possible_actions) > 0:  # for debugging
-                    print('Enemies nearby: ', enemies_nearby_agent)
-                    print('Enemies attached: ', enemies_attached_agent)
-                    print('Possible actions: ', possible_actions)
-                    print('Exploration: problem in action selection with nearby model -> action taken', action)
-
-                # additional Q-Table udpate
+                # additional Q-Table update
                 Q_table[current_stateX, current_stateY, action] = (1 - LEARNING_RATE) * Q_table[
                     current_stateX, current_stateY, action] + LEARNING_RATE * (reward + GAMMA * max(
                     Q_table[next_stateX, next_stateY, :]))
 
             else:  # exploitation
                 enemies_nearby_agent = enemies_nearby_all_agents[agent]
-                enemies_attached_agent = enemies_attached_all_agents[agent]
+                goals_nearby_agent = goals_nearby_all_agents[agent]
                 possible_actions = [s for s in range(n_act_agents)]
 
-                possible_actions = causal_model_gameover(causal_table, possible_actions, enemies_nearby_agent,
-                                                         enemies_attached_agent)
+                possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent, goals_nearby_agent)
 
                 if len(possible_actions) > 0:
                     max_value = max(Q_table[current_stateX, current_stateY, possible_actions])
@@ -282,15 +280,8 @@ def CQL3(env, n_act_agents, n_episodes):
                     possibilities = list(set(possibilities))
                     action = random.sample(possibilities, k=1)[0]
 
-                    if action in enemies_nearby_agent:
-                        print('Exploitation mod problem')
-                        print('Enemies nearby: ', enemies_nearby_agent)
-                        print('Enemies attached: ', enemies_attached_agent)
-                        print(f'Possible actions: {possible_actions}, possibilities: {possibilities}')
-                        print('Wrong actions ', actions_wrong)
-                        print('Q-table situation: ', np.mean(Q_table[current_stateX, current_stateY, possible_actions]))
-                        print('Action taken', action)
-
+            if action not in possible_actions and len(possible_actions) > 0:
+                print(f'PROBLEM) Action: {action} - Nearbies: {enemies_nearby_agent} - Pos Act: {possible_actions}')
             result = env.step_agent(action)
             # print('result:', result)
             next_stateX = int(result[0][agent][0])
@@ -359,15 +350,14 @@ def CQL4(env, n_act_agents, n_episodes):
 
             # print('current acquired', [current_stateX, current_stateY])
             step_for_episode += 1
-            enemies_nearby_all_agents, enemies_attached_all_agents, new_en_coord = env.step_enemies()
+            enemies_nearby_all_agents, goals_nearby_all_agents, new_en_coord = env.step_enemies()
             " epsilon-greedy "
             if np.random.uniform(0, 1) < EXPLORATION_PROBA:  # exploration
                 enemies_nearby_agent = enemies_nearby_all_agents[agent]
-                enemies_attached_agent = enemies_attached_all_agents[agent]
+                goals_nearby_agent = goals_nearby_all_agents[agent]
                 possible_actions = [s for s in range(n_act_agents)]
 
-                possible_actions = causal_model_gameover(causal_table, possible_actions, enemies_nearby_agent,
-                                                         enemies_attached_agent)
+                possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent, goals_nearby_agent)
 
                 if len(possible_actions) > 0:
                     action = random.sample(possible_actions, 1)[0]
@@ -377,13 +367,7 @@ def CQL4(env, n_act_agents, n_episodes):
                 next_stateX, next_stateY = causal_model_movement(causal_table, action, current_stateY, current_stateX,
                                                                  rows, cols)
 
-                if enemies_nearby_agent[0] == action and len(possible_actions) > 0:  # for debugging
-                    print('Enemies nearby: ', enemies_nearby_agent)
-                    print('Enemies attached: ', enemies_attached_agent)
-                    print('Possible actions: ', possible_actions)
-                    print('Exploration: problem in action selection with nearby model -> action taken', action)
-
-                # additional Q-Table udpate
+                # additional Q-Table update
                 reward = 0
                 Q_table[current_stateX, current_stateY, action] = (1 - LEARNING_RATE) * Q_table[
                     current_stateX, current_stateY, action] + LEARNING_RATE * (reward + GAMMA * max(
@@ -391,11 +375,10 @@ def CQL4(env, n_act_agents, n_episodes):
 
             else:  # exploitation
                 enemies_nearby_agent = enemies_nearby_all_agents[agent]
-                enemies_attached_agent = enemies_attached_all_agents[agent]
+                goals_nearby_agent = goals_nearby_all_agents[agent]
                 possible_actions = [s for s in range(n_act_agents)]
 
-                possible_actions = causal_model_gameover(causal_table, possible_actions, enemies_nearby_agent,
-                                                         enemies_attached_agent)
+                possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent, goals_nearby_agent)
 
                 if len(possible_actions) > 0:
                     max_value = max(Q_table[current_stateX, current_stateY, possible_actions])
@@ -415,15 +398,8 @@ def CQL4(env, n_act_agents, n_episodes):
                     possibilities = list(set(possibilities))
                     action = random.sample(possibilities, k=1)[0]
 
-                    if action in enemies_nearby_agent:
-                        print('Exploitation mod problem')
-                        print('Enemies nearby: ', enemies_nearby_agent)
-                        print('Enemies attached: ', enemies_attached_agent)
-                        print(f'Possible actions: {possible_actions}, possibilities: {possibilities}')
-                        print('Wrong actions ', actions_wrong)
-                        print('Q-table situation: ', np.mean(Q_table[current_stateX, current_stateY, possible_actions]))
-                        print('Action taken', action)
-
+            if action not in possible_actions and len(possible_actions) > 0:
+                print(f'PROBLEM) Action: {action} - Nearbies: {enemies_nearby_agent} - Pos Act: {possible_actions}')
             result = env.step_agent(action)
             # print('result:', result)
             next_stateX = int(result[0][agent][0])
@@ -544,7 +520,7 @@ def DeepQNetwork(env, n_act_agents, n_episodes):
 
         while not done:
             step_for_episode += 1
-            _, _, new_en_coord = env.step_enemies()
+            _, _,new_en_coord = env.step_enemies()
 
             general_state = np.zeros(env.rows * env.cols)
 
@@ -695,12 +671,13 @@ def CausalDeepQNetwork(env, n_act_agents, n_episodes):
 
         while not done:
             step_for_episode += 1
-            enemies_nearby_all_agents, enemies_attached_all_agents, new_en_coord = env.step_enemies()
+            enemies_nearby_all_agents, goals_nearby_all_agents, new_en_coord = env.step_enemies()
+
+            goals_nearby_agent = goals_nearby_all_agents[agent]
             enemies_nearby_agent = enemies_nearby_all_agents[0]  # only one agent
-            enemies_attached_agent = enemies_attached_all_agents[0]  # only one agent
+
             possible_actions = [s for s in range(n_act_agents)]
-            possible_actions = causal_model_gameover(causal_table, possible_actions, enemies_nearby_agent,
-                                                     enemies_attached_agent)
+            possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent, goals_nearby_agent)
             possible_actions = torch.tensor(possible_actions, device=device)
 
             general_state = np.zeros(env.rows * env.cols)
@@ -714,7 +691,7 @@ def CausalDeepQNetwork(env, n_act_agents, n_episodes):
 
             action = select_action(general_state, EXPLORATION_PROBA, possible_actions)
 
-            if action not in possible_actions:
+            if action not in possible_actions and len(possible_actions) > 0:
                 print(f'PROBLEM) Action: {action} - Nearbies: {enemies_nearby_agent} - Pos Act: {possible_actions}')
 
             result = env.step_agent(action)
@@ -1013,12 +990,13 @@ def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
 
         while not done:
             step_for_episode += 1
-            enemies_nearby_all_agents, enemies_attached_all_agents, new_en_coord = env.step_enemies()
-            enemies_nearby_agent = enemies_nearby_all_agents[0]  # only one agent
-            enemies_attached_agent = enemies_attached_all_agents[0]  # only one agent
+            enemies_nearby_all_agents, goals_nearby_all_agents, new_en_coord = env.step_enemies()
+
+            goals_nearby_agent = goals_nearby_all_agents[agent]
+            enemies_nearby_agent = enemies_nearby_all_agents[agent]  # only one agent
+
             possible_actions = [s for s in range(n_act_agents)]
-            possible_actions = causal_model_gameover(causal_table, possible_actions, enemies_nearby_agent,
-                                                     enemies_attached_agent)
+            possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent, goals_nearby_agent)
             possible_actions = torch.tensor(possible_actions, device=device)
 
             general_state = np.zeros(env.rows * env.cols)
@@ -1035,7 +1013,7 @@ def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
 
             action = select_action(general_state, EXPLORATION_PROBA, possible_actions)
 
-            if action not in possible_actions:
+            if action not in possible_actions and len(possible_actions) > 0:
                 print(f'PROBLEM) Action: {action} - Nearbies: {enemies_nearby_agent} - Pos Act: {possible_actions}')
 
             result = env.step_agent(action)
@@ -1065,7 +1043,7 @@ def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes):
 
             if if_lose:
                 general_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
-            if (abs(current_stateX - next_stateX) + abs(current_stateY - next_stateY)) > 1 and env.n_act_agents < 5:
+            if (abs(current_stateX - next_stateX) + abs(current_stateY - next_stateY)) > 1 and env.n_act_agents <= 5:
                 print('movement control problem:', [current_stateX, current_stateY], [next_stateX, next_stateY])
 
         average_episodes_rewards.append(total_episode_reward)
