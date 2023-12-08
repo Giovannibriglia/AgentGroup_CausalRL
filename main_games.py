@@ -13,11 +13,11 @@ import time
 
 # 'QL_EpsGreedy', 'QL_BoltzmannMachine', 'QL_ThompsonSampling', 'QL_SoftAnn' , 'CQL3', 'CQL4',
 # 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod'
-algorithms = ['QL_EpsGreedy', 'QL_BoltzmannMachine', 'QL_ThompsonSampling', 'QL_SoftmaxAnnealing', 'CQL3']
-n_games = 1
-vect_rows = [20]
-vect_n_enemies = [1]
-n_episodes = 100
+algorithms = ['QL_EpsGreedy', 'CQL3', 'CQL4']
+n_games = 2
+vect_rows = [5]
+vect_n_enemies = [5]
+n_episodes = 1000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
 dir_start = f'Results_{len(algorithms)}Algs'
@@ -76,10 +76,10 @@ for if_maze in vect_if_maze:
                             rewards, steps = models.QL_ThompsonSampling(env_for_alg, n_act_agents, n_episodes)
                         elif alg == 'QL_SoftmaxAnnealing':
                             rewards, steps = models.QL_SoftmaxAnnealing(env_for_alg, n_act_agents, n_episodes)
-                        elif alg == 'CQL3':
-                            rewards, steps = models.CQL3(env_for_alg, n_act_agents, n_episodes, causal_table)
-                        elif alg == 'CQL4':
-                            rewards, steps = models.CQL4(env_for_alg, n_act_agents, n_episodes, causal_table)
+                        elif alg == 'CQL3' or 'CQL3_add':
+                            rewards, steps = models.CQL3(env_for_alg, n_act_agents, n_episodes, causal_table, alg)
+                        elif alg == 'CQL4' or 'CQL4_add':
+                            rewards, steps = models.CQL4(env_for_alg, n_act_agents, n_episodes, causal_table, alg)
                         elif alg == 'DeepQNetwork':
                             rewards, steps = models.DeepQNetwork(env_for_alg, n_act_agents, n_episodes)
                         elif alg == 'CausalDeepQNetwork':

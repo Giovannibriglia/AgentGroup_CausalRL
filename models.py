@@ -189,7 +189,8 @@ class SoftmaxAnnealingQAgent:
         # Q-table initialization
         self.q_table = np.zeros((self.rows, self.cols, action_space_size))
 
-        self.EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (EXPLORATION_GAME_PERCENT * self.n_episodes)
+        self.EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (
+                    EXPLORATION_GAME_PERCENT * self.n_episodes)
 
     def softmax(self, values):
         exp_values = np.exp(values / self.temperature)
@@ -221,7 +222,6 @@ class SoftmaxAnnealingQAgent:
 
     def anneal_temperature(self, e):
         self.temperature = max(MIN_EXPLORATION_PROBA, np.exp(-self.EXPLORATION_DECREASING_DECAY * e))
-
 
 def QL_EpsGreedy(env, n_act_agents, n_episodes):
     global EXPLORATION_PROBA
@@ -470,7 +470,7 @@ def QL_SoftmaxAnnealing(env, n_act_agents, n_episodes):
     return average_episodes_rewards, steps_for_episode
 
 
-def CQL3(env, n_act_agents, n_episodes, causal_table):
+def CQL3(env, n_act_agents, n_episodes, causal_table, alg):
     global EXPLORATION_PROBA
     EXPLORATION_ACTIONS_TH = 10
 
@@ -535,14 +535,16 @@ def CQL3(env, n_act_agents, n_episodes, causal_table):
                                 action = random.sample(possible_actions, 1)[0]
                 else:
                     action = env.action_space.sample()
+                    reward = 0
 
                 next_stateX, next_stateY = causal_model_movement(causal_table, action, current_stateY, current_stateX,
                                                                  rows, cols)
 
-                # additional Q-Table update
-                Q_table[current_stateX, current_stateY, action] = (1 - LEARNING_RATE) * Q_table[
-                    current_stateX, current_stateY, action] + LEARNING_RATE * (reward + GAMMA * max(
-                    Q_table[next_stateX, next_stateY, :]))
+                if alg == 'CQL3_add':
+                    # additional Q-Table update
+                    Q_table[current_stateX, current_stateY, action] = (1 - LEARNING_RATE) * Q_table[
+                        current_stateX, current_stateY, action] + LEARNING_RATE * (reward + GAMMA * max(
+                        Q_table[next_stateX, next_stateY, :]))
 
             else:  # exploitation
                 enemies_nearby_agent = enemies_nearby_all_agents[agent]
@@ -605,7 +607,7 @@ def CQL3(env, n_act_agents, n_episodes, causal_table):
     return average_episodes_rewards, steps_for_episode
 
 
-def CQL4(env, n_act_agents, n_episodes, causal_table):
+def CQL4(env, n_act_agents, n_episodes, causal_table, alg):
     global EXPLORATION_PROBA
     EXPLORATION_ACTIONS_TH = 10
 
@@ -658,11 +660,12 @@ def CQL4(env, n_act_agents, n_episodes, causal_table):
                 next_stateX, next_stateY = causal_model_movement(causal_table, action, current_stateY, current_stateX,
                                                                  rows, cols)
 
-                # additional Q-Table update
-                reward = 0
-                Q_table[current_stateX, current_stateY, action] = (1 - LEARNING_RATE) * Q_table[
-                    current_stateX, current_stateY, action] + LEARNING_RATE * (reward + GAMMA * max(
-                    Q_table[next_stateX, next_stateY, :]))
+                if alg == 'CQL4_add':
+                    # additional Q-Table update
+                    reward = 0
+                    Q_table[current_stateX, current_stateY, action] = (1 - LEARNING_RATE) * Q_table[
+                        current_stateX, current_stateY, action] + LEARNING_RATE * (reward + GAMMA * max(
+                        Q_table[next_stateX, next_stateY, :]))
 
             else:  # exploitation
                 enemies_nearby_agent = enemies_nearby_all_agents[agent]

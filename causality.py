@@ -10,17 +10,18 @@ from causalnex.inference import InferenceEngine
 from causalnex.network import BayesianNetwork
 from causalnex.structure.notears import from_pandas
 from tqdm import tqdm
+
 warnings.filterwarnings("ignore")
 
 
 class MiniGame:
 
-    def __init__(self, n_goals):
-        self.rows = 3
-        self.cols = 3
-        self.n_agents = 1
+    def __init__(self, rows, cols, n_agents, n_enemies, n_goals):
+        self.rows = rows
+        self.cols = cols
+        self.n_agents = n_agents
         self.n_actions = 5
-        self.n_enemies = 1
+        self.n_enemies = n_enemies
         self.n_goals = n_goals
 
         # predefined action state
@@ -53,7 +54,7 @@ class MiniGame:
 
     def create_df(self, n_episodes, if_binary_df=False):
 
-        print('creating dataframe...')
+        print('\ncreating dataframe...')
         time.sleep(1)
 
         counter = 0
@@ -333,11 +334,11 @@ class Causality:
 
         " Plot structure "
         plt.figure(dpi=500)
-        plt.title(f'{self.structureModel}')
+        plt.title(f'{self.structureModel} - {n_episodes} episodes - Grid {cols}x{rows}')
         nx.draw(self.structureModel, pos=nx.circular_layout(self.structureModel), with_labels=True, font_size=6,
                 edge_color='orange')
         # nx.draw(self.structureModel, with_labels=True, font_size=4, edge_color='orange')
-        plt.show()
+        # plt.show()
 
         print(f'training bayesian network...')
         self.bn = BayesianNetwork(self.structureModel)
@@ -352,7 +353,7 @@ class Causality:
         self.dependents_var = []
         self.independents_var = []
 
-        print('do-calculus-1...\n')
+        print('do-calculus-1...')
         " understand who influences whom "
         before = self.ie.query()
         for var in self.features_names:
@@ -385,7 +386,7 @@ class Causality:
 
         print(f'**Externally caused: {self.independents_var}')
         print(f'**Externally influenced: {self.dependents_var}')
-        print('\ndo-calculus-2...')
+        print('do-calculus-2...')
         causal_table = pd.DataFrame(columns=self.features_names)
 
         arrays = []
@@ -422,17 +423,63 @@ class Causality:
 
 
 """ ************************************************************************************************************* """
+" EVALUATION ENVIRONMENT AND NUMBER OF EPISODES NEEDED"
 " Dataframe "
-n_goals = 1
-obj_minigame = MiniGame(n_goals=n_goals)  # grid 3x3, one agent, one enemy
-df = obj_minigame.create_df(n_episodes=2000)
-df.to_pickle(f'sample_df_causality_{n_goals}goals.pkl')
 
-" Causal Model "
-df = pd.read_pickle(f'sample_df_causality_{n_goals}goals.pkl')
+
+def are_dataframes_equal(df1, df2):
+    # Sort DataFrames by values
+    sorted_df1 = df1.sort_values(by=['Enemy0_Nearby_Agent0', 'Goal0_Nearby_Agent0', 'Action_Agent0']).reset_index(drop=True)
+    sorted_df2 = df2.sort_values(by=['Enemy0_Nearby_Agent0', 'Goal0_Nearby_Agent0', 'Action_Agent0']).reset_index(drop=True)
+
+    # Check if the sorted DataFrames are equal
+    return sorted_df1.equals(sorted_df2)
+
+
+n_simulations = 10
+official_causal_table = pd.read_pickle('heuristic_table.pkl')
+vector_episodes = [50, 100, 500]
+vector_grid_size = [3, 5, 10, 50]
+columns = ['Grid Size', 'Episodes', 'Suitable']
+df = pd.DataFrame(columns=columns)
+
+df_row = 0
+for n_episodes in vector_episodes:
+    for rows in vector_grid_size:
+        cols = rows
+        n_oks = 0
+        print(f'\n Grid size: {rows}x{cols} - {n_episodes} episodes')
+        for sim_n in range(n_simulations):
+            obj_minigame = MiniGame(rows=rows, cols=cols, n_agents=1, n_enemies=1, n_goals=1)
+            df = obj_minigame.create_df(n_episodes=n_episodes)
+
+            " Causal Model "
+            causality = Causality(df)
+            causal_table = causality.training()
+            causal_table.dropna(axis=0, how='any', inplace=True)
+
+            if are_dataframes_equal(causal_table, official_causal_table):
+                n_oks += 1
+            else:
+                causal_table.to_excel(f'{rows}x{cols}_{n_episodes}episodes_{sim_n}.xlsx')
+                break
+
+        df.at[df_row, 'Grid Size'] = rows
+        df.at[df_row, 'Episodes'] = n_episodes
+        if n_oks == n_simulations:
+            df.at[df_row, 'Suitable'] = 'suitable'
+        else:
+            df.at[df_row, 'Suitable'] = 'unsuitable'
+
+df.to_excel('comparison_causality.xlsx')
+
+""" ************************************************************************************************************* """
+" EVALUATION ENVIRONMENT AND NUMBER OF EPISODES NEEDED"
+" Dataframe "
+"""obj_minigame = MiniGame(rows=rows, cols=cols, n_agents=1, n_enemies=1, n_goals=1)
+df = obj_minigame.create_df(n_episodes=n_episodes)
 
 causality = Causality(df)
 causal_table = causality.training()
 causal_table.dropna(axis=0, how='any', inplace=True)
-causal_table.to_excel('heuristic_table.xlsx')
-causal_table.to_pickle('heuristic_table.pkl')
+causal_table.to_pickle('heuristic_table.pkl')"""
