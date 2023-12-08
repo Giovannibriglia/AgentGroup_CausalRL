@@ -11,10 +11,11 @@ from plots import plot_av_rew_steps
 import time
 
 
-# 'QL_EpsGreedy', 'QL_BoltzmannMachine', 'CQL3', 'CQL4', 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod'
-algorithms = ['QL_EpsGreedy', 'QL_BoltzmannMachine', 'QL_ThompsonSampling']
+# 'QL_EpsGreedy', 'QL_BoltzmannMachine', 'QL_ThompsonSampling', 'QL_SoftAnn' , 'CQL3', 'CQL4',
+# 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod'
+algorithms = ['QL_EpsGreedy', 'QL_BoltzmannMachine', 'QL_ThompsonSampling', 'QL_SoftmaxAnnealing', 'CQL3']
 n_games = 1
-vect_rows = [5]
+vect_rows = [20]
 vect_n_enemies = [1]
 n_episodes = 100
 vect_if_maze = [False]
@@ -73,6 +74,8 @@ for if_maze in vect_if_maze:
                             rewards, steps = models.QL_BoltzmannMachine(env_for_alg, n_act_agents, n_episodes)
                         elif alg == 'QL_ThompsonSampling':
                             rewards, steps = models.QL_ThompsonSampling(env_for_alg, n_act_agents, n_episodes)
+                        elif alg == 'QL_SoftmaxAnnealing':
+                            rewards, steps = models.QL_SoftmaxAnnealing(env_for_alg, n_act_agents, n_episodes)
                         elif alg == 'CQL3':
                             rewards, steps = models.CQL3(env_for_alg, n_act_agents, n_episodes, causal_table)
                         elif alg == 'CQL4':
