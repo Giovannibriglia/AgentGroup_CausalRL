@@ -17,7 +17,7 @@ LEARNING_RATE = 0.0001
 EXPLORATION_PROBA = 1
 MIN_EXPLORATION_PROBA = 0.01
 EXPLORATION_GAME_PERCENT = 0.6
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 TAU = 0.005
 HIDDEN_LAYERS = 128
 
@@ -108,7 +108,44 @@ class DQN(nn.Module):
         return self.final_layer(x)
 
 
-def QL(env, n_act_agents, n_episodes):
+class BoltzmannQAgent:
+    def __init__(self, rows, cols, action_space_size, temperature=1.0):
+        self.rows = rows
+        self.cols = cols
+        self.action_space_size = action_space_size
+        self.temperature = temperature
+
+        # Q-table initialization
+        self.q_table = np.zeros((rows, cols, action_space_size))
+
+    def softmax(self, values):
+        exp_values = np.exp(values / self.temperature)
+        probabilities = exp_values / np.sum(exp_values)
+        return probabilities
+
+    def choose_action(self, state):
+        stateX = int(state[0])
+        stateY = int(state[1])
+        action_values = self.q_table[stateX, stateY, :]
+        action_probabilities = self.softmax(action_values)
+
+        # Choose action based on probabilities
+        chosen_action = np.random.choice(self.action_space_size, p=action_probabilities)
+        return chosen_action
+
+    def update_q_table(self, state, action, reward, next_state):
+        stateX = int(state[0])
+        stateY = int(state[1])
+        next_stateX = int(next_state[0])
+        next_stateY = int(next_state[1])
+        current_q_value = self.q_table[stateX, stateY, action]
+        max_next_q_value = np.max(self.q_table[next_stateX, next_stateY, :])
+
+        new_q_value = current_q_value + LEARNING_RATE * (reward + GAMMA * max_next_q_value - current_q_value)
+        self.q_table[stateX, stateY, action] = new_q_value
+
+
+def QL_EpsGreedy(env, n_act_agents, n_episodes):
     global EXPLORATION_PROBA
     rows = env.rows
     cols = env.cols
@@ -158,7 +195,8 @@ def QL(env, n_act_agents, n_episodes):
             Q_table[current_stateX, current_stateY, action] = (1 - LEARNING_RATE) * Q_table[
                 current_stateX, current_stateY, action] + LEARNING_RATE * (reward + GAMMA * max(
                 Q_table[next_stateX, next_stateY, :]))
-            total_episode_reward = total_episode_reward + reward
+
+            total_episode_reward += reward
 
             if if_lose:
                 current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
@@ -173,6 +211,64 @@ def QL(env, n_act_agents, n_episodes):
         # updating the exploration proba using exponential decay formula
         EXPLORATION_PROBA = max(MIN_EXPLORATION_PROBA, np.exp(-EXPLORATION_DECREASING_DECAY * e))
 
+        pbar.set_postfix_str(
+            f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
+
+    print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
+    return average_episodes_rewards, steps_for_episode
+
+
+def QL_BoltzmannMachine(env, n_act_agents, n_episodes):
+    rows = env.rows
+    cols = env.cols
+    action_space_size = n_act_agents
+
+    # Initialize the Boltzmann Q-learning agent
+    boltzmann_q_agent = BoltzmannQAgent(rows, cols, action_space_size)
+
+    average_episodes_rewards = []
+    steps_for_episode = []
+
+    pbar = tqdm(range(n_episodes))
+    time.sleep(1)
+    for e in pbar:
+        agent = 0
+        if e == 0:
+            env.reset(reset_n_times_loser=True)
+        else:
+            env.reset(reset_n_times_loser=False)
+
+        total_episode_reward = 0
+        step_for_episode = 0
+        done = False
+
+        while not done:
+            step_for_episode += 1
+
+            current_state = env.pos_agents[-1][agent]
+
+            _, _, _ = env.step_enemies()
+
+            # Choose action using Boltzmann exploration
+            action = boltzmann_q_agent.choose_action(current_state)
+
+            result = env.step_agent(action)
+            # print('result:', result)
+            next_state = result[0][agent]
+            reward = int(result[1][agent])
+            done = result[2][agent]  # If agent wins, end loop and restart
+            if_lose = result[3]
+
+            # Update the Q-table
+            boltzmann_q_agent.update_q_table(current_state, action, reward, next_state)
+
+            total_episode_reward += reward
+
+            if if_lose:
+                current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
+
+        average_episodes_rewards.append(total_episode_reward)
+        steps_for_episode.append(step_for_episode)
         pbar.set_postfix_str(
             f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
 

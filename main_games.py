@@ -11,15 +11,14 @@ from plots import plot_av_rew_steps
 import time
 
 
-# 'QL', 'CQL3', 'CQL4', 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod'
-algorithms = ['QL', 'CQL3', 'CQL4', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod']
-n_games = 5
-vect_rows = [10]
-vect_n_enemies = [15]
+# 'QL_EpsGreedy', 'QL_BoltzmannMachine', 'CQL3', 'CQL4', 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod'
+algorithms = ['QL_EpsGreedy', 'QL_BoltzmannMachine']
+n_games = 1
+vect_rows = [5]
+vect_n_enemies = [1]
 n_episodes = 100
-timeout_condition = 5
 vect_if_maze = [False]
-vect_if_same_enemies_actions = [True]
+vect_if_same_enemies_actions = [False]
 dir_start = f'Results_{len(algorithms)}Algs'
 causal_table = pd.read_pickle('heuristic_table.pkl')
 
@@ -68,8 +67,10 @@ for if_maze in vect_if_maze:
                         steps = []
 
                         # returned: reward for episode and steps for episode
-                        if alg == 'QL':
-                            rewards, steps = models.QL(env_for_alg, n_act_agents, n_episodes)
+                        if alg == 'QL_EpsGreedy':
+                            rewards, steps = models.QL_EpsGreedy(env_for_alg, n_act_agents, n_episodes)
+                        elif alg == 'QL_BoltzmannMachine':
+                            rewards, steps = models.QL_BoltzmannMachine(env_for_alg, n_act_agents, n_episodes)
                         elif alg == 'CQL3':
                             rewards, steps = models.CQL3(env_for_alg, n_act_agents, n_episodes, causal_table)
                         elif alg == 'CQL4':
@@ -98,7 +99,7 @@ for if_maze in vect_if_maze:
 
                         ax2.plot(x, gaussian_filter1d(steps, 1))
                         ax2.set_yscale('log')
-                        ax2.set_title('Steps needed to complete the episode')
+                        ax2.set_title('Actions needed to complete the episode')
                         ax2.set_xlabel('Episode', fontsize=12)
 
                     plt.savefig(f'{directory}/Comparison_Game{game_n}.pdf')

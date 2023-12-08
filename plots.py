@@ -36,7 +36,7 @@ def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes):
 
         ax2.plot(x, gaussian_filter1d(av_steps, 1))
         ax2.set_yscale('log')
-        ax2.set_title('Steps needed to complete the episode')
+        ax2.set_title('Actions needed to complete the episode')
         ax2.set_xlabel('Episode', fontsize=12)
 
     plt.savefig(f'{dir_results}/Average_comparison_{n_games}Games.pdf')
