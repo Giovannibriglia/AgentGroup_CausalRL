@@ -12,7 +12,7 @@ import time
 
 
 # 'QL_EpsGreedy', 'QL_BoltzmannMachine', 'CQL3', 'CQL4', 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod'
-algorithms = ['QL_EpsGreedy', 'QL_BoltzmannMachine']
+algorithms = ['QL_EpsGreedy', 'QL_BoltzmannMachine', 'QL_ThompsonSampling']
 n_games = 1
 vect_rows = [5]
 vect_n_enemies = [1]
@@ -71,6 +71,8 @@ for if_maze in vect_if_maze:
                             rewards, steps = models.QL_EpsGreedy(env_for_alg, n_act_agents, n_episodes)
                         elif alg == 'QL_BoltzmannMachine':
                             rewards, steps = models.QL_BoltzmannMachine(env_for_alg, n_act_agents, n_episodes)
+                        elif alg == 'QL_ThompsonSampling':
+                            rewards, steps = models.QL_ThompsonSampling(env_for_alg, n_act_agents, n_episodes)
                         elif alg == 'CQL3':
                             rewards, steps = models.CQL3(env_for_alg, n_act_agents, n_episodes, causal_table)
                         elif alg == 'CQL4':

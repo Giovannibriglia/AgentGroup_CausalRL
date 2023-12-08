@@ -9,6 +9,7 @@ import pandas as pd
 from tqdm.auto import tqdm
 import warnings
 import time
+from scipy.stats import beta
 
 warnings.filterwarnings("ignore")
 
@@ -45,7 +46,7 @@ def causal_model_movement(causal_table, action, oldX, oldY, rows, cols):
         newY += deltaY
 
     # print(f'\nOldX: {oldX} , action {action} --> NewX {newX}')
-    #print(f'OldY: {oldY} , action {action} --> NewX {newY}')
+    # print(f'OldY: {oldY} , action {action} --> NewX {newY}')
     return newX, newY
 
 
@@ -55,7 +56,8 @@ def causal_model_winner_gameover(causal_table, possible_actions_in, nearbies_ene
     check_goal = False
     possible_actions_for_goal = []
     for nearby_goal in nearbies_goals:
-        action_to_do = causal_table[(causal_table[col_reward] == 1) & (causal_table[col_nearby_goal] == nearby_goal)].reset_index(drop=True)
+        action_to_do = causal_table[
+            (causal_table[col_reward] == 1) & (causal_table[col_nearby_goal] == nearby_goal)].reset_index(drop=True)
         if not action_to_do.empty:
             action_to_do = action_to_do.loc[0, col_action]
             if action_to_do in possible_actions:
@@ -64,7 +66,9 @@ def causal_model_winner_gameover(causal_table, possible_actions_in, nearbies_ene
 
     if not check_goal:
         for nearby_enemy in nearbies_enemies:
-            action_to_remove = causal_table[(causal_table[col_reward] == -1) & (causal_table[col_nearby_enemy] == nearby_enemy)].reset_index(drop=True)
+            action_to_remove = causal_table[
+                (causal_table[col_reward] == -1) & (causal_table[col_nearby_enemy] == nearby_enemy)].reset_index(
+                drop=True)
             if not action_to_remove.empty:
                 action_to_remove = action_to_remove.loc[0, col_action]
                 if action_to_remove in possible_actions:
@@ -73,7 +77,6 @@ def causal_model_winner_gameover(causal_table, possible_actions_in, nearbies_ene
     else:
         possible_actions = possible_actions_for_goal
         # print(f'Goals nearby: {nearbies_goals} -- Possible actions: {possible_actions}')
-
 
     return possible_actions
 
@@ -145,6 +148,36 @@ class BoltzmannQAgent:
         self.q_table[stateX, stateY, action] = new_q_value
 
 
+class ThompsonSamplingQAgent:
+    def __init__(self, rows, cols, action_space_size, alpha=1, beta=1):
+        self.rows = rows
+        self.cols = cols
+        self.action_space_size = action_space_size
+
+        # Initialize Beta distribution parameters for each action
+        self.alpha = np.maximum(np.zeros((rows, cols, action_space_size)) * alpha, 1)
+        self.beta = np.maximum(np.zeros((rows, cols, action_space_size)) * beta, 1)
+
+    def choose_action(self, state):
+        # Sample from the Beta distribution for each action
+        stateX = int(state[0])
+        stateY = int(state[1])
+        sampled_values = np.random.beta(self.alpha[stateX, stateY, :], self.beta[stateX, stateY, :])
+
+        # Choose the action with the highest sampled value
+        chosen_action = np.argmax(sampled_values)
+        return chosen_action
+
+    def update_q_values(self, state, action, reward):
+
+        stateX = int(state[0])
+        stateY = int(state[1])
+        if reward == 1:
+            self.alpha[stateX, stateY, action] += 1
+        elif reward == -1:
+            self.beta[stateX, stateY, action] += 1
+
+
 def QL_EpsGreedy(env, n_act_agents, n_episodes):
     global EXPLORATION_PROBA
     rows = env.rows
@@ -176,7 +209,7 @@ def QL_EpsGreedy(env, n_act_agents, n_episodes):
 
             # print('current acquired', [current_stateX, current_stateY])
             step_for_episode += 1
-            _, _, _= env.step_enemies()
+            _, _, _ = env.step_enemies()
 
             " epsilon-greedy "
             if np.random.uniform(0, 1) < EXPLORATION_PROBA:  # exploration
@@ -276,6 +309,63 @@ def QL_BoltzmannMachine(env, n_act_agents, n_episodes):
     return average_episodes_rewards, steps_for_episode
 
 
+def QL_ThompsonSampling(env, n_act_agents, n_episodes):
+    rows = env.rows
+    cols = env.cols
+    action_space_size = n_act_agents
+
+    thompson_q_agent = ThompsonSamplingQAgent(rows, cols, action_space_size)
+
+    average_episodes_rewards = []
+    steps_for_episode = []
+
+    pbar = tqdm(range(n_episodes))
+    time.sleep(1)
+    for e in pbar:
+        agent = 0
+        if e == 0:
+            env.reset(reset_n_times_loser=True)
+        else:
+            env.reset(reset_n_times_loser=False)
+
+        total_episode_reward = 0
+        step_for_episode = 0
+        done = False
+
+        while not done:
+            step_for_episode += 1
+
+            current_state = env.pos_agents[-1][agent]
+
+            _, _, _ = env.step_enemies()
+
+            # Choose action using Boltzmann exploration
+            action = thompson_q_agent.choose_action(current_state)
+
+            result = env.step_agent(action)
+            # print('result:', result)
+            next_state = result[0][agent]
+            reward = int(result[1][agent])
+            done = result[2][agent]  # If agent wins, end loop and restart
+            if_lose = result[3]
+
+            # Update the Q-table
+            thompson_q_agent.update_q_values(current_state, action, reward)
+
+            total_episode_reward += reward
+
+            if if_lose:
+                current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
+
+        average_episodes_rewards.append(total_episode_reward)
+        steps_for_episode.append(step_for_episode)
+        pbar.set_postfix_str(
+            f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
+
+    print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
+    return average_episodes_rewards, steps_for_episode
+
+
 def CQL3(env, n_act_agents, n_episodes, causal_table):
     global EXPLORATION_PROBA
     EXPLORATION_ACTIONS_TH = 10
@@ -318,7 +408,8 @@ def CQL3(env, n_act_agents, n_episodes, causal_table):
                 goals_nearby_agent = goals_nearby_all_agents[agent]
                 possible_actions = [s for s in range(n_act_agents)]
 
-                possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent, goals_nearby_agent)
+                possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent,
+                                                                goals_nearby_agent)
 
                 new = False
                 check_tries = 0
@@ -354,7 +445,8 @@ def CQL3(env, n_act_agents, n_episodes, causal_table):
                 goals_nearby_agent = goals_nearby_all_agents[agent]
                 possible_actions = [s for s in range(n_act_agents)]
 
-                possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent, goals_nearby_agent)
+                possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent,
+                                                                goals_nearby_agent)
 
                 if len(possible_actions) > 0:
                     max_value = max(Q_table[current_stateX, current_stateY, possible_actions])
@@ -451,7 +543,8 @@ def CQL4(env, n_act_agents, n_episodes, causal_table):
                 goals_nearby_agent = goals_nearby_all_agents[agent]
                 possible_actions = [s for s in range(n_act_agents)]
 
-                possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent, goals_nearby_agent)
+                possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent,
+                                                                goals_nearby_agent)
 
                 if len(possible_actions) > 0:
                     action = random.sample(possible_actions, 1)[0]
@@ -472,7 +565,8 @@ def CQL4(env, n_act_agents, n_episodes, causal_table):
                 goals_nearby_agent = goals_nearby_all_agents[agent]
                 possible_actions = [s for s in range(n_act_agents)]
 
-                possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent, goals_nearby_agent)
+                possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent,
+                                                                goals_nearby_agent)
 
                 if len(possible_actions) > 0:
                     max_value = max(Q_table[current_stateX, current_stateY, possible_actions])
@@ -614,7 +708,7 @@ def DeepQNetwork(env, n_act_agents, n_episodes):
 
         while not done:
             step_for_episode += 1
-            _, _,new_en_coord = env.step_enemies()
+            _, _, new_en_coord = env.step_enemies()
 
             general_state = np.zeros(env.rows * env.cols)
 
@@ -771,7 +865,8 @@ def CausalDeepQNetwork(env, n_act_agents, n_episodes, causal_table):
             enemies_nearby_agent = enemies_nearby_all_agents[0]  # only one agent
 
             possible_actions = [s for s in range(n_act_agents)]
-            possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent, goals_nearby_agent)
+            possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent,
+                                                            goals_nearby_agent)
             possible_actions = torch.tensor(possible_actions, device=device)
 
             general_state = np.zeros(env.rows * env.cols)
@@ -1090,7 +1185,8 @@ def CausalDeepQNetwork_Mod(env, n_act_agents, n_episodes, causal_table):
             enemies_nearby_agent = enemies_nearby_all_agents[agent]  # only one agent
 
             possible_actions = [s for s in range(n_act_agents)]
-            possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent, goals_nearby_agent)
+            possible_actions = causal_model_winner_gameover(causal_table, possible_actions, enemies_nearby_agent,
+                                                            goals_nearby_agent)
             possible_actions = torch.tensor(possible_actions, device=device)
 
             general_state = np.zeros(env.rows * env.cols)
