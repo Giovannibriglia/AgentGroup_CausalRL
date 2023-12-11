@@ -190,7 +190,7 @@ class SoftmaxAnnealingQAgent:
         self.q_table = np.zeros((self.rows, self.cols, action_space_size))
 
         self.EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (
-                    EXPLORATION_GAME_PERCENT * self.n_episodes)
+                EXPLORATION_GAME_PERCENT * self.n_episodes)
 
     def softmax(self, values):
         exp_values = np.exp(values / self.temperature)
@@ -222,6 +222,7 @@ class SoftmaxAnnealingQAgent:
 
     def anneal_temperature(self, e):
         self.temperature = max(MIN_EXPLORATION_PROBA, np.exp(-self.EXPLORATION_DECREASING_DECAY * e))
+
 
 def QL_EpsGreedy(env, n_act_agents, n_episodes):
     global EXPLORATION_PROBA

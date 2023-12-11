@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import glob
 import os
 from scipy.ndimage import gaussian_filter1d
-
+fontsize = 12
 
 def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, n_enemies):
     targetPattern = fr"{dir_results}\*.npy"
@@ -48,18 +48,22 @@ def plot_av_computation_time(dir_results, algorithms, n_games, n_episodes, rows,
     # data_names = [os.path.basename(directories[s]) for s in range(len(directories))]
 
     fig = plt.figure(dpi=500)
-    fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemy - Averaged over {n_games} games', fontsize=15)
+    fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemy - Averaged over {n_games} games', fontsize=fontsize+3)
 
     for alg in algorithms:
         filename_comp_time = [s for s in directories if f'{alg}_computation_time' in s]
 
-        av_comp_time = np.zeros(n_episodes)
+        av_comp_time = 0
         for n_game in range(n_games):
-            av_comp_time = np.sum([av_comp_time, np.load(filename_comp_time[n_game])], axis=0)
+            av_comp_time += np.load(filename_comp_time[n_game])
+        av_comp_time = av_comp_time/n_games
 
-        av_comp_time = np.cumsum(av_comp_time, dtype=int)
+        plt.bar(alg, av_comp_time, label=f'{alg} = {round(av_comp_time, 3)}')
 
-        plt.bar(av_comp_time, label=f'{alg} = {round(np.mean(av_comp_time) / n_games, 3)}')
-
+    plt.legend(loc='best')
+    plt.xticks(rotation=20)
+    plt.ylabel('Computation time [min]', fontsize=fontsize)
+    plt.subplots_adjust(bottom=0.2)
+    plt.grid()
     plt.savefig(f'{dir_results}/Average_comp_time_comparison_{n_games}Games.pdf')
     plt.show()
