@@ -2,49 +2,49 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 import env_game
 import os
 import models
 from scipy.ndimage import gaussian_filter1d
-from plots import plot_av_rew_steps
+import plots
 import time
-
 
 # 'QL_EpsGreedy', 'QL_BoltzmannMachine', 'QL_ThompsonSampling', 'QL_SoftAnn' , 'CQL3', 'CQL4',
 # 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod'
-algorithms = ['QL_EpsGreedy', 'CQL3', 'CQL4']
-n_games = 2
-vect_rows = [5]
-vect_n_enemies = [5]
+algorithms = ['QL_EpsGreedy', 'QL_BoltzmannMachine', 'QL_ThompsonSampling', 'QL_SoftAnn']
+n_games = 5
+vect_rows = [10]
+vect_n_enemies = [1, 5, 10]
 n_episodes = 1000
-vect_if_maze = [False]
+vect_if_maze = [True, False]
 vect_if_same_enemies_actions = [False]
-dir_start = f'Results_{len(algorithms)}Algs'
+dir_start = f'Comparison2_QLearning_DifferentPolicy'
 causal_table = pd.read_pickle('heuristic_table.pkl')
 
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:
-    directory = dir_start
     if if_maze:
-        directory += '/Maze'
         env_name = 'Maze'
     else:
-        directory += '/Grid'
         env_name = 'Grid'
+    directory = dir_start + f'/{env_name}'
     os.makedirs(directory, exist_ok=True)
+
     for if_same_enemies_actions in vect_if_same_enemies_actions:
         if if_same_enemies_actions:
-            directory += '/SameEnAct'
+            en_act = 'SameEnAct'
         else:
-            directory += '/RandEnAct'
+            en_act = 'RandEnAct'
+        directory = dir_start + f'/{env_name}'+ f'/{en_act}'
         os.makedirs(directory, exist_ok=True)
         for n_enemies in vect_n_enemies:
-            directory += f'/{n_enemies}En'
+            directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem'
             os.makedirs(directory, exist_ok=True)
             for rows in vect_rows:
+                if n_enemies > 2 * rows:
+                    break
                 cols = rows
-                directory += f'/{rows}x{cols}'
+                directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem' + f'/{rows}x{cols}'
                 os.makedirs(directory, exist_ok=True)
 
                 for game_n in range(1, n_games + 1, 1):
@@ -62,6 +62,8 @@ for if_maze in vect_if_maze:
                     for alg in algorithms:
                         print(f'\n*** {alg} - Game {game_n}/{n_games} ****')
                         time.sleep(1)
+
+                        start_time = time.time()
 
                         env_for_alg = env
                         rewards = []
@@ -83,14 +85,19 @@ for if_maze in vect_if_maze:
                         elif alg == 'DeepQNetwork':
                             rewards, steps = models.DeepQNetwork(env_for_alg, n_act_agents, n_episodes)
                         elif alg == 'CausalDeepQNetwork':
-                            rewards, steps = models.CausalDeepQNetwork(env_for_alg, n_act_agents, n_episodes, causal_table)
+                            rewards, steps = models.CausalDeepQNetwork(env_for_alg, n_act_agents, n_episodes,
+                                                                       causal_table)
                         elif alg == 'DeepQNetwork_Mod':
                             rewards, steps = models.DeepQNetwork_Mod(env_for_alg, n_act_agents, n_episodes)
                         elif alg == 'CausalDeepQNetwork_Mod':
-                            rewards, steps = models.CausalDeepQNetwork_Mod(env_for_alg, n_act_agents, n_episodes, causal_table)
+                            rewards, steps = models.CausalDeepQNetwork_Mod(env_for_alg, n_act_agents, n_episodes,
+                                                                           causal_table)
+
+                        computation_time = time.time() - start_time
 
                         np.save(f"{directory}/{alg}_rewards_game{game_n}.npy", rewards)
                         np.save(f"{directory}/{alg}_steps_game{game_n}.npy", steps)
+                        np.save(f'{directory}/{alg}_computation_time_game{game_n}.npy', computation_time)
 
                         cumulative_rewards = np.cumsum(rewards, dtype=int)
                         x = np.arange(0, n_episodes, 1)
@@ -111,4 +118,5 @@ for if_maze in vect_if_maze:
                     plt.show()
 
                 if n_games > 1:
-                    plot_av_rew_steps(directory, algorithms, n_games, n_episodes)
+                    plots.plot_av_rew_steps(directory, algorithms, n_games, n_episodes, rows, cols, n_enemies)
+                    plots.plot_av_computation_time(directory, algorithms, n_games, n_episodes, rows, cols, n_enemies)

@@ -10,6 +10,7 @@ from causalnex.inference import InferenceEngine
 from causalnex.network import BayesianNetwork
 from causalnex.structure.notears import from_pandas
 from tqdm import tqdm
+import os
 
 warnings.filterwarnings("ignore")
 
@@ -425,12 +426,16 @@ class Causality:
 """ ************************************************************************************************************* """
 " EVALUATION ENVIRONMENT AND NUMBER OF EPISODES NEEDED"
 " Dataframe "
+path_save = 'Comparison1_Offline_Only_Causality_Different_Envs'
+os.makedirs(path_save, exist_ok=True)
 
 
 def are_dataframes_equal(df1, df2):
     # Sort DataFrames by values
-    sorted_df1 = df1.sort_values(by=['Enemy0_Nearby_Agent0', 'Goal0_Nearby_Agent0', 'Action_Agent0']).reset_index(drop=True)
-    sorted_df2 = df2.sort_values(by=['Enemy0_Nearby_Agent0', 'Goal0_Nearby_Agent0', 'Action_Agent0']).reset_index(drop=True)
+    sorted_df1 = df1.sort_values(by=['Enemy0_Nearby_Agent0', 'Goal0_Nearby_Agent0', 'Action_Agent0']).reset_index(
+        drop=True)
+    sorted_df2 = df2.sort_values(by=['Enemy0_Nearby_Agent0', 'Goal0_Nearby_Agent0', 'Action_Agent0']).reset_index(
+        drop=True)
 
     # Check if the sorted DataFrames are equal
     return sorted_df1.equals(sorted_df2)
@@ -438,10 +443,10 @@ def are_dataframes_equal(df1, df2):
 
 n_simulations = 10
 official_causal_table = pd.read_pickle('heuristic_table.pkl')
-vector_episodes = [50, 100, 500]
-vector_grid_size = [3, 5, 10, 50]
+vector_episodes = [500, 1000, 2000]
+vector_grid_size = [3, 5, 10]
 columns = ['Grid Size', 'Episodes', 'Suitable']
-df = pd.DataFrame(columns=columns)
+result = pd.DataFrame(columns=columns)
 
 df_row = 0
 for n_episodes in vector_episodes:
@@ -460,24 +465,28 @@ for n_episodes in vector_episodes:
 
             if are_dataframes_equal(causal_table, official_causal_table):
                 n_oks += 1
+                print('ok')
             else:
-                causal_table.to_excel(f'{rows}x{cols}_{n_episodes}episodes_{sim_n}.xlsx')
+                causal_table.to_excel(f'{path_save}\\{rows}x{cols}_{n_episodes}episodes_{sim_n}.xlsx')
+                print('no')
                 break
 
-        df.at[df_row, 'Grid Size'] = rows
-        df.at[df_row, 'Episodes'] = n_episodes
+        result.at[df_row, 'Grid Size'] = rows
+        result.at[df_row, 'Episodes'] = n_episodes
         if n_oks == n_simulations:
-            df.at[df_row, 'Suitable'] = 'suitable'
+            result.at[df_row, 'Suitable'] = 'suitable'
         else:
-            df.at[df_row, 'Suitable'] = 'unsuitable'
+            result.at[df_row, 'Suitable'] = 'unsuitable'
 
-df.to_excel('comparison_causality.xlsx')
+        df_row += 1
+
+result.to_excel(f'{path_save}\\comparison_causality.xlsx')
 
 """ ************************************************************************************************************* """
-" EVALUATION ENVIRONMENT AND NUMBER OF EPISODES NEEDED"
+" Grid size and number of episodes already chosen"
 " Dataframe "
-"""obj_minigame = MiniGame(rows=rows, cols=cols, n_agents=1, n_enemies=1, n_goals=1)
-df = obj_minigame.create_df(n_episodes=n_episodes)
+"""obj_minigame = MiniGame(rows=3, cols=3, n_agents=1, n_enemies=1, n_goals=1)
+df = obj_minigame.create_df(n_episodes=2000)
 
 causality = Causality(df)
 causal_table = causality.training()
