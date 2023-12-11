@@ -11,12 +11,12 @@ import time
 
 # 'QL_EpsGreedy', 'QL_BoltzmannMachine', 'QL_ThompsonSampling', 'QL_SoftAnn' , 'CQL3', 'CQL4',
 # 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod'
-algorithms = ['QL_EpsGreedy', 'QL_BoltzmannMachine', 'QL_ThompsonSampling', 'QL_SoftAnn']
+algorithms = ['QL_EpsGreedy', 'QL_BoltzmannMachine', 'QL_ThompsonSampling', 'QL_SoftmaxAnnealing']
 n_games = 5
-vect_rows = [10]
-vect_n_enemies = [1, 5, 10]
+vect_rows = [5]
+vect_n_enemies = [1]
 n_episodes = 1000
-vect_if_maze = [True, False]
+vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
 dir_start = f'Comparison2_QLearning_DifferentPolicy'
 causal_table = pd.read_pickle('heuristic_table.pkl')
@@ -78,9 +78,9 @@ for if_maze in vect_if_maze:
                             rewards, steps = models.QL_ThompsonSampling(env_for_alg, n_act_agents, n_episodes)
                         elif alg == 'QL_SoftmaxAnnealing':
                             rewards, steps = models.QL_SoftmaxAnnealing(env_for_alg, n_act_agents, n_episodes)
-                        elif alg == 'CQL3' or 'CQL3_add':
+                        elif alg == 'CQL3' or alg == 'CQL3_add':
                             rewards, steps = models.CQL3(env_for_alg, n_act_agents, n_episodes, causal_table, alg)
-                        elif alg == 'CQL4' or 'CQL4_add':
+                        elif alg == 'CQL4' or alg == 'CQL4_add':
                             rewards, steps = models.CQL4(env_for_alg, n_act_agents, n_episodes, causal_table, alg)
                         elif alg == 'DeepQNetwork':
                             rewards, steps = models.DeepQNetwork(env_for_alg, n_act_agents, n_episodes)
@@ -93,7 +93,7 @@ for if_maze in vect_if_maze:
                             rewards, steps = models.CausalDeepQNetwork_Mod(env_for_alg, n_act_agents, n_episodes,
                                                                            causal_table)
 
-                        computation_time = time.time() - start_time
+                        computation_time = (time.time() - start_time)/60
 
                         np.save(f"{directory}/{alg}_rewards_game{game_n}.npy", rewards)
                         np.save(f"{directory}/{alg}_steps_game{game_n}.npy", steps)
