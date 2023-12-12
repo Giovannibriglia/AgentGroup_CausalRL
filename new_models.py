@@ -28,6 +28,40 @@ col_deltaY = 'DeltaY_Agent0'
 col_reward = 'Reward_Agent0'
 col_nearby_enemy = 'Enemy0_Nearby_Agent0'
 col_nearby_goal = 'Goal0_Nearby_Agent0'
+causal_table = pd.read_pickle('heuristic_table.pkl')
+
+
+def get_possible_actions(n_act_agents, enemies_nearby_all_agents, goals_nearby_all_agents):
+    nearbies_goals = goals_nearby_all_agents[0]
+    nearbies_enemies = enemies_nearby_all_agents[0]
+    possible_actions = list(np.arange(0, n_act_agents, 1))
+
+    check_goal = False
+    possible_actions_for_goal = []
+    for nearby_goal in nearbies_goals:
+        action_to_do = causal_table[
+            (causal_table[col_reward] == 1) & (causal_table[col_nearby_goal] == nearby_goal)].reset_index(drop=True)
+        if not action_to_do.empty:
+            action_to_do = action_to_do.loc[0, col_action]
+            if action_to_do in possible_actions:
+                possible_actions_for_goal.append(action_to_do)
+                check_goal = True
+
+    if not check_goal:
+        for nearby_enemy in nearbies_enemies:
+            action_to_remove = causal_table[
+                (causal_table[col_reward] == -1) & (causal_table[col_nearby_enemy] == nearby_enemy)].reset_index(
+                drop=True)
+            if not action_to_remove.empty:
+                action_to_remove = action_to_remove.loc[0, col_action]
+                if action_to_remove in possible_actions:
+                    possible_actions.remove(action_to_remove)
+        # print(f'Enemies nearby: {nearbies_enemies} -- Possible actions: {possible_actions}')
+    else:
+        possible_actions = possible_actions_for_goal
+        # print(f'Goals nearby: {nearbies_goals} -- Possible actions: {possible_actions}')
+
+    return possible_actions
 
 
 class SoftmaxAnnealingQAgent:
@@ -49,15 +83,19 @@ class SoftmaxAnnealingQAgent:
         probabilities = exp_values / np.sum(exp_values)
         return probabilities
 
-    def choose_action(self, state):
+    def choose_action(self, state, possible_actions=None):
         stateX = int(state[0])
         stateY = int(state[1])
 
-        action_values = self.q_table[stateX, stateY, :]
-        action_probabilities = self.softmax(action_values)
+        if possible_actions is not None and len(possible_actions) > 0:
+            action_values = self.q_table[stateX, stateY, possible_actions]
+            action_probabilities = self.softmax(action_values)
+            chosen_action = np.random.choice(possible_actions, p=action_probabilities)
+        else:
+            action_values = self.q_table[stateX, stateY, :]
+            action_probabilities = self.softmax(action_values)
+            chosen_action = np.random.choice(self.action_space_size, p=action_probabilities)
 
-        # Choose action based on probabilities
-        chosen_action = np.random.choice(self.action_space_size, p=action_probabilities)
         return chosen_action
 
     def update_Q(self, state, action, reward, next_state):
@@ -91,14 +129,19 @@ class BoltzmannQAgent:
         probabilities = exp_values / np.sum(exp_values)
         return probabilities
 
-    def choose_action(self, state):
+    def choose_action(self, state, possible_actions=None):
         stateX = int(state[0])
         stateY = int(state[1])
-        action_values = self.q_table[stateX, stateY, :]
-        action_probabilities = self.softmax(action_values)
 
-        # Choose action based on probabilities
-        chosen_action = np.random.choice(self.action_space_size, p=action_probabilities)
+        if possible_actions is not None and len(possible_actions) > 0:
+            action_values = self.q_table[stateX, stateY, possible_actions]
+            action_probabilities = self.softmax(action_values)
+            chosen_action = np.random.choice(possible_actions, p=action_probabilities)
+        else:
+            action_values = self.q_table[stateX, stateY, :]
+            action_probabilities = self.softmax(action_values)
+            chosen_action = np.random.choice(self.action_space_size, p=action_probabilities)
+
         return chosen_action
 
     def update_Q(self, state, action, reward, next_state):
@@ -123,18 +166,28 @@ class ThompsonSamplingQAgent:
         self.alpha = np.maximum(np.zeros((self.rows, self.cols, action_space_size)) * alpha, 1)
         self.beta = np.maximum(np.zeros((self.rows, self.cols, action_space_size)) * beta, 1)
 
-    def choose_action(self, state):
+    def choose_action(self, state, possible_actions=None):
         # Sample from the Beta distribution for each action
         stateX = int(state[0])
         stateY = int(state[1])
         sampled_values = np.random.beta(self.alpha[stateX, stateY, :], self.beta[stateX, stateY, :])
 
-        # Choose the action with the highest sampled value
-        chosen_action = np.argmax(sampled_values)
+        if possible_actions is not None and len(possible_actions) > 0:
+            all_actions = list(np.arange(0, self.action_space_size, 1))
+
+            valid_indices = [index for index in possible_actions if 0 <= index < len(all_actions)]
+
+            if not valid_indices:
+                chosen_action = np.argmax(sampled_values)
+            else:
+                # Find the index of the maximum value among the valid indices
+                chosen_action = max(valid_indices, key=lambda i: all_actions[i])
+        else:
+            chosen_action = np.argmax(sampled_values)
+
         return chosen_action
 
     def update_Q(self, state, action, reward, next_state=None):
-
         stateX = int(state[0])
         stateY = int(state[1])
         if reward == 1:
@@ -156,13 +209,35 @@ class EpsilonGreedyAgent():
         self.EXPLORATION_DECREASING_DECAY = -np.log(self.MIN_EXPLORATION_PROBA) / (
                 EXPLORATION_GAME_PERCENT * self.n_episodes)
 
-    def choose_action(self, state):
+    def choose_action(self, state, possible_actions=None):
         if np.random.uniform(0, 1) < self.exp_proba:  # exploration
-            action = np.random.randint(0, self.n_agent_actions, size=1)
+            if possible_actions is not None and len(possible_actions) > 0:
+                action = random.sample(possible_actions, 1)[0]
+            else:
+                action = np.random.randint(0, self.n_agent_actions, size=1)
         else:  # exploitation
             stateX = int(state[0])
             stateY = int(state[1])
-            action = np.argmax(self.Q_table[stateX, stateY, :])
+            if possible_actions is not None and len(possible_actions) > 0:
+                if len(possible_actions) > 0:
+                    max_value = max(self.Q_table[stateX, stateY, possible_actions])
+
+                    actions_wrong = []
+                    for act_test in [s for s in range(self.n_agent_actions)]:
+                        if act_test not in possible_actions:
+                            actions_wrong.append(act_test)
+                    actions_wrong = list(set(actions_wrong))
+                    q_table_values = list(
+                        np.array(np.where(self.Q_table[stateX, stateY, :] == max_value)[0]))
+
+                    possibilities = []
+                    for act_test in q_table_values:
+                        if act_test not in actions_wrong:
+                            possibilities.append(act_test)
+                    possibilities = list(set(possibilities))
+                    action = random.sample(possibilities, k=1)[0]
+            else:
+                action = np.argmax(self.Q_table[stateX, stateY, :])
 
         return action
 
@@ -186,13 +261,13 @@ def QL_variants(env, n_act_agents, n_episodes, alg, who_moves_first):
     cols = env.cols
     action_space_size = n_act_agents
 
-    if alg == 'QL_SoftmaxAnnealing':
+    if 'SoftmaxAnnealing' in alg:
         agent_alg = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes)
-    elif alg == 'QL_EpsilonGreedy':
+    elif 'EpsilonGreedy' in alg:
         agent_alg = EpsilonGreedyAgent(rows, cols, action_space_size, n_episodes)
-    elif alg == 'QL_BoltzmannMachine':
+    elif 'BoltzmannMachine' in alg:
         agent_alg = BoltzmannQAgent(rows, cols, action_space_size, n_episodes)
-    elif alg == 'QL_ThompsonSampling':
+    elif 'ThompsonSampling' in alg:
         agent_alg = ThompsonSamplingQAgent(rows, cols, action_space_size, n_episodes)
 
     average_episodes_rewards = []
@@ -216,33 +291,43 @@ def QL_variants(env, n_act_agents, n_episodes, alg, who_moves_first):
 
             current_state = env.pos_agents[-1][agent]
 
+            if 'Causal' in alg:
+                enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
+                possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
+                                                        goals_nearby_all_agents)
+            else:
+                possible_actions = None
+
             if who_moves_first == 'Enemy':
                 env.step_enemies()
-
-                enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
-                if 'Causal' in alg:
-                    action = agent_alg.choose_action(current_state, enemies_nearby_all_agents, goals_nearby_all_agents)
+                _, _, if_lose = env.check_winner_gameover_agent(current_state[0], current_state[1])
+                if not if_lose:
+                    action = agent_alg.choose_action(current_state, possible_actions)
+                    next_state = env.step_agent(action)[0]
                 else:
-                    action = agent_alg.choose_action(current_state)
-                next_state = env.step_agent(action)[0]
+                    action = 0
+                    next_state = current_state
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
             else:
-                enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
-                if 'Causal' in alg:
-                    action = agent_alg.choose_action(current_state, enemies_nearby_all_agents, goals_nearby_all_agents)
-                else:
-                    action = agent_alg.choose_action(current_state)
+                action = agent_alg.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
-
-                env.step_enemies()
+                _, dones, _ = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
+                if dones[agent]:
+                    env.step_enemies()
 
             rewards, dones, if_lose = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
             reward = int(rewards[agent])
             done = dones[agent]  # If agent wins, end loop and restart
             if_lose = if_lose
+
+            if possible_actions is not None and len(possible_actions) > 0 and if_lose:
+                print(possible_actions, action)
+                print(f'lose: wrong causal gameover model in {alg}')
+                print(f'agents: {env.pos_agents[-1]}')
+                print(f'enemies: {env.pos_enemies[-1]}')
 
             # Update the Q-table/values
             agent_alg.update_Q(current_state, action, reward, next_state)

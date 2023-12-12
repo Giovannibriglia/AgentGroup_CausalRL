@@ -2,25 +2,22 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import env_game_sim
+import new_env_game
 import os
 import new_models
 from scipy.ndimage import gaussian_filter1d
 import plots
 import time
 
-# 'QL_EpsilonGreedy', 'QL_BoltzmannMachine', 'QL_ThompsonSampling', 'QL_SoftAnn' , 'CQL3', 'CQL4',
-# 'DeepQNetwork', 'CausalDeepQNetwork', 'DeepQNetwork_Mod', 'CausalDeepQNetwork_Mod'
-algorithms = ['QL_EpsilonGreedy', 'QL_SoftmaxAnnealing', 'QL_BoltzmannMachine', 'QL_ThompsonSampling']
-n_games = 5
+# 'QL_EpsilonGreedy', 'QL_SoftmaxAnnealing', 'QL_BoltzmannMachine', 'QL_ThompsonSampling' + all causal
+algorithms = ['QL_EpsilonGreedy_Causal', 'QL_ThompsonSampling_Causal']
+n_games = 2
 vect_rows = [5]
-vect_n_enemies = [1]
-who_moves_first = ['BeforeEnemy', 'BeforeAgent']
+vect_n_enemies = [2]
 n_episodes = 1000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
 dir_start = f'Comparison2_QLearning_DifferentPolicy'
-causal_table = pd.read_pickle('heuristic_table.pkl')
 
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:
@@ -53,7 +50,7 @@ for if_maze in vect_if_maze:
                     n_act_agents = 5
                     n_act_enemies = 5
                     n_goals = 1
-                    env = env_game_sim.CustomEnv(rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals,
+                    env = new_env_game.CustomEnv(rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals,
                                              if_maze, if_same_enemies_actions)
 
                     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, dpi=500)
@@ -72,7 +69,8 @@ for if_maze in vect_if_maze:
 
                         # returned: reward for episode and steps for episode
                         if 'QL' in alg:
-                            rewards, steps = new_models.QL_variants(env_for_alg, n_act_agents, n_episodes, alg, 'Agent')
+                            rewards, steps = new_models.QL_variants(env_for_alg, n_act_agents, n_episodes,
+                                                                    alg, 'Enemy')
 
                         computation_time = (time.time() - start_time)/60
 
