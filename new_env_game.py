@@ -26,7 +26,6 @@ class CustomEnv:
         self.n_times_loser = 0
 
         #  game episode
-        self.n_steps = 0
         self.len_actions_enemies = 50
         self.n_steps_enemies_actions = 0
 
@@ -207,11 +206,12 @@ class CustomEnv:
             last_stateY_en = self.pos_enemies[-1][enemy - 1][1]
 
             if self.if_same_enemies_actions:
-                if self.n_steps < self.len_actions_enemies:
-                    n = int(self.n_steps)
+                n_steps = len(self.pos_enemies)
+                if n_steps < self.len_actions_enemies:
+                    n = int(n_steps)
                 else:
-                    n = int(self.n_steps - self.len_actions_enemies * (int(self.n_steps / self.len_actions_enemies)))
-                # n = (self.len_actions_enemies / self.n_steps)
+                    n = int(n_steps - self.len_actions_enemies * (int(n_steps / self.len_actions_enemies)))
+
                 action = self.list_enemies_actions[enemy - 1][n]
             else:
                 action = random.randint(0, self.n_act_enemies - 1)
@@ -253,13 +253,17 @@ class CustomEnv:
 
             goals_nearby.append(single_agent_goals)
 
+        """print(f'\nAgent pos: {self.pos_agents[-1]}')
+        print(f'Enemies pos: {self.pos_enemies[-1]}')
+        print(f'Goal pos: {self.pos_goals[0]}')
+        print(f'Nearby goals: {goals_nearby}')
+        print(f'Nearby enemies: {enemies_nearby}')"""
+
         return enemies_nearby, goals_nearby
 
     def step_agent(self, agent_action):
-        self.n_steps += 1
         new_agents_pos = []
         for agent in range(1, self.n_agents + 1, 1):
-            # print(self.pos_agents[self.n_steps-1])
             last_stateX_ag = self.pos_agents[-1][agent - 1][0]
             last_stateY_ag = self.pos_agents[-1][agent - 1][1]
 
@@ -293,17 +297,16 @@ class CustomEnv:
                 # print('winner', goal, [new_stateX_ag, new_stateY_ag])
         # check if agent loses
         if not if_win:
-
             for enemy in range(0, self.n_enemies, 1):
-                X_en = self.pos_enemies[self.n_steps][enemy][0]
-                Y_en = self.pos_enemies[self.n_steps][enemy][1]
+                X_en = self.pos_enemies[-1][enemy][0]
+                Y_en = self.pos_enemies[-1][enemy][1]
                 if new_stateX_ag == X_en and new_stateY_ag == Y_en:
                     reward = self.reward_loser
                     if_lose = True
                     self.n_times_loser += 1
                     done = False
                     self.n_steps_enemies_actions = 0
-                    # print(f'Loser) En: {[X_en, Y_en]}, Ag before: {[last_stateX_ag, last_stateY_ag]}, Action: {action} -> ResAction: {res_action}, Ag after: {[new_stateX_ag, new_stateY_ag]}')
+                    # print(f'Loser) En: {[X_en, Y_en]}, Ag before: {self.pos_agents[-1]}, Ag after: {[new_stateX_ag, new_stateY_ag]}')
             # otherwise agent is alive
             if not if_lose:
                 # print('alive')
@@ -321,7 +324,6 @@ class CustomEnv:
             self.n_times_loser = 0
 
         # reset agents' states
-        self.n_steps = 0
         reset_rewards = [0] * self.n_agents
         reset_dones = [False] * self.n_agents
 

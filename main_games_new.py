@@ -10,14 +10,16 @@ import plots
 import time
 
 # 'QL_EpsilonGreedy', 'QL_SoftmaxAnnealing', 'QL_BoltzmannMachine', 'QL_ThompsonSampling' + all causal
-algorithms = ['QL_EpsilonGreedy_Causal', 'QL_ThompsonSampling_Causal']
-n_games = 2
-vect_rows = [5]
-vect_n_enemies = [2]
+algorithms = ['QL_EpsilonGreedy_Causal', 'QL_SoftmaxAnnealing_Causal',
+              'QL_BoltzmannMachine_Causal', 'QL_ThompsonSampling_Causal']
+n_games = 1
+vect_rows = [10]
+vect_n_enemies = [1]
 n_episodes = 1000
 vect_if_maze = [False]
-vect_if_same_enemies_actions = [False]
+vect_if_same_enemies_actions = [True]
 dir_start = f'Comparison2_QLearning_DifferentPolicy'
+who_moves_first = 'Agent'  # 'Enemy', 'Agent'
 
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:
@@ -69,8 +71,8 @@ for if_maze in vect_if_maze:
 
                         # returned: reward for episode and steps for episode
                         if 'QL' in alg:
-                            rewards, steps = new_models.QL_variants(env_for_alg, n_act_agents, n_episodes,
-                                                                    alg, 'Enemy')
+                            rewards, steps = new_models.QL_variations(env_for_alg, n_act_agents, n_episodes,
+                                                                    alg, who_moves_first)
 
                         computation_time = (time.time() - start_time)/60
 

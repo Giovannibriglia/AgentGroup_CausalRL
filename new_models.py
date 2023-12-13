@@ -10,7 +10,6 @@ from tqdm.auto import tqdm
 import warnings
 import time
 from scipy.stats import beta
-
 warnings.filterwarnings("ignore")
 
 GAMMA = 0.99
@@ -174,14 +173,12 @@ class ThompsonSamplingQAgent:
 
         if possible_actions is not None and len(possible_actions) > 0:
             all_actions = list(np.arange(0, self.action_space_size, 1))
+            dict_all_actions = {}
+            for act in all_actions:
+                dict_all_actions[act] = sampled_values[act]
 
-            valid_indices = [index for index in possible_actions if 0 <= index < len(all_actions)]
-
-            if not valid_indices:
-                chosen_action = np.argmax(sampled_values)
-            else:
-                # Find the index of the maximum value among the valid indices
-                chosen_action = max(valid_indices, key=lambda i: all_actions[i])
+            dict_valid_actions = {act: dict_all_actions[act] for act in possible_actions}
+            chosen_action, _ = max(dict_valid_actions.items(), key=lambda x: x[1])
         else:
             chosen_action = np.argmax(sampled_values)
 
@@ -196,7 +193,7 @@ class ThompsonSamplingQAgent:
             self.beta[stateX, stateY, action] += 1
 
 
-class EpsilonGreedyAgent():
+class EpsilonGreedyAgent:
 
     def __init__(self, rows, cols, n_agent_actions, n_episodes):
         self.rows = rows
@@ -219,23 +216,13 @@ class EpsilonGreedyAgent():
             stateX = int(state[0])
             stateY = int(state[1])
             if possible_actions is not None and len(possible_actions) > 0:
-                if len(possible_actions) > 0:
-                    max_value = max(self.Q_table[stateX, stateY, possible_actions])
+                all_actions = list(np.arange(0, self.n_agent_actions, 1))
+                dict_all_actions = {}
+                for act in all_actions:
+                    dict_all_actions[act] = self.Q_table[stateX, stateY, act]
 
-                    actions_wrong = []
-                    for act_test in [s for s in range(self.n_agent_actions)]:
-                        if act_test not in possible_actions:
-                            actions_wrong.append(act_test)
-                    actions_wrong = list(set(actions_wrong))
-                    q_table_values = list(
-                        np.array(np.where(self.Q_table[stateX, stateY, :] == max_value)[0]))
-
-                    possibilities = []
-                    for act_test in q_table_values:
-                        if act_test not in actions_wrong:
-                            possibilities.append(act_test)
-                    possibilities = list(set(possibilities))
-                    action = random.sample(possibilities, k=1)[0]
+                dict_valid_actions = {act: dict_all_actions[act] for act in possible_actions}
+                chosen_action, _ = max(dict_valid_actions.items(), key=lambda x: x[1])
             else:
                 action = np.argmax(self.Q_table[stateX, stateY, :])
 
@@ -256,7 +243,7 @@ class EpsilonGreedyAgent():
         self.exp_proba = max(self.MIN_EXPLORATION_PROBA, np.exp(-self.EXPLORATION_DECREASING_DECAY * episode))
 
 
-def QL_variants(env, n_act_agents, n_episodes, alg, who_moves_first):
+def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
     rows = env.rows
     cols = env.cols
     action_space_size = n_act_agents
@@ -287,7 +274,6 @@ def QL_variants(env, n_act_agents, n_episodes, alg, who_moves_first):
         done = False
 
         while not done:
-            step_for_episode += 1
 
             current_state = env.pos_agents[-1][agent]
 
@@ -301,21 +287,21 @@ def QL_variants(env, n_act_agents, n_episodes, alg, who_moves_first):
             if who_moves_first == 'Enemy':
                 env.step_enemies()
                 _, _, if_lose = env.check_winner_gameover_agent(current_state[0], current_state[1])
+                if_lose = False
                 if not if_lose:
                     action = agent_alg.choose_action(current_state, possible_actions)
                     next_state = env.step_agent(action)[0]
                 else:
-                    action = 0
                     next_state = current_state
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
-            else:
+            elif who_moves_first == 'Agent':
                 action = agent_alg.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
                 _, dones, _ = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
-                if dones[agent]:
+                if not dones[agent]:
                     env.step_enemies()
 
             rewards, dones, if_lose = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
@@ -323,11 +309,11 @@ def QL_variants(env, n_act_agents, n_episodes, alg, who_moves_first):
             done = dones[agent]  # If agent wins, end loop and restart
             if_lose = if_lose
 
-            if possible_actions is not None and len(possible_actions) > 0 and if_lose:
-                print(possible_actions, action)
+            """if possible_actions is not None and len(possible_actions) > 0 and if_lose:
+                print(possible_actions, action, enemies_nearby_all_agents)
                 print(f'lose: wrong causal gameover model in {alg}')
                 print(f'agents: {env.pos_agents[-1]}')
-                print(f'enemies: {env.pos_enemies[-1]}')
+                print(f'enemies: {env.pos_enemies[-1]}')"""
 
             # Update the Q-table/values
             agent_alg.update_Q(current_state, action, reward, next_state)
@@ -336,6 +322,8 @@ def QL_variants(env, n_act_agents, n_episodes, alg, who_moves_first):
 
             if if_lose:
                 current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
+
+            step_for_episode += 1
 
         if alg == 'QL_SoftmaxAnnealing' or alg == 'EpsilonGreedyAgent':
             agent_alg.update_exp_fact(e)
