@@ -10,16 +10,17 @@ import plots
 import time
 
 # 'QL_EpsilonGreedy', 'QL_SoftmaxAnnealing', 'QL_BoltzmannMachine', 'QL_ThompsonSampling' + all causal
-algorithms = ['QL_EpsilonGreedy_Causal', 'QL_SoftmaxAnnealing_Causal',
+algorithms = ['QL_EpsilonGreedy',  'QL_SoftmaxAnnealing', 'QL_BoltzmannMachine', 'QL_ThompsonSampling',
+              'QL_EpsilonGreedy_Causal', 'QL_SoftmaxAnnealing_Causal',
               'QL_BoltzmannMachine_Causal', 'QL_ThompsonSampling_Causal']
-n_games = 1
-vect_rows = [10]
+n_games = 3
+vect_rows = [5]
 vect_n_enemies = [1]
-n_episodes = 1000
+n_episodes = 100
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [True]
 dir_start = f'Comparison2_QLearning_DifferentPolicy'
-who_moves_first = 'Agent'  # 'Enemy', 'Agent'
+who_moves_first = 'Enemy'  # 'Enemy', 'Agent'
 
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:
@@ -100,4 +101,5 @@ for if_maze in vect_if_maze:
 
                 if n_games > 1:
                     plots.plot_av_rew_steps(directory, algorithms, n_games, n_episodes, rows, cols, n_enemies)
-                    plots.plot_av_computation_time(directory, algorithms, n_games, n_episodes, rows, cols, n_enemies)
+                    plots.plot_av_computation_time(directory, algorithms, n_games, rows, cols, n_enemies)
+

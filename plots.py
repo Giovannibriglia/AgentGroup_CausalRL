@@ -31,7 +31,7 @@ def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, 
         confidence_interval_rew = np.std(av_rewards)
         ax1.fill_between(x, (av_rewards - confidence_interval_rew), (av_rewards + confidence_interval_rew), alpha=0.2)
         ax1.set_title('Average reward on episode steps')
-        ax1.legend(fontsize='x-small')
+        ax1.legend(fontsize='xx-small')
 
         ax2.plot(x, gaussian_filter1d(av_steps, 1))
         ax2.set_yscale('log')
@@ -42,7 +42,7 @@ def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, 
     plt.show()
 
 
-def plot_av_computation_time(dir_results, algorithms, n_games, n_episodes, rows, cols, n_enemies):
+def plot_av_computation_time(dir_results, algorithms, n_games, rows, cols, n_enemies):
     targetPattern = fr"{dir_results}\*.npy"
     directories = glob.glob(targetPattern)
     # data_names = [os.path.basename(directories[s]) for s in range(len(directories))]
@@ -50,20 +50,25 @@ def plot_av_computation_time(dir_results, algorithms, n_games, n_episodes, rows,
     fig = plt.figure(dpi=500)
     fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemy - Averaged over {n_games} games', fontsize=fontsize+3)
 
+    data = []
     for alg in algorithms:
         filename_comp_time = [s for s in directories if f'{alg}_computation_time' in s]
 
         av_comp_time = 0
+        data_to_app = []
         for n_game in range(n_games):
             av_comp_time += np.load(filename_comp_time[n_game])
+            data_to_app.append(av_comp_time)
         av_comp_time = av_comp_time/n_games
+        data.append(data_to_app)
 
-        plt.bar(alg, av_comp_time, label=f'{alg} = {round(av_comp_time, 3)}')
+        # plt.bar(alg, av_comp_time, label=f'{alg} = {round(av_comp_time, 3)}')
+    plt.boxplot(data, vert=True, patch_artist=True, labels=algorithms)
 
-    plt.legend(loc='best')
-    plt.xticks(rotation=20)
+    # plt.legend(loc='best')
+    plt.xticks(rotation=90)
     plt.ylabel('Computation time [min]', fontsize=fontsize)
-    plt.subplots_adjust(bottom=0.2)
+    plt.subplots_adjust(bottom=0.5)
     plt.grid()
     plt.savefig(f'{dir_results}/Average_comp_time_comparison_{n_games}Games.pdf')
     plt.show()
