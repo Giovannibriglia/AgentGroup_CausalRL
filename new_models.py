@@ -234,7 +234,7 @@ class EpsilonGreedyAgent:
                     dict_all_actions[act] = self.Q_table[stateX, stateY, act]
 
                 dict_valid_actions = {act: dict_all_actions[act] for act in possible_actions}
-                chosen_action, _ = max(dict_valid_actions.items(), key=lambda x: x[1])
+                action, _ = max(dict_valid_actions.items(), key=lambda x: x[1])
             else:
                 action = np.argmax(self.Q_table[stateX, stateY, :])
 
@@ -411,13 +411,13 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
     action_space_size = n_act_agents
 
     if 'SoftmaxAnnealing' in alg:
-        agent_alg = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes)
+        agent = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes)
     elif 'EpsilonGreedy' in alg:
-        agent_alg = EpsilonGreedyAgent(rows, cols, action_space_size, n_episodes)
+        agent = EpsilonGreedyAgent(rows, cols, action_space_size, n_episodes)
     elif 'BoltzmannMachine' in alg:
-        agent_alg = BoltzmannQAgent(rows, cols, action_space_size, n_episodes)
+        agent = BoltzmannQAgent(rows, cols, action_space_size, n_episodes)
     elif 'ThompsonSampling' in alg:
-        agent_alg = ThompsonSamplingQAgent(rows, cols, action_space_size, n_episodes)
+        agent = ThompsonSamplingQAgent(rows, cols, action_space_size, n_episodes)
 
     average_episodes_rewards = []
     steps_for_episode = []
@@ -425,7 +425,7 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
     pbar = tqdm(range(n_episodes))
     time.sleep(1)
     for e in pbar:
-        agent = 0
+        agent_n = 0
         if e == 0:
             env.reset(reset_n_times_loser=True)
         else:
@@ -437,7 +437,7 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
 
         while not done:
 
-            current_state = env.pos_agents[-1][agent]
+            current_state = env.pos_agents[-1][agent_n]
 
             if who_moves_first == 'Enemy':
                 env.step_enemies()
@@ -450,7 +450,7 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
                                                                 goals_nearby_all_agents)
                     else:
                         possible_actions = None
-                    action = agent_alg.choose_action(current_state, possible_actions)
+                    action = agent.choose_action(current_state, possible_actions)
                     next_state = env.step_agent(action)[0]
                 else:
                     next_state = current_state
@@ -465,17 +465,17 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
                 else:
                     possible_actions = None
 
-                action = agent_alg.choose_action(current_state, possible_actions)
+                action = agent.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
                 _, dones, _ = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
-                if not dones[agent]:
+                if not dones[agent_n]:
                     env.step_enemies()
 
             rewards, dones, if_lose = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
-            reward = int(rewards[agent])
-            done = dones[agent]  # If agent wins, end loop and restart
+            reward = int(rewards[agent_n])
+            done = dones[agent_n]  # If agent wins, end loop and restart
             if_lose = if_lose
 
             """if possible_actions is not None and len(possible_actions) > 0 and if_lose:
@@ -485,7 +485,7 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
                 print(f'enemies: {env.pos_enemies[-1]}')"""
 
             # Update the Q-table/values
-            agent_alg.update_Q(current_state, action, reward, next_state)
+            agent.update_Q(current_state, action, reward, next_state)
 
             total_episode_reward += reward
 
@@ -495,7 +495,7 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
             step_for_episode += 1
 
         if alg == 'QL_SoftmaxAnnealing' or alg == 'EpsilonGreedyAgent':
-            agent_alg.update_exp_fact(e)
+            agent.update_exp_fact(e)
 
         average_episodes_rewards.append(total_episode_reward)
         steps_for_episode.append(step_for_episode)
@@ -513,9 +513,9 @@ def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
     action_space_size = n_act_agents
 
     if 'DeepQNetwork' in alg:
-        agent_alg = DeepQNetwork(rows, cols, action_space_size, n_episodes)
+        agent = DeepQNetwork(rows, cols, action_space_size, n_episodes)
     elif 'DeepQNetwork_Multi' in alg:
-        agent_alg = DeepQNetwork(rows, cols, action_space_size, n_episodes)
+        agent = DeepQNetwork(rows, cols, action_space_size, n_episodes)
 
     average_episodes_rewards = []
     steps_for_episode = []
@@ -523,7 +523,7 @@ def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
     pbar = tqdm(range(n_episodes))
     time.sleep(1)
     for e in pbar:
-        agent = 0
+        agent_n = 0
         if e == 0:
             env.reset(reset_n_times_loser=True)
         else:
@@ -535,7 +535,7 @@ def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
 
         while not done:
 
-            current_state = env.pos_agents[-1][agent]
+            current_state = env.pos_agents[-1][agent_n]
 
             if who_moves_first == 'Enemy':
                 env.step_enemies()
@@ -553,8 +553,8 @@ def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
                     current_stateY = current_state[1]
                     general_state[current_stateX * rows + current_stateY] = 1
 
-                    action = agent_alg.choose_action(general_state, possible_actions)
-                    next_state = env.step_agent(action)[agent]
+                    action = agent.choose_action(general_state, possible_actions)
+                    next_state = env.step_agent(action)[agent_n]
                 else:
                     next_state = current_state
                     print('perso subito')
@@ -575,17 +575,17 @@ def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
 
                 general_state[current_stateY * env.cols + current_stateX] = 1
 
-                action = agent_alg.choose_action(general_state, possible_actions)
-                next_state = env.step_agent(action)[agent]
+                action = agent.choose_action(general_state, possible_actions)
+                next_state = env.step_agent(action)[agent_n]
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
                 _, dones, _ = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
-                if not dones[agent]:
+                if not dones[agent_n]:
                     env.step_enemies()
 
             rewards, dones, if_lose = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
-            reward = int(rewards[agent])
-            done = dones[agent]
+            reward = int(rewards[agent_n])
+            done = dones[agent_n]
             if_lose = if_lose
 
             """if possible_actions is not None and len(possible_actions) > 0 and if_lose:
@@ -598,11 +598,11 @@ def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
             next_state = np.zeros(env.rows * env.cols)
             next_state[new_stateX_ag * rows + new_stateY_ag] = 1
 
-            agent_alg.update_memory(general_state, action, next_state, reward)
+            agent.update_memory(general_state, action, next_state, reward)
 
-            agent_alg.optimize_model()
+            agent.optimize_model()
 
-            agent_alg.update_target_net()
+            agent.update_target_net()
 
             total_episode_reward += reward
 
@@ -611,7 +611,7 @@ def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
 
             step_for_episode += 1
 
-        agent_alg.update_exp_factor(e)
+        agent.update_exp_factor(e)
 
         average_episodes_rewards.append(total_episode_reward)
         steps_for_episode.append(step_for_episode)
