@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 import glob
 import os
 from scipy.ndimage import gaussian_filter1d
+
 fontsize = 12
+
 
 def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, n_enemies):
     targetPattern = fr"{dir_results}\*.npy"
@@ -11,7 +13,7 @@ def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, 
     # data_names = [os.path.basename(directories[s]) for s in range(len(directories))]
 
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, dpi=500)
-    fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemy - Averaged over {n_games} games', fontsize=15)
+    fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemy - Averaged over {n_games} games', fontsize=fontsize+3)
 
     for alg in algorithms:
         filename_rewards = [s for s in directories if f'{alg}_rewards' in s]
@@ -30,7 +32,7 @@ def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, 
         ax1.plot(x, av_rewards, label=f'{alg} = {round(np.mean(av_rew) / n_games, 3)}')
         confidence_interval_rew = np.std(av_rewards)
         ax1.fill_between(x, (av_rewards - confidence_interval_rew), (av_rewards + confidence_interval_rew), alpha=0.2)
-        ax1.set_title('Average reward on episode steps')
+        ax1.set_title('Cumulative average reward')
         ax1.legend(fontsize='xx-small')
 
         ax2.plot(x, gaussian_filter1d(av_steps, 1))
@@ -48,7 +50,7 @@ def plot_av_computation_time(dir_results, algorithms, n_games, rows, cols, n_ene
     # data_names = [os.path.basename(directories[s]) for s in range(len(directories))]
 
     fig = plt.figure(dpi=500)
-    fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemy - Averaged over {n_games} games', fontsize=fontsize+3)
+    fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemy - Averaged over {n_games} games', fontsize=fontsize + 3)
 
     data = []
     for alg in algorithms:
@@ -59,7 +61,7 @@ def plot_av_computation_time(dir_results, algorithms, n_games, rows, cols, n_ene
         for n_game in range(n_games):
             av_comp_time += np.load(filename_comp_time[n_game])
             data_to_app.append(av_comp_time)
-        av_comp_time = av_comp_time/n_games
+        av_comp_time = av_comp_time / n_games
         data.append(data_to_app)
 
         # plt.bar(alg, av_comp_time, label=f'{alg} = {round(av_comp_time, 3)}')

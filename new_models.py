@@ -200,7 +200,7 @@ class ThompsonSamplingQAgent:
             self.beta[stateX, stateY, action] += 1
 
 
-class EpsilonGreedyAgent:
+class EpsilonGreedyQAgent:
 
     def __init__(self, rows, cols, n_agent_actions, n_episodes):
         self.rows = rows
@@ -413,8 +413,8 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
     if 'SoftmaxAnnealing' in alg:
         agent = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes)
     elif 'EpsilonGreedy' in alg:
-        agent = EpsilonGreedyAgent(rows, cols, action_space_size, n_episodes)
-    elif 'BoltzmannMachine' in alg:
+        agent = EpsilonGreedyQAgent(rows, cols, action_space_size, n_episodes)
+    elif 'Boltzmann' in alg:
         agent = BoltzmannQAgent(rows, cols, action_space_size, n_episodes)
     elif 'ThompsonSampling' in alg:
         agent = ThompsonSamplingQAgent(rows, cols, action_space_size, n_episodes)
@@ -478,11 +478,11 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
             done = dones[agent_n]  # If agent wins, end loop and restart
             if_lose = if_lose
 
-            """if possible_actions is not None and len(possible_actions) > 0 and if_lose:
-                print(possible_actions, action, enemies_nearby_all_agents)
-                print(f'lose: wrong causal gameover model in {alg}')
-                print(f'agents: {env.pos_agents[-1]}')
-                print(f'enemies: {env.pos_enemies[-1]}')"""
+            if possible_actions is not None and len(possible_actions) > 0 and if_lose and [current_state] != [next_state]:
+                print(f'\nLose: wrong causal gameover model in {alg}')
+                print(f'New agents pos: {env.pos_agents[-1]}')
+                print(f'Enemies pos: {env.pos_enemies[-1]} - enemies nearby: {enemies_nearby_all_agents}')
+                print(f'Possible actions: {possible_actions} - chosen action: {action}')
 
             # Update the Q-table/values
             agent.update_Q(current_state, action, reward, next_state)
@@ -588,12 +588,11 @@ def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
             done = dones[agent_n]
             if_lose = if_lose
 
-            """if possible_actions is not None and len(possible_actions) > 0 and if_lose:
-                print(f'\nlose: wrong causal gameover model in {alg}')
-                print(f'Enemies nearby: {enemies_nearby_all_agents}')
-                print(f'possible_actions : {possible_actions} --> chosen action: {action}')
-                print(f'agents: {env.pos_agents[-1]}')
-                print(f'enemies: {env.pos_enemies[-1]}')"""
+            if possible_actions is not None and len(possible_actions) > 0 and if_lose and [current_state] != [next_state]:
+                print(f'\nLose: wrong causal gameover model in {alg}')
+                print(f'New agents pos: {env.pos_agents[-1]}')
+                print(f'Enemies pos: {env.pos_enemies[-1]} - enemies nearby: {enemies_nearby_all_agents}')
+                print(f'Possible actions: {possible_actions} - chosen action: {action}')
 
             next_state = np.zeros(env.rows * env.cols)
             next_state[new_stateX_ag * rows + new_stateY_ag] = 1
