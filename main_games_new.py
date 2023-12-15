@@ -9,17 +9,17 @@ from scipy.ndimage import gaussian_filter1d
 import plots
 import time
 
-# 'QL_EpsilonGreedy', 'QL_SoftmaxAnnealing', 'QL_BoltzmannMachine', 'QL_ThompsonSampling' + all causal
-# 'DeepQNetwork + causal
-algorithms = ['QL_EpsilonGreedy', 'QL_SoftmaxAnnealing', 'QL_BoltzmannMachine', 'QL_ThompsonSampling']
-n_games = 5
-vect_rows = [10]
+# 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal'
+# 'DQN' + 'causal'
+algorithms = ['QL_TS_causal', 'QL_EG_causal']
+n_games = 2
+vect_rows = [4]
 vect_n_enemies = [1]
-n_episodes = 500
+n_episodes = 100
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [True]
 dir_start = f'Comparison2_QLearning_DifferentPolicy'
-who_moves_first = 'Agent'  # 'Enemy' or 'Agent'
+who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:
@@ -90,7 +90,7 @@ for if_maze in vect_if_maze:
                         ax1.fill_between(x, (cumulative_rewards - confidence_interval_rew),
                                          (cumulative_rewards + confidence_interval_rew),
                                          alpha=0.2)
-                        ax1.set_title('Average reward on episode steps')
+                        ax1.set_title('Cumulative reward')
                         ax1.legend(fontsize='x-small')
 
                         ax2.plot(x, gaussian_filter1d(steps, 1))

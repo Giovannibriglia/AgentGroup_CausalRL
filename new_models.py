@@ -410,13 +410,13 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
     cols = env.cols
     action_space_size = n_act_agents
 
-    if 'SoftmaxAnnealing' in alg:
+    if 'SA' in alg:
         agent = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes)
-    elif 'EpsilonGreedy' in alg:
+    elif 'EG' in alg:
         agent = EpsilonGreedyQAgent(rows, cols, action_space_size, n_episodes)
-    elif 'Boltzmann' in alg:
+    elif 'BM' in alg:
         agent = BoltzmannQAgent(rows, cols, action_space_size, n_episodes)
-    elif 'ThompsonSampling' in alg:
+    elif 'TS' in alg:
         agent = ThompsonSamplingQAgent(rows, cols, action_space_size, n_episodes)
 
     average_episodes_rewards = []
@@ -444,7 +444,7 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
                 _, _, if_lose = env.check_winner_gameover_agent(current_state[0], current_state[1])
                 if_lose = False
                 if not if_lose:
-                    if 'Causal' in alg:
+                    if 'causal' in alg:
                         enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
                         possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
                                                                 goals_nearby_all_agents)
@@ -512,7 +512,7 @@ def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
     cols = env.cols
     action_space_size = n_act_agents
 
-    if 'DeepQNetwork' in alg:
+    if 'DQN' in alg:
         agent = DeepQNetwork(rows, cols, action_space_size, n_episodes)
     elif 'DeepQNetwork_Multi' in alg:
         agent = DeepQNetwork(rows, cols, action_space_size, n_episodes)
@@ -542,7 +542,7 @@ def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
                 _, _, if_lose = env.check_winner_gameover_agent(current_state[0], current_state[1])
                 if_lose = False
                 if not if_lose:
-                    if 'Causal' in alg:
+                    if 'causal' in alg:
                         enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
                         possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
                                                                 goals_nearby_all_agents)
