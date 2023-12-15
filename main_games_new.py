@@ -1,4 +1,4 @@
-import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -10,17 +10,15 @@ import plots
 import time
 
 # 'QL_EpsilonGreedy', 'QL_SoftmaxAnnealing', 'QL_BoltzmannMachine', 'QL_ThompsonSampling' + all causal
-algorithms = ['QL_EpsilonGreedy',  'QL_SoftmaxAnnealing', 'QL_BoltzmannMachine', 'QL_ThompsonSampling',
-              'QL_EpsilonGreedy_Causal', 'QL_SoftmaxAnnealing_Causal',
-              'QL_BoltzmannMachine_Causal', 'QL_ThompsonSampling_Causal']
+algorithms = ['DeepQNetwork_Causal', 'QL_EpsilonGreedy', 'QL_EpsilonGreedy_Causal']
 n_games = 3
-vect_rows = [5]
+vect_rows = [10]
 vect_n_enemies = [1]
-n_episodes = 100
+n_episodes = 500
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [True]
 dir_start = f'Comparison2_QLearning_DifferentPolicy'
-who_moves_first = 'Enemy'  # 'Enemy', 'Agent'
+who_moves_first = 'Agent'  # 'Enemy', 'Agent' # 'Both
 
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:
@@ -74,6 +72,9 @@ for if_maze in vect_if_maze:
                         if 'QL' in alg:
                             rewards, steps = new_models.QL_variations(env_for_alg, n_act_agents, n_episodes,
                                                                     alg, who_moves_first)
+                        else:
+                            rewards, steps = new_models.DQN_variations(env_for_alg, n_act_agents, n_episodes,
+                                                                      alg, who_moves_first)
 
                         computation_time = (time.time() - start_time)/60
 

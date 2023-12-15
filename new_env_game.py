@@ -1,5 +1,7 @@
 import random
 import warnings
+
+import numpy as np
 import pygame
 from gym.spaces import Discrete
 
@@ -253,11 +255,12 @@ class CustomEnv:
 
             goals_nearby.append(single_agent_goals)
 
-        """print(f'\nAgent pos: {self.pos_agents[-1]}')
-        print(f'Enemies pos: {self.pos_enemies[-1]}')
-        print(f'Goal pos: {self.pos_goals[0]}')
-        print(f'Nearby goals: {goals_nearby}')
-        print(f'Nearby enemies: {enemies_nearby}')"""
+        """if np.mean(enemies_nearby[0]) != 50 or np.mean(goals_nearby[0]) != 50:
+            print(f'\nAgent pos: {self.pos_agents[-1]}')
+            print(f'Enemies pos: {self.pos_enemies[-1]}')
+            print(f'Goal pos: {self.pos_goals[0]}')
+            print(f'Nearby goals: {goals_nearby}')
+            print(f'Nearby enemies: {enemies_nearby}')"""
 
         return enemies_nearby, goals_nearby
 

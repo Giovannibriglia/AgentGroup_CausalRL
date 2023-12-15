@@ -10,6 +10,7 @@ from tqdm.auto import tqdm
 import warnings
 import time
 from scipy.stats import beta
+
 warnings.filterwarnings("ignore")
 
 GAMMA = 0.99
@@ -71,6 +72,9 @@ class SoftmaxAnnealingQAgent:
         self.temperature = initial_temperature
         self.n_episodes = n_episodes
 
+        self.lr = LEARNING_RATE
+        self.gamma = GAMMA
+
         # Q-table initialization
         self.q_table = np.zeros((self.rows, self.cols, action_space_size))
 
@@ -106,7 +110,7 @@ class SoftmaxAnnealingQAgent:
         current_q_value = self.q_table[stateX, stateY, action]
         max_next_q_value = np.max(self.q_table[next_stateX, next_stateY, :])
 
-        new_q_value = current_q_value + LEARNING_RATE * (reward + GAMMA * max_next_q_value - current_q_value)
+        new_q_value = current_q_value + self.lr * (reward + self.gamma * max_next_q_value - current_q_value)
         self.q_table[state, action] = new_q_value
 
     def update_exp_fact(self, e):  # annealing temperature
@@ -119,6 +123,9 @@ class BoltzmannQAgent:
         self.cols = cols
         self.action_space_size = action_space_size
         self.temperature = temperature
+
+        self.lr = LEARNING_RATE
+        self.gamma = GAMMA
 
         # Q-table initialization
         self.q_table = np.zeros((self.rows, self.cols, action_space_size))
@@ -151,7 +158,7 @@ class BoltzmannQAgent:
         current_q_value = self.q_table[stateX, stateY, action]
         max_next_q_value = np.max(self.q_table[next_stateX, next_stateY, :])
 
-        new_q_value = current_q_value + LEARNING_RATE * (reward + GAMMA * max_next_q_value - current_q_value)
+        new_q_value = current_q_value + self.lr * (reward + self.gamma * max_next_q_value - current_q_value)
         self.q_table[stateX, stateY, action] = new_q_value
 
 
@@ -199,8 +206,13 @@ class EpsilonGreedyAgent:
         self.rows = rows
         self.cols = cols
         self.n_agent_actions = n_agent_actions
-        self.Q_table = np.zeros((self.rows, self.cols, self.n_agent_actions))
         self.n_episodes = n_episodes
+
+        self.Q_table = np.zeros((self.rows, self.cols, self.n_agent_actions))
+
+        self.lr = LEARNING_RATE
+        self.gamma = GAMMA
+
         self.exp_proba = EXPLORATION_PROBA
         self.MIN_EXPLORATION_PROBA = MIN_EXPLORATION_PROBA
         self.EXPLORATION_DECREASING_DECAY = -np.log(self.MIN_EXPLORATION_PROBA) / (
@@ -236,11 +248,161 @@ class EpsilonGreedyAgent:
         current_q_value = self.Q_table[stateX, stateY, action]
         max_next_q_value = np.max(self.Q_table[next_stateX, next_stateY, :])
 
-        new_q_value = current_q_value + LEARNING_RATE * (reward + GAMMA * max_next_q_value - current_q_value)
+        new_q_value = current_q_value + self.lr * (reward + self.gamma * max_next_q_value - current_q_value)
         self.Q_table[stateX, stateY, action] = new_q_value
 
     def update_exp_fact(self, episode):  # update exploration probability
         self.exp_proba = max(self.MIN_EXPLORATION_PROBA, np.exp(-self.EXPLORATION_DECREASING_DECAY * episode))
+
+
+class ReplayMemory(object):
+
+    def __init__(self, capacity):
+        self.memory = deque([], maxlen=capacity)
+
+    def push(self, *args, Transition):
+        """Save a transition"""
+        self.memory.append(Transition(*args))
+
+    def sample(self, batch_size):
+        return random.sample(self.memory, batch_size)
+
+    def __len__(self):
+        return len(self.memory)
+
+
+class ClassDQN(nn.Module):
+
+    def __init__(self, n_observations, n_actions):
+        super(ClassDQN, self).__init__()
+
+        self.hidden_layers = HIDDEN_LAYERS
+        self.n_observations = n_observations
+        self.n_actions = n_actions
+
+        self.layer1 = nn.Linear(self.n_observations, self.hidden_layers)
+        self.layer2 = nn.Linear(self.hidden_layers, self.hidden_layers)
+        self.final_layer = nn.Linear(self.hidden_layers, self.n_actions)
+
+    def forward(self, x):
+        x = F.relu(self.layer1(x))
+        x = F.relu(self.layer2(x))
+        return self.final_layer(x)
+
+
+class DeepQNetwork:
+    def __init__(self, rows, cols, n_agent_actions, n_episodes):
+        self.rows = rows
+        self.cols = cols
+        self.n_agent_actions = n_agent_actions
+        self.n_episodes = n_episodes
+
+        self.batch_size = BATCH_SIZE
+        self.gamma = GAMMA
+        self.lr = LEARNING_RATE
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        self.exp_proba = EXPLORATION_PROBA
+        self.MIN_EXPLORATION_PROBA = MIN_EXPLORATION_PROBA
+        self.EXPLORATION_DECREASING_DECAY = -np.log(self.MIN_EXPLORATION_PROBA) / (
+                EXPLORATION_GAME_PERCENT * self.n_episodes)
+
+        self.policy_net: ClassDQN = ClassDQN(self.cols * self.rows, self.n_agent_actions).to(self.device)
+        self.target_net = ClassDQN(self.cols * self.rows, self.n_agent_actions).to(self.device)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
+
+        self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+
+        self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
+        self.memory = ReplayMemory(10000)
+
+    def choose_action(self, state, possible_actions=None):
+        state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
+
+        if possible_actions is not None and len(possible_actions) > 0:
+            if np.random.uniform(0, 1) < self.exp_proba:  # exploration
+                if len(possible_actions) > 0:
+                    return torch.tensor([[possible_actions[torch.randint(0, len(possible_actions), (1,)).item()]]],
+                                        device=self.device, dtype=torch.long)
+                else:
+                    return torch.tensor([[np.random.randint(0, self.n_agent_actions, 1)]], device=self.device, dtype=torch.long)
+            else:  # exploitation
+                actions_to_avoid = [s for s in range(self.n_agent_actions) if s not in possible_actions]
+
+                actions_values = self.policy_net(state)
+                for act_to_avoid in actions_to_avoid:
+                    actions_values[:, act_to_avoid] = - 10000
+
+                return actions_values.max(1).indices.view(1, 1)
+        else:
+            if np.random.uniform(0, 1) < self.exp_proba:  # exploration
+                return torch.tensor([[np.random.randint(0, self.n_agent_actions, 1)]], device=self.device, dtype=torch.long)
+            else:
+                with torch.no_grad():
+                    actions_values = self.policy_net(state)
+                    return actions_values.max(1).indices.view(1, 1)
+
+    def optimize_model(self):
+        if len(self.memory) < self.batch_size:
+            return
+        transitions = self.memory.sample(BATCH_SIZE)
+        batch = self.Transition(*zip(*transitions))
+
+        # Compute a mask of non-final states and concatenate the batch elements
+        # (a final state would've been the one after which simulation ended)
+        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
+                                                batch.next_state)), device=self.device, dtype=torch.bool)
+
+        non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
+        state_batch = torch.cat(batch.state)
+        action_batch = torch.cat(batch.action)
+        reward_batch = torch.cat(batch.reward)
+
+        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the columns of actions taken.
+        # These are the actions which would've been taken for each batch state according to policy_net
+        action_batch = action_batch.view(-1)
+        action_batch = action_batch.unsqueeze(1)
+        state_action_values = self.policy_net(state_batch).gather(1, action_batch)
+
+        # Compute V(s_{t+1}) for all next states.
+        # Expected values of actions for non_final_next_states are computed based on the "older" target_net;
+        # selecting their best reward with max(1).values
+        # This is merged based on the mask, such that we'll have either the expected state value or 0 in
+        # case the state was final.
+        next_state_values = torch.zeros(self.batch_size, device=self.device)
+        with torch.no_grad():
+            next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1).values
+        # Compute the expected Q values
+        expected_state_action_values = (next_state_values * self.gamma) + reward_batch
+
+        # Compute Huber loss
+        criterion = nn.SmoothL1Loss()
+        loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
+
+        # Optimize the model
+        self.optimizer.zero_grad()
+        loss.backward()
+        # In-place gradient clipping
+        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
+        self.optimizer.step()
+
+    def update_memory(self, state, action, next_state, reward):
+        state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
+        next_state = torch.tensor(next_state, dtype=torch.float32, device=self.device).unsqueeze(0)
+        reward = torch.tensor([reward], device=self.device)
+        action = torch.tensor([action], device=self.device)
+        self.memory.push(state, action, next_state, reward, Transition=self.Transition)
+
+    def update_exp_factor(self, episode):
+        self.exp_proba = max(self.MIN_EXPLORATION_PROBA, np.exp(-self.EXPLORATION_DECREASING_DECAY * episode))
+
+    def update_target_net(self):
+        target_net_state_dict = self.target_net.state_dict()
+        policy_net_state_dict = self.policy_net.state_dict()
+        for key in policy_net_state_dict:
+            target_net_state_dict[key] = policy_net_state_dict[key] * TAU + target_net_state_dict[key] * (1 - TAU)
+        self.target_net.load_state_dict(target_net_state_dict)
 
 
 def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
@@ -277,25 +439,32 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
 
             current_state = env.pos_agents[-1][agent]
 
-            if 'Causal' in alg:
-                enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
-                possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
-                                                        goals_nearby_all_agents)
-            else:
-                possible_actions = None
-
             if who_moves_first == 'Enemy':
                 env.step_enemies()
                 _, _, if_lose = env.check_winner_gameover_agent(current_state[0], current_state[1])
                 if_lose = False
                 if not if_lose:
+                    if 'Causal' in alg:
+                        enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
+                        possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
+                                                                goals_nearby_all_agents)
+                    else:
+                        possible_actions = None
                     action = agent_alg.choose_action(current_state, possible_actions)
                     next_state = env.step_agent(action)[0]
                 else:
                     next_state = current_state
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
+
             elif who_moves_first == 'Agent':
+                if 'Causal' in alg:
+                    enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
+                    possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
+                                                            goals_nearby_all_agents)
+                else:
+                    possible_actions = None
+
                 action = agent_alg.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
                 new_stateX_ag = next_state[0]
@@ -321,12 +490,128 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
             total_episode_reward += reward
 
             if if_lose:
-                current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
+                _, _, _, _, _ = env.reset(reset_n_times_loser=False)
 
             step_for_episode += 1
 
         if alg == 'QL_SoftmaxAnnealing' or alg == 'EpsilonGreedyAgent':
             agent_alg.update_exp_fact(e)
+
+        average_episodes_rewards.append(total_episode_reward)
+        steps_for_episode.append(step_for_episode)
+        pbar.set_postfix_str(
+            f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
+
+    print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
+    return average_episodes_rewards, steps_for_episode
+
+
+def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
+
+    rows = env.rows
+    cols = env.cols
+    action_space_size = n_act_agents
+
+    if 'DeepQNetwork' in alg:
+        agent_alg = DeepQNetwork(rows, cols, action_space_size, n_episodes)
+    elif 'DeepQNetwork_Multi' in alg:
+        agent_alg = DeepQNetwork(rows, cols, action_space_size, n_episodes)
+
+    average_episodes_rewards = []
+    steps_for_episode = []
+
+    pbar = tqdm(range(n_episodes))
+    time.sleep(1)
+    for e in pbar:
+        agent = 0
+        if e == 0:
+            env.reset(reset_n_times_loser=True)
+        else:
+            env.reset(reset_n_times_loser=False)
+
+        total_episode_reward = 0
+        step_for_episode = 0
+        done = False
+
+        while not done:
+
+            current_state = env.pos_agents[-1][agent]
+
+            if who_moves_first == 'Enemy':
+                env.step_enemies()
+                _, _, if_lose = env.check_winner_gameover_agent(current_state[0], current_state[1])
+                if_lose = False
+                if not if_lose:
+                    if 'Causal' in alg:
+                        enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
+                        possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
+                                                                goals_nearby_all_agents)
+                    else:
+                        possible_actions = None
+                    general_state = np.zeros(rows * cols)
+                    current_stateX = current_state[0]
+                    current_stateY = current_state[1]
+                    general_state[current_stateX * rows + current_stateY] = 1
+
+                    action = agent_alg.choose_action(general_state, possible_actions)
+                    next_state = env.step_agent(action)[agent]
+                else:
+                    next_state = current_state
+                    print('perso subito')
+                new_stateX_ag = next_state[0]
+                new_stateY_ag = next_state[1]
+
+            elif who_moves_first == 'Agent':
+                if 'Causal' in alg:
+                    enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
+                    possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
+                                                            goals_nearby_all_agents)
+                else:
+                    possible_actions = None
+
+                general_state = np.zeros(rows * cols)
+                current_stateX = current_state[0]
+                current_stateY = current_state[1]
+
+                general_state[current_stateY * env.cols + current_stateX] = 1
+
+                action = agent_alg.choose_action(general_state, possible_actions)
+                next_state = env.step_agent(action)[agent]
+                new_stateX_ag = next_state[0]
+                new_stateY_ag = next_state[1]
+                _, dones, _ = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
+                if not dones[agent]:
+                    env.step_enemies()
+
+            rewards, dones, if_lose = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
+            reward = int(rewards[agent])
+            done = dones[agent]
+            if_lose = if_lose
+
+            """if possible_actions is not None and len(possible_actions) > 0 and if_lose:
+                print(f'\nlose: wrong causal gameover model in {alg}')
+                print(f'Enemies nearby: {enemies_nearby_all_agents}')
+                print(f'possible_actions : {possible_actions} --> chosen action: {action}')
+                print(f'agents: {env.pos_agents[-1]}')
+                print(f'enemies: {env.pos_enemies[-1]}')"""
+
+            next_state = np.zeros(env.rows * env.cols)
+            next_state[new_stateX_ag * rows + new_stateY_ag] = 1
+
+            agent_alg.update_memory(general_state, action, next_state, reward)
+
+            agent_alg.optimize_model()
+
+            agent_alg.update_target_net()
+
+            total_episode_reward += reward
+
+            if if_lose:
+                _, _, _, _, _ = env.reset(reset_n_times_loser=False)
+
+            step_for_episode += 1
+
+        agent_alg.update_exp_factor(e)
 
         average_episodes_rewards.append(total_episode_reward)
         steps_for_episode.append(step_for_episode)
