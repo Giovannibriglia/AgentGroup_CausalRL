@@ -111,7 +111,7 @@ class SoftmaxAnnealingQAgent:
         max_next_q_value = np.max(self.q_table[next_stateX, next_stateY, :])
 
         new_q_value = current_q_value + self.lr * (reward + self.gamma * max_next_q_value - current_q_value)
-        self.q_table[state, action] = new_q_value
+        self.q_table[stateX, stateY, action] = new_q_value
 
     def update_exp_fact(self, e):  # annealing temperature
         self.temperature = max(MIN_EXPLORATION_PROBA, np.exp(-self.EXPLORATION_DECREASING_DECAY * e))
@@ -427,18 +427,16 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
     for e in pbar:
         agent_n = 0
         if e == 0:
-            env.reset(reset_n_times_loser=True)
+            current_state, _, _, _, _ = env.reset(reset_n_times_loser=True)
         else:
-            env.reset(reset_n_times_loser=False)
-
+            current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
+        current_state = current_state[agent_n]
+        print(current_state)
         total_episode_reward = 0
         step_for_episode = 0
         done = False
 
         while not done:
-
-            current_state = env.pos_agents[-1][agent_n]
-
             if who_moves_first == 'Enemy':
                 env.step_enemies()
                 _, _, if_lose = env.check_winner_gameover_agent(current_state[0], current_state[1])
@@ -457,7 +455,7 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
 
-            elif who_moves_first == 'Agent':
+            else:  # who_moves_first == 'Agent':
                 if 'Causal' in alg:
                     enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
                     possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
@@ -490,8 +488,10 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
             total_episode_reward += reward
 
             if if_lose:
-                _, _, _, _, _ = env.reset(reset_n_times_loser=False)
-
+                current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
+                current_state = current_state[agent_n]
+            else:
+                current_state = next_state
             step_for_episode += 1
 
         if alg == 'QL_SoftmaxAnnealing' or alg == 'EpsilonGreedyAgent':
@@ -506,6 +506,7 @@ def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
     return average_episodes_rewards, steps_for_episode
 
 
+"""
 def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
 
     rows = env.rows
@@ -525,17 +526,16 @@ def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
     for e in pbar:
         agent_n = 0
         if e == 0:
-            env.reset(reset_n_times_loser=True)
+            current_state, _, _, _, _ = env.reset(reset_n_times_loser=True)
         else:
-            env.reset(reset_n_times_loser=False)
+            current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
+        current_state = current_state[agent_n]
 
         total_episode_reward = 0
         step_for_episode = 0
         done = False
 
         while not done:
-
-            current_state = env.pos_agents[-1][agent_n]
 
             if who_moves_first == 'Enemy':
                 env.step_enemies()
@@ -606,7 +606,10 @@ def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
             total_episode_reward += reward
 
             if if_lose:
-                _, _, _, _, _ = env.reset(reset_n_times_loser=False)
+                current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
+                current_state = current_state[agent_n]
+            else:
+                current_state = next_state
 
             step_for_episode += 1
 
@@ -619,3 +622,4 @@ def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
 
     print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
     return average_episodes_rewards, steps_for_episode
+"""

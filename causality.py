@@ -426,7 +426,7 @@ class Causality:
 """ ************************************************************************************************************* """
 " EVALUATION ENVIRONMENT AND NUMBER OF EPISODES NEEDED"
 " Dataframe "
-path_save = 'Comparison1_Offline_Only_Causality_Different_Envs'
+path_save = 'Comparison0_Offline_Only_Causality_Different_Envs'
 os.makedirs(path_save, exist_ok=True)
 
 

@@ -1,15 +1,5 @@
-import matplotlib.pyplot as plt
+import numpy as np
 
-decay = 0.995
-start = 1
-n_ep = 10000
-vet = []
+for _ in range(15):
+    print(np.random.randint(0, 5))
 
-res = start
-for e in range(n_ep):
-    res = res * decay
-    vet.append(res)
-
-
-plt.plot(vet)
-plt.show()

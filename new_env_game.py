@@ -1,4 +1,5 @@
 import random
+import sys
 import warnings
 
 import numpy as np
@@ -6,6 +7,7 @@ import pygame
 from gym.spaces import Discrete
 
 warnings.filterwarnings("ignore")
+
 
 class CustomEnv:
 
@@ -45,7 +47,7 @@ class CustomEnv:
         # action space of agents
         self.action_space = Discrete(self.n_act_agents, start=0)
 
-        # defining empyt matrices for game
+        # defining empty matrices for game
         for ind_row in range(self.rows):
             row = []
             for ind_col in range(self.cols):
@@ -90,10 +92,10 @@ class CustomEnv:
         for agent in range(0, self.n_agents, 1):
             single_agent = []
             for enemy in range(0, self.n_enemies, 1):
-                x_ag = self.pos_agents_for_reset[agent][0]
-                y_ag = self.pos_agents_for_reset[agent][1]
-                x_en = self.pos_enemies_for_reset[enemy][0]
-                y_en = self.pos_enemies_for_reset[enemy][1]
+                x_ag = self.pos_agents[0][agent][0]
+                y_ag = self.pos_agents[0][agent][1]
+                x_en = self.pos_enemies[0][enemy][0]
+                y_en = self.pos_enemies[0][enemy][1]
                 single_agent.append(self.get_direction(x_ag, y_ag, x_en, y_en))
             self.reset_enemies_nearby.append(single_agent)
 
@@ -106,8 +108,8 @@ class CustomEnv:
                     enemy_actions.append(random.randint(0, self.n_act_enemies - 1))
                 self.list_enemies_actions.append(enemy_actions)
 
+        self.walls = []
         if if_maze:
-            self.walls = []
             for wall in range(0, self.n_walls, 1):
                 # check if same position than enemies and agents
                 do = True
@@ -201,6 +203,8 @@ class CustomEnv:
         for ind in range(len(self.grid_for_game)):
             print(self.grid_for_game[ind])
 
+        print('INIT)', self.pos_agents_for_reset, self.pos_enemies_for_reset)
+
     def step_enemies(self):
         new_enemies_pos = []
         for enemy in range(1, self.n_enemies + 1, 1):
@@ -219,7 +223,7 @@ class CustomEnv:
                 action = random.randint(0, self.n_act_enemies - 1)
 
             new_stateX_en, new_stateY_en, _, _, _ = self.get_action(action, last_stateX_en, last_stateY_en,
-                                                               self.grid_for_game)
+                                                                    self.grid_for_game)
             # print('enemy pos: ', [new_stateX_en, new_stateY_en])
 
             if (abs(new_stateX_en - last_stateX_en) + abs(
@@ -247,9 +251,9 @@ class CustomEnv:
             enemies_nearby.append(single_agent_enemies)
 
             single_agent_goals = []
-            for goal in range(1, self.n_goals+1, 1):
-                x_goal = self.pos_goals[goal-1][0]
-                y_goal = self.pos_goals[goal-1][1]
+            for goal in range(1, self.n_goals + 1, 1):
+                x_goal = self.pos_goals[goal - 1][0]
+                y_goal = self.pos_goals[goal - 1][1]
                 direction_nearby_goal = self.get_direction(x_ag, y_ag, x_goal, y_goal)
                 single_agent_goals.append(direction_nearby_goal)
 
@@ -270,7 +274,8 @@ class CustomEnv:
             last_stateX_ag = self.pos_agents[-1][agent - 1][0]
             last_stateY_ag = self.pos_agents[-1][agent - 1][1]
 
-            new_stateX_ag, new_stateY_ag, res_action, _, _ = self.get_action(agent_action, last_stateX_ag, last_stateY_ag,
+            new_stateX_ag, new_stateY_ag, res_action, _, _ = self.get_action(agent_action, last_stateX_ag,
+                                                                             last_stateY_ag,
                                                                              self.grid_for_game)
             # print('ag inside', [last_stateX_ag, last_stateY_ag], [new_stateX_ag, new_stateY_ag])
 
@@ -280,6 +285,7 @@ class CustomEnv:
                       agent_action)
 
             new_agents_pos.append([new_stateX_ag, new_stateY_ag])
+
         self.pos_agents.append(new_agents_pos)
 
         return new_agents_pos
@@ -309,7 +315,7 @@ class CustomEnv:
                     self.n_times_loser += 1
                     done = False
                     self.n_steps_enemies_actions = 0
-                    # print(f'Loser) En: {[X_en, Y_en]}, Ag before: {self.pos_agents[-1]}, Ag after: {[new_stateX_ag, new_stateY_ag]}')
+                    #  print(f'Loser) En: {[X_en, Y_en]}, Ag before: {self.pos_agents[-1]}, Ag after: {[new_stateX_ag, new_stateY_ag]}')
             # otherwise agent is alive
             if not if_lose:
                 # print('alive')
@@ -322,7 +328,7 @@ class CustomEnv:
         return rewards, dones, if_lose
 
     def reset(self, reset_n_times_loser):
-        # print('reset')
+        print('reset1)', self.pos_agents_for_reset, self.pos_enemies_for_reset)
         if reset_n_times_loser:
             self.n_times_loser = 0
 
@@ -331,12 +337,14 @@ class CustomEnv:
         reset_dones = [False] * self.n_agents
 
         self.pos_agents = []
-        self.pos_agents.append(self.pos_agents_for_reset)
+        self.pos_agents.append(self.pos_agents_for_reset.copy())
 
         self.pos_enemies = []
         self.pos_enemies.append(self.pos_enemies_for_reset)
 
-        return self.pos_agents[-1], reset_rewards, reset_dones, self.reset_enemies_nearby, self.reset_enemies_attached
+        print('reset2)', self.pos_agents_for_reset, self.pos_enemies_for_reset)
+
+        return self.pos_agents_for_reset.copy(), reset_rewards, reset_dones, self.reset_enemies_nearby.copy(), self.reset_enemies_attached.copy()
 
     def get_direction(self, x_ag, y_ag, x_en, y_en):
         deltaX = x_en - x_ag
@@ -431,4 +439,3 @@ class CustomEnv:
             # print('out) wall',[new_stateX, new_stateY])
 
         return new_stateX, new_stateY, action, actionX, actionY
-
