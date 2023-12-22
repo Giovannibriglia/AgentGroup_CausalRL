@@ -11,14 +11,14 @@ import time
 
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal'
 # 'DQN' + 'causal'
-algorithms = ['QL_EG_causal', 'QL_SA_causal', 'QL_BM_causal', 'QL_TS_causal']
-n_games = 10
-vect_rows = [4]
-vect_n_enemies = [1]
+algorithms = ['QL_EG_causal', 'QL_EG']
+n_games = 5
+vect_rows = [5, 10]
+vect_n_enemies = [2, 5, 10]
 n_episodes = 2500
 vect_if_maze = [False]
-vect_if_same_enemies_actions = [False]
-dir_start = f'xxx'
+vect_if_same_enemies_actions = [False, True]
+dir_start = f'Baseline_and_Comp1'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 
 
@@ -56,9 +56,9 @@ for if_maze in vect_if_maze:
                     env = new_env_game.CustomEnv(rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals,
                                              if_maze, if_same_enemies_actions)
 
-                    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, dpi=500)
+                    """fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, dpi=500)
                     fig.suptitle(f'{env_name} {rows}x{cols} - {n_enemies} enemies - Game {game_n}/{n_games}',
-                                 fontsize=15)
+                                 fontsize=15)"""
 
                     for alg in algorithms:
                         print(f'\n*** {alg} - Game {game_n}/{n_games} ****')
@@ -84,7 +84,7 @@ for if_maze in vect_if_maze:
                         np.save(f"{directory}/{alg}_steps_game{game_n}.npy", steps)
                         np.save(f'{directory}/{alg}_computation_time_game{game_n}.npy', computation_time)
 
-                        cumulative_rewards = np.cumsum(rewards, dtype=int)
+                        """cumulative_rewards = np.cumsum(rewards, dtype=int)
                         x = np.arange(0, n_episodes, 1)
                         ax1.plot(x, cumulative_rewards, label=f'{alg} = {round(np.mean(rewards), 3)}')
                         confidence_interval_rew = np.std(cumulative_rewards)
@@ -94,13 +94,13 @@ for if_maze in vect_if_maze:
                         ax1.set_title('Cumulative reward')
                         ax1.legend(fontsize='x-small')
 
-                        ax2.plot(x, gaussian_filter1d(steps, 1))
+                        ax2.plot(x, gaussian_filter1d(steps, 5))
                         ax2.set_yscale('log')
                         ax2.set_title('Actions needed to complete the episode')
                         ax2.set_xlabel('Episode', fontsize=12)
 
                     plt.savefig(f'{directory}/Comparison_Game{game_n}.pdf')
-                    plt.show()
+                    plt.show()"""
 
                 if n_games > 1:
                     plots.plot_av_rew_steps(directory, algorithms, n_games, n_episodes, rows, cols, n_enemies)

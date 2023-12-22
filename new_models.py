@@ -255,13 +255,110 @@ class EpsilonGreedyQAgent:
         self.exp_proba = max(self.MIN_EXPLORATION_PROBA, np.exp(-self.EXPLORATION_DECREASING_DECAY * episode))
 
 
+def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
+    rows = env.rows
+    cols = env.cols
+    action_space_size = n_act_agents
+
+    if 'SA' in alg:
+        agent = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes)
+    elif 'EG' in alg:
+        agent = EpsilonGreedyQAgent(rows, cols, action_space_size, n_episodes)
+    elif 'BM' in alg:
+        agent = BoltzmannQAgent(rows, cols, action_space_size, n_episodes)
+    elif 'TS' in alg:
+        agent = ThompsonSamplingQAgent(rows, cols, action_space_size, n_episodes)
+
+    average_episodes_rewards = []
+    steps_for_episode = []
+
+    pbar = tqdm(range(n_episodes))
+    time.sleep(1)
+    for e in pbar:
+        agent_n = 0
+        if e == 0:
+            current_state, _, _, _, _ = env.reset(reset_n_times_loser=True)
+        else:
+            current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
+        current_state = current_state[agent_n]
+
+        total_episode_reward = 0
+        step_for_episode = 0
+        done = False
+
+        while not done:
+            possible_actions = None
+            if who_moves_first == 'Enemy':
+                env.step_enemies()
+                """_, _, if_lose = env.check_winner_gameover_agent(current_state[0], current_state[1])
+                if not if_lose:"""
+                if 'causal' in alg:
+                    enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
+                    possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
+                                                            goals_nearby_all_agents)
+                action = agent.choose_action(current_state, possible_actions)
+                next_state = env.step_agent(action)[0]
+                """else:
+                    next_state = current_state"""
+                new_stateX_ag = next_state[0]
+                new_stateY_ag = next_state[1]
+
+            else:  # who_moves_first == 'Agent':
+                if 'Causal' in alg:
+                    enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
+                    possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
+                                                            goals_nearby_all_agents)
+
+                action = agent.choose_action(current_state, possible_actions)
+                next_state = env.step_agent(action)[0]
+                new_stateX_ag = next_state[0]
+                new_stateY_ag = next_state[1]
+                _, dones, _ = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
+                if not dones[agent_n]:
+                    env.step_enemies()
+
+            rewards, dones, if_lose = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
+            reward = int(rewards[agent_n])
+            done = dones[agent_n]  # If agent wins, end loop and restart
+
+            if possible_actions is not None and if_lose and [current_state] != [next_state]:
+                print(f'\nLose: wrong causal gameover model in {alg}')
+                print(f'New agents pos: {env.pos_agents[-1]}')
+                print(f'Enemies pos: {env.pos_enemies[-1]} - enemies nearby: {enemies_nearby_all_agents}')
+                print(f'Possible actions: {possible_actions} - chosen action: {action}')
+
+            # Update the Q-table/values
+            agent.update_Q(current_state, action, reward, next_state)
+
+            total_episode_reward += reward
+
+            if if_lose:
+                current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
+                current_state = current_state[agent_n]
+            else:
+                current_state = next_state
+            step_for_episode += 1
+
+        if alg == 'QL_SoftmaxAnnealing' or alg == 'EpsilonGreedyAgent':
+            agent.update_exp_fact(e)
+
+        average_episodes_rewards.append(total_episode_reward)
+        steps_for_episode.append(step_for_episode)
+        pbar.set_postfix_str(
+            f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
+
+    print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
+    return average_episodes_rewards, steps_for_episode
+
+
+"""
 class ReplayMemory(object):
 
     def __init__(self, capacity):
         self.memory = deque([], maxlen=capacity)
 
     def push(self, *args, Transition):
-        """Save a transition"""
+        # Save a transition
         self.memory.append(Transition(*args))
 
     def sample(self, batch_size):
@@ -403,110 +500,7 @@ class DeepQNetwork:
         for key in policy_net_state_dict:
             target_net_state_dict[key] = policy_net_state_dict[key] * TAU + target_net_state_dict[key] * (1 - TAU)
         self.target_net.load_state_dict(target_net_state_dict)
-
-
-def QL_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
-    rows = env.rows
-    cols = env.cols
-    action_space_size = n_act_agents
-
-    if 'SA' in alg:
-        agent = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes)
-    elif 'EG' in alg:
-        agent = EpsilonGreedyQAgent(rows, cols, action_space_size, n_episodes)
-    elif 'BM' in alg:
-        agent = BoltzmannQAgent(rows, cols, action_space_size, n_episodes)
-    elif 'TS' in alg:
-        agent = ThompsonSamplingQAgent(rows, cols, action_space_size, n_episodes)
-
-    average_episodes_rewards = []
-    steps_for_episode = []
-
-    pbar = tqdm(range(n_episodes))
-    time.sleep(1)
-    for e in pbar:
-        agent_n = 0
-        if e == 0:
-            current_state, _, _, _, _ = env.reset(reset_n_times_loser=True)
-        else:
-            current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
-        current_state = current_state[agent_n]
-        print(current_state)
-        total_episode_reward = 0
-        step_for_episode = 0
-        done = False
-
-        while not done:
-            if who_moves_first == 'Enemy':
-                env.step_enemies()
-                _, _, if_lose = env.check_winner_gameover_agent(current_state[0], current_state[1])
-                if_lose = False
-                if not if_lose:
-                    if 'causal' in alg:
-                        enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
-                        possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
-                                                                goals_nearby_all_agents)
-                    else:
-                        possible_actions = None
-                    action = agent.choose_action(current_state, possible_actions)
-                    next_state = env.step_agent(action)[0]
-                else:
-                    next_state = current_state
-                new_stateX_ag = next_state[0]
-                new_stateY_ag = next_state[1]
-
-            else:  # who_moves_first == 'Agent':
-                if 'Causal' in alg:
-                    enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
-                    possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
-                                                            goals_nearby_all_agents)
-                else:
-                    possible_actions = None
-
-                action = agent.choose_action(current_state, possible_actions)
-                next_state = env.step_agent(action)[0]
-                new_stateX_ag = next_state[0]
-                new_stateY_ag = next_state[1]
-                _, dones, _ = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
-                if not dones[agent_n]:
-                    env.step_enemies()
-
-            rewards, dones, if_lose = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
-            reward = int(rewards[agent_n])
-            done = dones[agent_n]  # If agent wins, end loop and restart
-            if_lose = if_lose
-
-            if possible_actions is not None and len(possible_actions) > 0 and if_lose and [current_state] != [next_state]:
-                print(f'\nLose: wrong causal gameover model in {alg}')
-                print(f'New agents pos: {env.pos_agents[-1]}')
-                print(f'Enemies pos: {env.pos_enemies[-1]} - enemies nearby: {enemies_nearby_all_agents}')
-                print(f'Possible actions: {possible_actions} - chosen action: {action}')
-
-            # Update the Q-table/values
-            agent.update_Q(current_state, action, reward, next_state)
-
-            total_episode_reward += reward
-
-            if if_lose:
-                current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
-                current_state = current_state[agent_n]
-            else:
-                current_state = next_state
-            step_for_episode += 1
-
-        if alg == 'QL_SoftmaxAnnealing' or alg == 'EpsilonGreedyAgent':
-            agent.update_exp_fact(e)
-
-        average_episodes_rewards.append(total_episode_reward)
-        steps_for_episode.append(step_for_episode)
-        pbar.set_postfix_str(
-            f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
-
-    print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
-    return average_episodes_rewards, steps_for_episode
-
-
-"""
+        
 def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
 
     rows = env.rows

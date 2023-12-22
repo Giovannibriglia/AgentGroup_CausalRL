@@ -203,7 +203,7 @@ class CustomEnv:
         for ind in range(len(self.grid_for_game)):
             print(self.grid_for_game[ind])
 
-        print('INIT)', self.pos_agents_for_reset, self.pos_enemies_for_reset)
+        # print('INIT)', self.pos_agents_for_reset, self.pos_enemies_for_reset)
 
     def step_enemies(self):
         new_enemies_pos = []
@@ -328,7 +328,7 @@ class CustomEnv:
         return rewards, dones, if_lose
 
     def reset(self, reset_n_times_loser):
-        print('reset1)', self.pos_agents_for_reset, self.pos_enemies_for_reset)
+        x, y = self.pos_agents_for_reset, self.pos_enemies_for_reset
         if reset_n_times_loser:
             self.n_times_loser = 0
 
@@ -342,7 +342,8 @@ class CustomEnv:
         self.pos_enemies = []
         self.pos_enemies.append(self.pos_enemies_for_reset)
 
-        print('reset2)', self.pos_agents_for_reset, self.pos_enemies_for_reset)
+        if x != self.pos_agents_for_reset or y != self.pos_enemies_for_reset:
+            print(x, y, '---', self.pos_agents_for_reset, self.pos_enemies_for_reset)
 
         return self.pos_agents_for_reset.copy(), reset_rewards, reset_dones, self.reset_enemies_nearby.copy(), self.reset_enemies_attached.copy()
 
