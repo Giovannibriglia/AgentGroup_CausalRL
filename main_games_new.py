@@ -11,13 +11,14 @@ import time
 
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal'
 # 'DQN' + 'causal'
-algorithms = ['QL_EG_causal', 'QL_EG']
-n_games = 5
+algorithms = ['QL_EG', 'QL_SA', 'QL_BM', 'QL_TS',
+              'QL_EG_causal', 'QL_SA_causal', 'QL_BM_causal', 'QL_TS_causal']
+n_games = 10
 vect_rows = [5, 10]
 vect_n_enemies = [2, 5, 10]
 n_episodes = 2500
 vect_if_maze = [False]
-vect_if_same_enemies_actions = [False, True]
+vect_if_same_enemies_actions = [False]
 dir_start = f'Baseline_and_Comp1'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 
@@ -42,7 +43,9 @@ for if_maze in vect_if_maze:
             directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem'
             os.makedirs(directory, exist_ok=True)
             for rows in vect_rows:
-                if n_enemies > 2 * rows:
+                """if n_enemies > 2 * rows:
+                    break"""
+                if n_enemies == 2 and rows == 5:
                     break
                 cols = rows
                 directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem' + f'/{rows}x{cols}'
@@ -102,7 +105,7 @@ for if_maze in vect_if_maze:
                     plt.savefig(f'{directory}/Comparison_Game{game_n}.pdf')
                     plt.show()"""
 
-                if n_games > 1:
+                """if n_games > 1:
                     plots.plot_av_rew_steps(directory, algorithms, n_games, n_episodes, rows, cols, n_enemies)
-                    plots.plot_av_computation_time(directory, algorithms, n_games, rows, cols, n_enemies)
+                    plots.plot_av_computation_time(directory, algorithms, n_games, rows, cols, n_enemies)"""
 

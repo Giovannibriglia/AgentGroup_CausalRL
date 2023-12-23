@@ -40,7 +40,7 @@ def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, 
         ax2.set_title('Actions needed to complete the episode')
         ax2.set_xlabel('Episode', fontsize=12)
 
-    plt.savefig(f'{dir_results}/Av_rew_actions_comparison_{n_games}Games.pdf')
+    # plt.savefig(f'{dir_results}/Av_rew_actions_comparison_{n_games}Games.pdf')
     plt.show()
 
 
@@ -73,5 +73,5 @@ def plot_av_computation_time(dir_results, algorithms, n_games, rows, cols, n_ene
     plt.xlabel('Algorithm', fontsize=fontsize)
     plt.subplots_adjust(bottom=0.3)
     plt.grid()
-    plt.savefig(f'{dir_results}/Average_comp_time_comparison_{n_games}Games.pdf')
+    # plt.savefig(f'{dir_results}/Average_comp_time_comparison_{n_games}Games.pdf')
     plt.show()
