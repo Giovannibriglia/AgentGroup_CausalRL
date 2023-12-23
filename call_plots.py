@@ -4,8 +4,8 @@ import os
 algorithms = ['QL_EG', 'QL_SA', 'QL_BM', 'QL_TS',
               'QL_EG_causal', 'QL_SA_causal', 'QL_BM_causal', 'QL_TS_causal']
 n_games = 10
-vect_rows = [5, 10]
-vect_n_enemies = [2, 5, 10]
+vect_rows = [10]
+vect_n_enemies = [5]
 n_episodes = 2500
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]

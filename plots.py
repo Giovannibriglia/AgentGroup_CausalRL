@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
-import os
 from scipy.ndimage import gaussian_filter1d
 
 fontsize = 12
@@ -19,23 +18,29 @@ def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, 
         filename_rewards = [s for s in directories if f'{alg}_rewards' in s]
         filename_steps = [s for s in directories if f'{alg}_steps' in s]
 
-        av_rew = np.zeros(n_episodes)
-        av_steps = np.zeros(n_episodes)
+        av_rew = np.zeros(len(np.load(filename_rewards[0])))
+        av_steps = np.zeros(len(np.load(filename_steps[0])))
+
         for n_game in range(n_games):
             av_rew = np.sum([av_rew, np.load(filename_rewards[n_game])], axis=0)
             av_steps = np.sum([av_steps, np.load(filename_steps[n_game])], axis=0)
+
+        av_rew = av_rew[:n_episodes]
+        av_steps = av_steps[:n_episodes]
 
         av_steps = av_steps / n_games
         av_rewards = np.cumsum(av_rew, dtype=int)
 
         x = np.arange(0, len(av_rewards), 1)
-        ax1.plot(x, av_rewards, label=f'{alg} = {round(np.mean(av_rew) / n_games, 3)}')
+        ax1.plot(x, av_rewards, label=f'{alg} = {round(np.mean(av_rew) / n_games, 2)} \u00B1 {round(np.std(av_rew) / n_games, 2)}')
         confidence_interval_rew = np.std(av_rewards)
         ax1.fill_between(x, (av_rewards - confidence_interval_rew), (av_rewards + confidence_interval_rew), alpha=0.2)
         ax1.set_title('Cumulative average reward')
         ax1.legend(fontsize='xx-small')
 
-        ax2.plot(x, gaussian_filter1d(av_steps, 1))
+        ax2.plot(x, gaussian_filter1d(av_steps, 8))
+        confidence_interval_steps = np.std(av_steps)
+        # ax2.fill_between(x, (av_steps - confidence_interval_steps), (av_steps + confidence_interval_steps), alpha=0.2)
         ax2.set_yscale('log')
         ax2.set_title('Actions needed to complete the episode')
         ax2.set_xlabel('Episode', fontsize=12)
