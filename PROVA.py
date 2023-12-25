@@ -1,5 +1,5 @@
 import numpy as np
+x = [99, 30, 40, 99, 99]
 
-for _ in range(15):
-    print(np.random.randint(0, 5))
 
+print(np.mean(x), np.std(x))
