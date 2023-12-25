@@ -41,7 +41,7 @@ def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, 
         ax2.plot(x, gaussian_filter1d(av_steps, 8))
         confidence_interval_steps = np.std(av_steps)
         # ax2.fill_between(x, (av_steps - confidence_interval_steps), (av_steps + confidence_interval_steps), alpha=0.2)
-        ax2.set_yscale('log')
+        # ax2.set_yscale('log')
         ax2.set_title('Actions needed to complete the episode')
         ax2.set_xlabel('Episode', fontsize=12)
 
