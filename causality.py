@@ -110,23 +110,6 @@ class MiniGame:
                 done = self.check_gameover_or_winner(agents_coord, enemies_coord, goals_coord, counter)
                 counter += 1
 
-        """indep_var_names = []
-        for feat1 in self.cols_df:
-            p_values = []
-            for feat2 in self.cols_df:
-                if feat1.split('_')[0] != feat2.split('_')[0]:
-                    res = cramervonmises_2samp(self.df[feat1], self.df[feat2])
-                    p_values.append(res.pvalue)
-            av = np.mean(p_values)
-
-            if -0.05 < av < 0.05:
-                indep_var_names.append(feat1)
-
-        dep_var_names = [s for s in self.cols_df if s not in indep_var_names]
-        print(f'Dependents features: {dep_var_names}')
-        print(f'Independents features: {indep_var_names}')
-        print('\n')"""
-
         self.df = self.df.drop(['Alive_Agent0', 'GameOver_Agent0', 'Winner_Agent0'], axis=1)
 
         if if_binary_df:

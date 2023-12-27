@@ -1,16 +1,16 @@
 import plots
 import os
 
-algorithms = [ 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS',
+algorithms = ['QL_EG', 'QL_SA', 'QL_BM', 'QL_TS',
               'QL_EG_causal', 'QL_SA_causal', 'QL_BM_causal', 'QL_TS_causal']
 n_games = 10
-vect_rows = [5]
-vect_n_enemies = [10]
+vect_rows = [5, 10]
+vect_n_enemies = [2, 5, 10]
 n_episodes = 2500
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
 dir_start = f'Baseline_and_Comp1'
-who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
+# who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:

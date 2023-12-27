@@ -19,7 +19,7 @@ vect_n_enemies = [2, 5, 10]
 n_episodes = 2500
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
-dir_start = f'Baseline_and_Comp1'
+dir_start = f'Comp2_OnlineDoCalculus'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 
 
@@ -75,7 +75,7 @@ for if_maze in vect_if_maze:
 
                         # returned: reward for episode and steps for episode
                         if 'QL' in alg:
-                            rewards, steps = new_models.QL_variations(env_for_alg, n_act_agents, n_episodes,
+                            rewards, steps = new_models.QL_causality_online(env_for_alg, n_act_agents, n_episodes,
                                                                     alg, who_moves_first)
                         else:
                             rewards, steps = new_models.DQN_variations(env_for_alg, n_act_agents, n_episodes,

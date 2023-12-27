@@ -38,10 +38,11 @@ def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, 
         ax1.set_title('Cumulative average reward')
         ax1.legend(fontsize='xx-small')
 
+        av_steps_gauss = gaussian_filter1d(av_steps, 4)
         ax2.plot(x, gaussian_filter1d(av_steps, 8))
-        confidence_interval_steps = np.std(av_steps)
-        # ax2.fill_between(x, (av_steps - confidence_interval_steps), (av_steps + confidence_interval_steps), alpha=0.2)
-        # ax2.set_yscale('log')
+        confidence_interval_steps = np.std(av_steps_gauss)
+        ax2.fill_between(x, (av_steps_gauss - confidence_interval_steps), (av_steps_gauss + confidence_interval_steps), alpha=0.2)
+        ax2.set_yscale('log')
         ax2.set_title('Actions needed to complete the episode')
         ax2.set_xlabel('Episode', fontsize=12)
 
