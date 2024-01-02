@@ -409,7 +409,7 @@ class Causality:
 """ ************************************************************************************************************* """
 " EVALUATION ENVIRONMENT AND NUMBER OF EPISODES NEEDED"
 " Dataframe "
-path_save = 'Comparison0_Offline_Only_Causality_Different_Envs'
+path_save = 'Comp0_Offline_OnlyCausality'
 os.makedirs(path_save, exist_ok=True)
 
 
@@ -457,9 +457,9 @@ for n_episodes in vector_episodes:
         result.at[df_row, 'Grid Size'] = rows
         result.at[df_row, 'Episodes'] = n_episodes
         if n_oks == n_simulations:
-            result.at[df_row, 'Suitable'] = 'suitable'
+            result.at[df_row, 'Suitable'] = 'yes'
         else:
-            result.at[df_row, 'Suitable'] = 'unsuitable'
+            result.at[df_row, 'Suitable'] = 'no'
 
         df_row += 1
 

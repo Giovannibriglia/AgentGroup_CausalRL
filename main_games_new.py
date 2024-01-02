@@ -11,16 +11,16 @@ import time
 
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal'
 # 'DQN' + 'causal'
-algorithms = ['QL_EG', 'QL_SA', 'QL_BM', 'QL_TS',
-              'QL_EG_causal', 'QL_SA_causal', 'QL_BM_causal', 'QL_TS_causal']
+algorithms = ['QL_EG_causal', 'QL_SA_causal', 'QL_BM_causal', 'QL_TS_causal']
 n_games = 10
 vect_rows = [5, 10]
 vect_n_enemies = [2, 5, 10]
 n_episodes = 2500
-vect_if_maze = [False]
+vect_if_maze = [True]
 vect_if_same_enemies_actions = [False]
-dir_start = f'Comp2_OnlineDoCalculus'
+dir_start = f'Compxyz'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
+if_offline = False
 
 
 os.makedirs(dir_start, exist_ok=True)
@@ -43,10 +43,6 @@ for if_maze in vect_if_maze:
             directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem'
             os.makedirs(directory, exist_ok=True)
             for rows in vect_rows:
-                """if n_enemies > 2 * rows:
-                    break"""
-                if n_enemies == 2 and rows == 5:
-                    break
                 cols = rows
                 directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem' + f'/{rows}x{cols}'
                 os.makedirs(directory, exist_ok=True)
@@ -75,8 +71,13 @@ for if_maze in vect_if_maze:
 
                         # returned: reward for episode and steps for episode
                         if 'QL' in alg:
-                            rewards, steps = new_models.QL_causality_online(env_for_alg, n_act_agents, n_episodes,
-                                                                    alg, who_moves_first)
+                            if if_offline:
+                                rewards, steps = new_models.QL_causality_offline(env_for_alg, n_act_agents, n_episodes,
+                                                                        alg, who_moves_first)
+                            else:
+                                rewards, steps = new_models.QL_causality_online(env_for_alg, n_act_agents, n_episodes,
+                                                                                 alg, who_moves_first)
+
                         else:
                             rewards, steps = new_models.DQN_variations(env_for_alg, n_act_agents, n_episodes,
                                                                       alg, who_moves_first)

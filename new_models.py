@@ -37,9 +37,14 @@ col_reward = 'Reward_Agent0'
 col_nearby_enemy = 'Enemy0_Nearby_Agent0'
 col_nearby_goal = 'Goal0_Nearby_Agent0'
 
+causal_table_offline = pd.read_pickle('heuristic_table.pkl')
 
-def get_possible_actions(n_act_agents, enemies_nearby_all_agents, goals_nearby_all_agents):
-    causal_table = pd.read_pickle('partial_heuristic_table.pkl')
+
+def get_possible_actions(n_act_agents, enemies_nearby_all_agents, goals_nearby_all_agents, if_online):
+    if if_online:
+        causal_table = pd.read_pickle('partial_heuristic_table.pkl')
+    else:
+        causal_table = causal_table_offline
 
     nearbies_goals = goals_nearby_all_agents[0]
     nearbies_enemies = enemies_nearby_all_agents[0]
@@ -436,7 +441,7 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
                 if 'causal' in alg:
                     enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
                     possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
-                                                            goals_nearby_all_agents)
+                                                            goals_nearby_all_agents, if_online=False)
                 action = agent.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
                 """else:
@@ -448,7 +453,7 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
                 if 'Causal' in alg:
                     enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
                     possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
-                                                            goals_nearby_all_agents)
+                                                            goals_nearby_all_agents, if_online=False)
 
                 action = agent.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
@@ -536,7 +541,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first):
                 enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
                 if e > int(n_episodes * EXPLORATION_GAME_PERCENT / 2):
                     possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
-                                                            goals_nearby_all_agents)
+                                                            goals_nearby_all_agents, if_online=True)
                 else:
                     possible_actions = None
 
@@ -548,9 +553,11 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first):
                 new_stateY_ag = next_state[1]
 
                 for enemy in range(env.n_enemies):
-                    df_for_causality.at[counter_e, f'Enemy{enemy}_Nearby_Agent{agent_n}'] = enemies_nearby_all_agents[agent_n][enemy]
+                    df_for_causality.at[counter_e, f'Enemy{enemy}_Nearby_Agent{agent_n}'] = \
+                    enemies_nearby_all_agents[agent_n][enemy]
                 for goal in range(env.n_goals):
-                    df_for_causality.at[counter_e, f'Goal{goal}_Nearby_Agent{agent_n}'] = goals_nearby_all_agents[agent_n][goal]
+                    df_for_causality.at[counter_e, f'Goal{goal}_Nearby_Agent{agent_n}'] = \
+                    goals_nearby_all_agents[agent_n][goal]
                 df_for_causality.at[counter_e, f'Action_Agent{agent_n}'] = action[agent_n]
                 df_for_causality.at[counter_e, f'DeltaX_Agent{agent_n}'] = int(new_stateX_ag - current_state[0])
                 df_for_causality.at[counter_e, f'DeltaY_Agent{agent_n}'] = int(new_stateY_ag - current_state[1])
@@ -559,7 +566,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first):
                 if 'Causal' in alg:
                     enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
                     possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
-                                                            goals_nearby_all_agents)
+                                                            goals_nearby_all_agents, if_online=True)
 
                 action = agent.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
