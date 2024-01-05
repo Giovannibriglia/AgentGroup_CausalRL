@@ -21,6 +21,7 @@ from causalnex.structure.notears import from_pandas
 warnings.filterwarnings("ignore")
 
 ACTIONS_FOR_UPDATE_BN = 1000
+BATCH_EPISODES_CAUSALITY = 5
 GAMMA = 0.99
 LEARNING_RATE = 0.0001
 EXPLORATION_PROBA = 1
@@ -42,7 +43,10 @@ causal_table_offline = pd.read_pickle('heuristic_table.pkl')
 
 def get_possible_actions(n_act_agents, enemies_nearby_all_agents, goals_nearby_all_agents, if_online):
     if if_online:
-        causal_table = pd.read_pickle('partial_heuristic_table.pkl')
+        try:
+            causal_table = pd.read_pickle('partial_heuristic_table.pkl')
+        except:
+            return list(np.arange(0, n_act_agents, 1))
     else:
         causal_table = causal_table_offline
 
@@ -110,13 +114,14 @@ class Causality:
         self.dependents_var = None
 
     def training(self, e, df):
-        self.df = df
+
+        self.df = pd.concat([self.df, df], axis=0, ignore_index=True)
+        print(f'\ndo-calculus... length df: {len(self.df)}')
         self.features_names = self.df.columns.to_list()
 
-        print(f'structuring model...')
-        if e == 0:
-            self.structureModel = from_pandas(self.df)
-            self.structureModel.remove_edges_below_threshold(0.2)
+        # print(f'\nstructuring model...')
+        self.structureModel = from_pandas(self.df)
+        self.structureModel.remove_edges_below_threshold(0.2)
 
         " Plot structure "
         """plt.figure(dpi=500)
@@ -126,10 +131,8 @@ class Causality:
         # nx.draw(self.structureModel, with_labels=True, font_size=4, edge_color='orange')
         # plt.show()"""
 
-        print(f'training bayesian network...')
-        if e == 0:
-            self.bn = BayesianNetwork(self.structureModel)
-
+        # print(f'training bayesian network...')
+        self.bn = BayesianNetwork(self.structureModel)
         self.bn = self.bn.fit_node_states_and_cpds(self.df)
 
         bad_nodes = [node for node in self.bn.nodes if not re.match("^[0-9a-zA-Z_]+$", node)]
@@ -141,7 +144,7 @@ class Causality:
         self.dependents_var = []
         self.independents_var = []
 
-        print('do-calculus-1...')
+       #  print('do-calculus-1...')
         " understand who influences whom "
         before = self.ie.query()
         for var in self.features_names:
@@ -172,9 +175,9 @@ class Causality:
                 # print(f'{var} --> externally caused')
                 self.independents_var.append(var)
 
-        print(f'**Externally caused: {self.independents_var}')
-        print(f'**Externally influenced: {self.dependents_var}')
-        print('do-calculus-2...')
+        # print(f'**Externally caused: {self.independents_var}')
+        # print(f'**Externally influenced: {self.dependents_var}')
+        # print('do-calculus-2...')
         causal_table = pd.DataFrame(columns=self.features_names)
 
         arrays = []
@@ -381,8 +384,10 @@ class EpsilonGreedyQAgent:
 
                 dict_valid_actions = {act: dict_all_actions[act] for act in possible_actions}
                 action, _ = max(dict_valid_actions.items(), key=lambda x: x[1])
+                print('Exploration) ', action, type(action))
             else:
                 action = np.argmax(self.Q_table[stateX, stateY, :])
+                print('Exploitation) ', action, type(action))
 
         return action
 
@@ -530,43 +535,38 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first):
         step_for_episode = 0
         done = False
 
-        df_for_causality = create_df(env)
-        counter_e = 0
+        if e % BATCH_EPISODES_CAUSALITY == 0 and e < int(EXPLORATION_GAME_PERCENT * n_episodes):
+            df_for_causality = create_df(env)
+            counter_e = 0
 
         while not done:
             if who_moves_first == 'Enemy':
                 env.step_enemies()
-                """_, _, if_lose = env.check_winner_gameover_agent(current_state[0], current_state[1])
-                if not if_lose:"""
                 enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
-                if e > int(n_episodes * EXPLORATION_GAME_PERCENT / 2):
-                    possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
+                possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
                                                             goals_nearby_all_agents, if_online=True)
-                else:
-                    possible_actions = None
 
                 action = agent.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
-                """else:
-                    next_state = current_state"""
+
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
 
                 for enemy in range(env.n_enemies):
                     df_for_causality.at[counter_e, f'Enemy{enemy}_Nearby_Agent{agent_n}'] = \
-                    enemies_nearby_all_agents[agent_n][enemy]
+                        enemies_nearby_all_agents[agent_n][enemy]
                 for goal in range(env.n_goals):
                     df_for_causality.at[counter_e, f'Goal{goal}_Nearby_Agent{agent_n}'] = \
-                    goals_nearby_all_agents[agent_n][goal]
-                df_for_causality.at[counter_e, f'Action_Agent{agent_n}'] = action[agent_n]
+                        goals_nearby_all_agents[agent_n][goal]
+
+                df_for_causality.at[counter_e, f'Action_Agent{agent_n}'] = action
                 df_for_causality.at[counter_e, f'DeltaX_Agent{agent_n}'] = int(new_stateX_ag - current_state[0])
                 df_for_causality.at[counter_e, f'DeltaY_Agent{agent_n}'] = int(new_stateY_ag - current_state[1])
 
             else:  # who_moves_first == 'Agent':
-                if 'Causal' in alg:
-                    enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
-                    possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
-                                                            goals_nearby_all_agents, if_online=True)
+                enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
+                possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
+                                                        goals_nearby_all_agents, if_online=True)
 
                 action = agent.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
@@ -584,10 +584,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first):
             counter_e += 1
 
             if possible_actions is not None and if_lose and [current_state] != [next_state]:
-                print(f'\nLose: wrong causal gameover model in {alg}')
-                print(f'New agents pos: {env.pos_agents[-1]}')
-                print(f'Enemies pos: {env.pos_enemies[-1]} - enemies nearby: {enemies_nearby_all_agents}')
-                print(f'Possible actions: {possible_actions} - chosen action: {action}')
+                print(f'\nLose: causal model not ready yet')
 
             # Update the Q-table/values
             agent.update_Q(current_state, action, reward, next_state)
@@ -601,11 +598,12 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first):
                 current_state = next_state
             step_for_episode += 1
 
-        for col in df_for_causality.columns:
-            df_for_causality[str(col)] = df_for_causality[str(col)].astype(str).str.replace(',', '').astype(float)
-        causal_table = causality.training(e, df_for_causality)
-        causal_table.dropna(axis=0, how='any', inplace=True)
-        causal_table.to_pickle('partial_heuristic_table.pkl')
+        if e % BATCH_EPISODES_CAUSALITY == 0 and 0 < e < int(EXPLORATION_GAME_PERCENT * n_episodes):
+            for col in df_for_causality.columns:
+                df_for_causality[str(col)] = df_for_causality[str(col)].astype(str).str.replace(',', '').astype(float)
+            causal_table = causality.training(e, df_for_causality)
+            causal_table.dropna(axis=0, how='any', inplace=True)
+            causal_table.to_pickle('partial_heuristic_table.pkl')
 
         if alg == 'QL_SoftmaxAnnealing' or alg == 'EpsilonGreedyAgent':
             agent.update_exp_fact(e)
