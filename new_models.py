@@ -1,6 +1,7 @@
 import random
 from itertools import product
 from collections import namedtuple, deque
+import os
 import re
 import networkx as nx
 import torch
@@ -612,6 +613,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
             f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
 
     print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
+    os.remove('partial_heuristic_table.pkl')
     return average_episodes_rewards, steps_for_episode
 
 
