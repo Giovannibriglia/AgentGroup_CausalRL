@@ -597,7 +597,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
                 current_state = next_state
             step_for_episode += 1
 
-        if e % BATCH_EPISODES_UPDATE_BN == 0 and 0 < e < int(EXPLORATION_GAME_PERCENT * n_episodes):
+        if e % BATCH_EPISODES_UPDATE_BN == 0 and e < int(EXPLORATION_GAME_PERCENT * n_episodes):
             for col in df_for_causality.columns:
                 df_for_causality[str(col)] = df_for_causality[str(col)].astype(str).str.replace(',', '').astype(float)
             causal_table = causality.training(e, df_for_causality)

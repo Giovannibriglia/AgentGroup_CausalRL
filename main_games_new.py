@@ -76,7 +76,7 @@ for if_maze in vect_if_maze:
                                                                         alg, who_moves_first)
                             else:
                                 rewards, steps = new_models.QL_causality_online(env_for_alg, n_act_agents, n_episodes,
-                                                                                 alg, who_moves_first, BATCH_EPISODES_UPDATE_BN=5)
+                                                                                 alg, who_moves_first, BATCH_EPISODES_UPDATE_BN=1)
 
                         else:
                             rewards, steps = new_models.DQN_variations(env_for_alg, n_act_agents, n_episodes,
