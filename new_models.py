@@ -17,11 +17,9 @@ from scipy.stats import beta
 from causalnex.inference import InferenceEngine
 from causalnex.network import BayesianNetwork
 from causalnex.structure.notears import from_pandas
-
 warnings.filterwarnings("ignore")
 
-ACTIONS_FOR_UPDATE_BN = 1000
-BATCH_EPISODES_CAUSALITY = 5
+
 GAMMA = 0.99
 LEARNING_RATE = 0.0001
 EXPLORATION_PROBA = 1
@@ -472,7 +470,7 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
             reward = int(rewards[agent_n])
             done = dones[agent_n]  # If agent wins, end loop and restart
 
-            if possible_actions is not None and if_lose and [current_state] != [next_state]:
+            if possible_actions is not None and if_lose and [current_state] != [next_state] and len(possible_actions) > 0:
                 print(f'\nLose: wrong causal gameover model in {alg}')
                 print(f'New agents pos: {env.pos_agents[-1]}')
                 print(f'Enemies pos: {env.pos_enemies[-1]} - enemies nearby: {enemies_nearby_all_agents}')
@@ -502,7 +500,7 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
     return average_episodes_rewards, steps_for_episode
 
 
-def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first):
+def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BATCH_EPISODES_UPDATE_BN):
     rows = env.rows
     cols = env.cols
     action_space_size = n_act_agents
@@ -535,7 +533,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first):
         step_for_episode = 0
         done = False
 
-        if e % BATCH_EPISODES_CAUSALITY == 0 and e < int(EXPLORATION_GAME_PERCENT * n_episodes):
+        if e % BATCH_EPISODES_UPDATE_BN == 0 and e < int(EXPLORATION_GAME_PERCENT * n_episodes):
             df_for_causality = create_df(env)
             counter_e = 0
 
@@ -598,7 +596,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first):
                 current_state = next_state
             step_for_episode += 1
 
-        if e % BATCH_EPISODES_CAUSALITY == 0 and 0 < e < int(EXPLORATION_GAME_PERCENT * n_episodes):
+        if e % BATCH_EPISODES_UPDATE_BN == 0 and 0 < e < int(EXPLORATION_GAME_PERCENT * n_episodes):
             for col in df_for_causality.columns:
                 df_for_causality[str(col)] = df_for_causality[str(col)].astype(str).str.replace(',', '').astype(float)
             causal_table = causality.training(e, df_for_causality)

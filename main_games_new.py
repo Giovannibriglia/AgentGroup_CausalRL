@@ -12,15 +12,15 @@ import time
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal'
 # 'DQN' + 'causal'
 algorithms = ['QL_EG_causal']
-n_games = 10
+n_games = 1
 vect_rows = [5]
 vect_n_enemies = [1]
-n_episodes = 2500
+n_episodes = 100
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
 dir_start = f'Compxyz'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
-if_offline = False
+if_online_causal_inference = True
 
 
 os.makedirs(dir_start, exist_ok=True)
@@ -71,12 +71,12 @@ for if_maze in vect_if_maze:
 
                         # returned: reward for episode and steps for episode
                         if 'QL' in alg:
-                            if if_offline:
+                            if not if_online_causal_inference:
                                 rewards, steps = new_models.QL_causality_offline(env_for_alg, n_act_agents, n_episodes,
                                                                         alg, who_moves_first)
                             else:
                                 rewards, steps = new_models.QL_causality_online(env_for_alg, n_act_agents, n_episodes,
-                                                                                 alg, who_moves_first)
+                                                                                 alg, who_moves_first, BATCH_EPISODES_UPDATE_BN=5)
 
                         else:
                             rewards, steps = new_models.DQN_variations(env_for_alg, n_act_agents, n_episodes,
