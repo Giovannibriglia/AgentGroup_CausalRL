@@ -13,9 +13,9 @@ import time
 # 'DQN' + 'causal'
 algorithms = ['QL_EG_causal']
 n_games = 1
-vect_rows = [5]
-vect_n_enemies = [1]
-n_episodes = 100
+vect_rows = [5, 10]
+vect_n_enemies = [2, 5, 10]
+n_episodes = 2500
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
 dir_start = f'Compxyz'
