@@ -18,13 +18,14 @@ vect_n_enemies = [2, 5, 10]
 n_episodes = 2500
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
-dir_start = f'Compxyz'
+dir_start = f'Comp2_Online_CausalInference'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 if_online_causal_inference = True
 
 
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:
+
     if if_maze:
         env_name = 'Maze'
     else:
