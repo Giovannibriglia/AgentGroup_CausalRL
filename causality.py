@@ -406,6 +406,38 @@ class Causality:
         return causal_table
 
 
+def process_df(df_start):
+    start_columns = df_start.columns.to_list()
+    n_enemies_columns = [s for s in start_columns if 'Enemy' in s]
+    if n_enemies_columns == 1:
+        return df_start
+    else:
+        df_only_nearbies = df_start[n_enemies_columns]
+
+        new_column = []
+        for episode in range(len(df_start)):
+            single_row = df_only_nearbies.loc[episode].tolist()
+
+            if df_start.loc[episode, 'Reward_Agent0'] == -1:
+                enemy_nearbies_true = [s for s in single_row if s != 50]
+                action_agent = df_start.loc[episode, 'Action_Agent0']
+
+                if action_agent in enemy_nearbies_true:
+                    new_column.append(action_agent)
+                else:
+                    new_column.append(50)
+            else:
+                new_column.append(random.choice(single_row))
+
+        df_out = df_start.drop(columns=n_enemies_columns)
+
+        df_out['Enemy0_Nearby_Agent0'] = new_column
+
+        print(df_out.columns)
+
+        return df_out
+
+
 """ ************************************************************************************************************* """
 " EVALUATION ENVIRONMENT AND NUMBER OF EPISODES NEEDED"
 " Dataframe "

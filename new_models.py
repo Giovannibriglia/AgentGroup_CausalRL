@@ -144,7 +144,7 @@ class Causality:
         self.independents_var = []
 
        #  print('do-calculus-1...')
-        " understand who influences whom "
+        # understand who influences whom
         before = self.ie.query()
         for var in self.features_names:
             count_var = 0
