@@ -18,8 +18,8 @@ from scipy.stats import beta
 from causalnex.inference import InferenceEngine
 from causalnex.network import BayesianNetwork
 from causalnex.structure.notears import from_pandas
-warnings.filterwarnings("ignore")
 
+warnings.filterwarnings("ignore")
 
 GAMMA = 0.99
 LEARNING_RATE = 0.0001
@@ -112,10 +112,39 @@ class Causality:
         self.independents_var = None
         self.dependents_var = None
 
+    def process_df(self, df_start):
+        start_columns = df_start.columns.to_list()
+        n_enemies_columns = [s for s in start_columns if 'Enemy' in s]
+        if n_enemies_columns == 1:
+            return df_start
+        else:
+            df_only_nearbies = df_start[n_enemies_columns]
+
+            new_column = []
+            for episode in range(len(df_start)):
+                single_row = df_only_nearbies.loc[episode].tolist()
+
+                if df_start.loc[episode, 'Reward_Agent0'] == -1:
+                    enemy_nearbies_true = [s for s in single_row if s != 50]
+                    action_agent = df_start.loc[episode, 'Action_Agent0']
+
+                    if action_agent in enemy_nearbies_true:
+                        new_column.append(action_agent)
+                    else:
+                        new_column.append(50)
+                else:
+                    new_column.append(random.choice(single_row))
+
+            df_out = df_start.drop(columns=n_enemies_columns)
+
+            df_out['Enemy0_Nearby_Agent0'] = new_column
+
+            return df_out
+
     def training(self, e, df):
 
+        df = self.process_df(df)
         self.df = pd.concat([self.df, df], axis=0, ignore_index=True)
-        print(f'\ndo-calculus... length df: {len(self.df)}')
         self.features_names = self.df.columns.to_list()
 
         # print(f'\nstructuring model...')
@@ -143,7 +172,7 @@ class Causality:
         self.dependents_var = []
         self.independents_var = []
 
-       #  print('do-calculus-1...')
+        #  print('do-calculus-1...')
         # understand who influences whom
         before = self.ie.query()
         for var in self.features_names:
@@ -471,7 +500,8 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
             reward = int(rewards[agent_n])
             done = dones[agent_n]  # If agent wins, end loop and restart
 
-            if possible_actions is not None and if_lose and [current_state] != [next_state] and len(possible_actions) > 0:
+            if possible_actions is not None and if_lose and [current_state] != [next_state] and len(
+                    possible_actions) > 0:
                 print(f'\nLose: wrong causal gameover model in {alg}')
                 print(f'New agents pos: {env.pos_agents[-1]}')
                 print(f'Enemies pos: {env.pos_enemies[-1]} - enemies nearby: {enemies_nearby_all_agents}')
@@ -543,7 +573,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
                 env.step_enemies()
                 enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
                 possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
-                                                            goals_nearby_all_agents, if_online=True)
+                                                        goals_nearby_all_agents, if_online=True)
 
                 action = agent.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
@@ -583,7 +613,8 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
             counter_e += 1
 
             if possible_actions is not None and if_lose and [current_state] != [next_state]:
-                print(f'\nLose: causal model not ready yet')
+                # print(f'\nLose: causal model not ready yet')
+                pass
 
             # Update the Q-table/values
             agent.update_Q(current_state, action, reward, next_state)
@@ -597,7 +628,13 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
                 current_state = next_state
             step_for_episode += 1
 
+        average_episodes_rewards.append(total_episode_reward)
+        steps_for_episode.append(step_for_episode)
+
         if e % BATCH_EPISODES_UPDATE_BN == 0 and e < int(EXPLORATION_GAME_PERCENT * n_episodes):
+            pbar.set_postfix_str(
+                f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}, do-calculus..")
+
             for col in df_for_causality.columns:
                 df_for_causality[str(col)] = df_for_causality[str(col)].astype(str).str.replace(',', '').astype(float)
             causal_table = causality.training(e, df_for_causality)
@@ -607,10 +644,8 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
         if alg == 'QL_SoftmaxAnnealing' or alg == 'EpsilonGreedyAgent':
             agent.update_exp_fact(e)
 
-        average_episodes_rewards.append(total_episode_reward)
-        steps_for_episode.append(step_for_episode)
         pbar.set_postfix_str(
-            f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
+            f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}, algorithm...")
 
     print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
     os.remove('partial_heuristic_table.pkl')

@@ -12,13 +12,13 @@ import time
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal'
 # 'DQN' + 'causal'
 algorithms = ['QL_EG_causal']
-n_games = 1
+n_games = 10
 vect_rows = [5, 10]
 vect_n_enemies = [2, 5, 10]
 n_episodes = 2500
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
-dir_start = f'Comp2_Online_CausalInference'
+dir_start = f'Comp2_Online'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 if_online_causal_inference = True
 

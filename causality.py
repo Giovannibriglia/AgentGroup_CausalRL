@@ -322,7 +322,7 @@ class Causality:
         nx.draw(self.structureModel, pos=nx.circular_layout(self.structureModel), with_labels=True, font_size=6,
                 edge_color='orange')
         # nx.draw(self.structureModel, with_labels=True, font_size=4, edge_color='orange')
-        # plt.show()
+        plt.show()
 
         print(f'training bayesian network...')
         self.bn = BayesianNetwork(self.structureModel)
@@ -474,6 +474,7 @@ for n_episodes in vector_episodes:
             df = obj_minigame.create_df(n_episodes=n_episodes)
 
             " Causal Model "
+            df = process_df(df)
             causality = Causality(df)
             causal_table = causality.training()
             causal_table.dropna(axis=0, how='any', inplace=True)
