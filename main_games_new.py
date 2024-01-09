@@ -9,16 +9,16 @@ from scipy.ndimage import gaussian_filter1d
 import plots
 import time
 
-# 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal'
+# 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal' + 'offline'/'online'
 # 'DQN' + 'causal'
-algorithms = ['QL_EG', 'QL_EG_causal']
-n_games = 10
-vect_rows = [5, 10]
-vect_n_enemies = [2, 5, 10]
-n_episodes = 2500
+algorithms = ['QL_EG_basic', 'QL_EG_causal_offline', 'QL_EG_causal_online']
+n_games = 1
+vect_rows = [5]
+vect_n_enemies = [1]
+n_episodes = 5
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
-dir_start = f'Comp2_Online'
+dir_start = f'Results_Baseline_Comp1_Comp2'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 if_online_causal_inference = True
 
@@ -71,7 +71,7 @@ for if_maze in vect_if_maze:
 
                         # returned: reward for episode and steps for episode
                         if 'QL' in alg:
-                            if not if_online_causal_inference:
+                            if 'offline' in alg:
                                 rewards, steps = new_models.QL_causality_offline(env_for_alg, n_act_agents, n_episodes,
                                                                         alg, who_moves_first)
                             else:

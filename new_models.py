@@ -150,7 +150,6 @@ class Causality:
         # print(f'\nstructuring model...')
         self.structureModel = from_pandas(self.df)
         self.structureModel.remove_edges_below_threshold(0.2)
-
         " Plot structure "
         """plt.figure(dpi=500)
         # plt.title(f'{self.structureModel} - {n_episodes} episodes - Grid {cols}x{rows}')
@@ -159,86 +158,89 @@ class Causality:
         # nx.draw(self.structureModel, with_labels=True, font_size=4, edge_color='orange')
         # plt.show()"""
 
-        # print(f'training bayesian network...')
-        self.bn = BayesianNetwork(self.structureModel)
-        self.bn = self.bn.fit_node_states_and_cpds(self.df)
+        if nx.number_weakly_connected_components(self.structureModel) == 1:
+            # print(f'training bayesian network...')
+            self.bn = BayesianNetwork(self.structureModel)
+            self.bn = self.bn.fit_node_states_and_cpds(self.df)
 
-        bad_nodes = [node for node in self.bn.nodes if not re.match("^[0-9a-zA-Z_]+$", node)]
-        if bad_nodes:
-            print('Bad nodes: ', bad_nodes)
+            bad_nodes = [node for node in self.bn.nodes if not re.match("^[0-9a-zA-Z_]+$", node)]
+            if bad_nodes:
+                print('Bad nodes: ', bad_nodes)
 
-        self.ie = InferenceEngine(self.bn)
+            self.ie = InferenceEngine(self.bn)
 
-        self.dependents_var = []
-        self.independents_var = []
+            self.dependents_var = []
+            self.independents_var = []
 
-        #  print('do-calculus-1...')
-        # understand who influences whom
-        before = self.ie.query()
-        for var in self.features_names:
-            count_var = 0
-            for value in self.df[var].unique():
-                try:
-                    self.ie.do_intervention(var, int(value))
-                    after = self.ie.query()
-                    features = [s for s in self.features_names if s not in var]
-                    count_var_value = 0
-                    for feat in features:
-                        best_key_before, max_value_before = max(before[feat].items(), key=lambda x: x[1])
-                        best_key_after, max_value_after = max(after[feat].items(), key=lambda x: x[1])
+            #  print('do-calculus-1...')
+            # understand who influences whom
+            before = self.ie.query()
+            for var in self.features_names:
+                count_var = 0
+                for value in self.df[var].unique():
+                    try:
+                        self.ie.do_intervention(var, int(value))
+                        after = self.ie.query()
+                        features = [s for s in self.features_names if s not in var]
+                        count_var_value = 0
+                        for feat in features:
+                            best_key_before, max_value_before = max(before[feat].items(), key=lambda x: x[1])
+                            best_key_after, max_value_after = max(after[feat].items(), key=lambda x: x[1])
 
-                        if best_key_after != best_key_before and round(max_value_after, 4) != round(
-                                1 / len(after[feat]), 4):
-                            count_var_value += 1
-                    self.ie.reset_do(var)
+                            if best_key_after != best_key_before and round(max_value_after, 4) != round(
+                                    1 / len(after[feat]), 4):
+                                count_var_value += 1
+                        self.ie.reset_do(var)
 
-                    count_var += count_var_value
-                except:
-                    pass
+                        count_var += count_var_value
+                    except:
+                        pass
 
-            if count_var > 0:
-                # print(f'{var} --> {count_var} changes, internally caused ')
-                self.dependents_var.append(var)
-            else:
-                # print(f'{var} --> externally caused')
-                self.independents_var.append(var)
-
-        # print(f'**Externally caused: {self.independents_var}')
-        # print(f'**Externally influenced: {self.dependents_var}')
-        # print('do-calculus-2...')
-        causal_table = pd.DataFrame(columns=self.features_names)
-
-        arrays = []
-        for feat_ind in self.dependents_var:
-            arrays.append(self.df[feat_ind].unique())
-        var_combinations = list(product(*arrays))
-
-        for n, comb_n in enumerate(var_combinations):
-            # print('\n')
-            for var_ind in range(len(self.dependents_var)):
-                try:
-                    self.ie.do_intervention(self.dependents_var[var_ind], int(comb_n[var_ind]))
-                    # print(f'{self.dependents_var[var_ind]} = {int(comb_n[var_ind])}')
-                    causal_table.at[n, f'{self.dependents_var[var_ind]}'] = int(comb_n[var_ind])
-                except:
-                    # print(f'no {self.dependents_var[var_ind]} = {int(comb_n[var_ind])}')
-                    causal_table.at[n, f'{self.dependents_var[var_ind]}'] = pd.NA
-
-            after = self.ie.query()
-            for var_dep in self.independents_var:
-                # print(f'{var_dep}) {after[var_dep]}')
-                max_key, max_value = max(after[var_dep].items(), key=lambda x: x[1])
-                if round(max_value, 4) != round(1 / len(after[var_dep]), 4):
-                    causal_table.at[n, f'{var_dep}'] = int(max_key)
-                    # print(f'{var_dep}) -> {max_key}: {max_value}')
+                if count_var > 0:
+                    # print(f'{var} --> {count_var} changes, internally caused ')
+                    self.dependents_var.append(var)
                 else:
-                    causal_table.at[n, f'{var_dep}'] = pd.NA
-                    # print(f'{var_dep}) -> unknown')
+                    # print(f'{var} --> externally caused')
+                    self.independents_var.append(var)
 
-            for var_ind in range(len(self.dependents_var)):
-                self.ie.reset_do(self.dependents_var[var_ind])
+            # print(f'**Externally caused: {self.independents_var}')
+            # print(f'**Externally influenced: {self.dependents_var}')
+            # print('do-calculus-2...')
+            causal_table = pd.DataFrame(columns=self.features_names)
 
-        return causal_table
+            arrays = []
+            for feat_ind in self.dependents_var:
+                arrays.append(self.df[feat_ind].unique())
+            var_combinations = list(product(*arrays))
+
+            for n, comb_n in enumerate(var_combinations):
+                # print('\n')
+                for var_ind in range(len(self.dependents_var)):
+                    try:
+                        self.ie.do_intervention(self.dependents_var[var_ind], int(comb_n[var_ind]))
+                        # print(f'{self.dependents_var[var_ind]} = {int(comb_n[var_ind])}')
+                        causal_table.at[n, f'{self.dependents_var[var_ind]}'] = int(comb_n[var_ind])
+                    except:
+                        # print(f'no {self.dependents_var[var_ind]} = {int(comb_n[var_ind])}')
+                        causal_table.at[n, f'{self.dependents_var[var_ind]}'] = pd.NA
+
+                after = self.ie.query()
+                for var_dep in self.independents_var:
+                    # print(f'{var_dep}) {after[var_dep]}')
+                    max_key, max_value = max(after[var_dep].items(), key=lambda x: x[1])
+                    if round(max_value, 4) != round(1 / len(after[var_dep]), 4):
+                        causal_table.at[n, f'{var_dep}'] = int(max_key)
+                        # print(f'{var_dep}) -> {max_key}: {max_value}')
+                    else:
+                        causal_table.at[n, f'{var_dep}'] = pd.NA
+                        # print(f'{var_dep}) -> unknown')
+
+                for var_ind in range(len(self.dependents_var)):
+                    self.ie.reset_do(self.dependents_var[var_ind])
+
+            causal_table.dropna(axis=0, how='any', inplace=True)
+            causal_table.to_pickle('partial_heuristic_table.pkl')
+
 
 
 class SoftmaxAnnealingQAgent:
@@ -637,9 +639,8 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
 
             for col in df_for_causality.columns:
                 df_for_causality[str(col)] = df_for_causality[str(col)].astype(str).str.replace(',', '').astype(float)
-            causal_table = causality.training(e, df_for_causality)
-            causal_table.dropna(axis=0, how='any', inplace=True)
-            causal_table.to_pickle('partial_heuristic_table.pkl')
+
+            causality.training(e, df_for_causality)
 
         if alg == 'QL_SoftmaxAnnealing' or alg == 'EpsilonGreedyAgent':
             agent.update_exp_fact(e)
