@@ -11,7 +11,7 @@ import time
 
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal'
 # 'DQN' + 'causal'
-algorithms = ['QL_EG_causal']
+algorithms = ['QL_EG', 'QL_EG_causal']
 n_games = 10
 vect_rows = [5, 10]
 vect_n_enemies = [2, 5, 10]
@@ -21,7 +21,6 @@ vect_if_same_enemies_actions = [False]
 dir_start = f'Comp2_Online'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 if_online_causal_inference = True
-
 
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:
