@@ -43,7 +43,7 @@ causal_table_offline = pd.read_pickle('heuristic_table.pkl')
 def get_possible_actions(n_act_agents, enemies_nearby_all_agents, goals_nearby_all_agents, if_online):
     if if_online:
         try:
-            causal_table = pd.read_pickle('partial_heuristic_table.pkl')
+            causal_table = pd.read_pickle('online_heuristic_table.pkl')
         except:
             return list(np.arange(0, n_act_agents, 1))
     else:
@@ -239,7 +239,7 @@ class Causality:
                     self.ie.reset_do(self.dependents_var[var_ind])
 
             causal_table.dropna(axis=0, how='any', inplace=True)
-            causal_table.to_pickle('partial_heuristic_table.pkl')
+            causal_table.to_pickle('online_heuristic_table.pkl')
 
 
 
@@ -649,7 +649,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
             f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}, algorithm...")
 
     print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
-    os.remove('partial_heuristic_table.pkl')
+    os.remove('online_heuristic_table.pkl')
     return average_episodes_rewards, steps_for_episode
 
 
