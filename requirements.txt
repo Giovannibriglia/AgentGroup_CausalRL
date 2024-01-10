@@ -1,0 +1,7 @@
+gymnasium
+pygame
+causalnex
+matplotlib
+openpyxl
+scipy
+networkx

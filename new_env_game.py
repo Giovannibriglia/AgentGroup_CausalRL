@@ -4,7 +4,7 @@ import warnings
 
 import numpy as np
 import pygame
-from gym.spaces import Discrete
+from gymnasium.spaces import Discrete
 
 warnings.filterwarnings("ignore")
 
