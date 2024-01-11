@@ -10,13 +10,13 @@ import time
 
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal' + 'offline'/'online'
 # 'DQN' + 'causal'
-algorithms = ['QL_EG_basic', 'QL_EG_causal_offline', 'QL_EG_causal_online',
-              'QL_SA_basic', 'QL_SA_causal_offline', 'QL_SA_causal_online'
-              'QL_BM_basic', 'QL_BM_causal_offline', 'QL_BM_causal_online'
-              'QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online']
-n_games = 3
-vect_rows = [5]
-vect_n_enemies = [1]
+algorithms = ['QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
+              'QL_EG_basic', 'QL_EG_causal_offline', 'QL_EG_causal_online',
+              'QL_SA_basic', 'QL_SA_causal_offline', 'QL_SA_causal_online',
+              'QL_BM_basic', 'QL_BM_causal_offline', 'QL_BM_causal_online']
+n_games = 10
+vect_rows = [5, 10]
+vect_n_enemies = [2, 5, 10]
 n_episodes = 2500
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
@@ -96,9 +96,7 @@ for if_maze in vect_if_maze:
                         np.save(f'{directory}/{alg}_computation_time_game{game_n}.npy', computation_time)
 
                         if 'TS' in alg:
-                            alpha = q_table[0]
-                            beta = q_table[1]
-
+                            alpha, beta = q_table[0], q_table[1]
                             np.save(f'{directory}/{alg}_alpha_game{game_n}.npy', alpha)
                             np.save(f'{directory}/{alg}_beta_game{game_n}.npy', beta)
                         else:
