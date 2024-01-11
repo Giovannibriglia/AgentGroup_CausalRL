@@ -242,7 +242,6 @@ class Causality:
             causal_table.to_pickle('online_heuristic_table.pkl')
 
 
-
 class SoftmaxAnnealingQAgent:
     def __init__(self, rows, cols, action_space_size, n_episodes, initial_temperature=1.0):
         self.rows = rows
@@ -387,7 +386,7 @@ class EpsilonGreedyQAgent:
         self.n_agent_actions = n_agent_actions
         self.n_episodes = n_episodes
 
-        self.Q_table = np.zeros((self.rows, self.cols, self.n_agent_actions))
+        self.q_table = np.zeros((self.rows, self.cols, self.n_agent_actions))
 
         self.lr = LEARNING_RATE
         self.gamma = GAMMA
@@ -410,14 +409,14 @@ class EpsilonGreedyQAgent:
                 all_actions = list(np.arange(0, self.n_agent_actions, 1))
                 dict_all_actions = {}
                 for act in all_actions:
-                    dict_all_actions[act] = self.Q_table[stateX, stateY, act]
+                    dict_all_actions[act] = self.q_table[stateX, stateY, act]
 
                 dict_valid_actions = {act: dict_all_actions[act] for act in possible_actions}
                 action, _ = max(dict_valid_actions.items(), key=lambda x: x[1])
-                print('Exploration) ', action, type(action))
+                # print('Exploration) ', action, type(action))
             else:
-                action = np.argmax(self.Q_table[stateX, stateY, :])
-                print('Exploitation) ', action, type(action))
+                action = np.argmax(self.q_table[stateX, stateY, :])
+                # print('Exploitation) ', action, type(action))
 
         return action
 
@@ -426,11 +425,11 @@ class EpsilonGreedyQAgent:
         stateY = int(state[1])
         next_stateX = int(next_state[0])
         next_stateY = int(next_state[1])
-        current_q_value = self.Q_table[stateX, stateY, action]
-        max_next_q_value = np.max(self.Q_table[next_stateX, next_stateY, :])
+        current_q_value = self.q_table[stateX, stateY, action]
+        max_next_q_value = np.max(self.q_table[next_stateX, next_stateY, :])
 
         new_q_value = current_q_value + self.lr * (reward + self.gamma * max_next_q_value - current_q_value)
-        self.Q_table[stateX, stateY, action] = new_q_value
+        self.q_table[stateX, stateY, action] = new_q_value
 
     def update_exp_fact(self, episode):  # update exploration probability
         self.exp_proba = max(self.MIN_EXPLORATION_PROBA, np.exp(-self.EXPLORATION_DECREASING_DECAY * episode))
@@ -521,7 +520,7 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
                 current_state = next_state
             step_for_episode += 1
 
-        if alg == 'QL_SoftmaxAnnealing' or alg == 'EpsilonGreedyAgent':
+        if 'SA' in alg or 'EG' in alg:
             agent.update_exp_fact(e)
 
         average_episodes_rewards.append(total_episode_reward)
@@ -530,10 +529,16 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
             f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
 
     print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
-    return average_episodes_rewards, steps_for_episode
+
+    if 'TS' in alg:
+        q_table = [agent.alpha, agent.beta]
+    else:
+        q_table = agent.q_table
+
+    return average_episodes_rewards, steps_for_episode, q_table
 
 
-def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BATCH_EPISODES_UPDATE_BN):
+def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BATCH_EPISODES_UPDATE_BN=1):
     rows = env.rows
     cols = env.cols
     action_space_size = n_act_agents
@@ -650,7 +655,13 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
 
     print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
     os.remove('online_heuristic_table.pkl')
-    return average_episodes_rewards, steps_for_episode
+
+    if 'TS' in alg:
+        q_table = [agent.alpha, agent.beta]
+    else:
+        q_table = agent.q_table
+
+    return average_episodes_rewards, steps_for_episode, q_table
 
 
 """
