@@ -441,7 +441,7 @@ def process_df(df_start):
 """ ************************************************************************************************************* """
 " EVALUATION ENVIRONMENT AND NUMBER OF EPISODES NEEDED"
 " Dataframe "
-path_save = 'Comp0_Offline_OnlyCausality'
+path_save = 'TradeOff_BatchEpisodesEnemies_Causality'
 os.makedirs(path_save, exist_ok=True)
 
 
@@ -458,43 +458,48 @@ def are_dataframes_equal(df1, df2):
 
 n_simulations = 10
 official_causal_table = pd.read_pickle('heuristic_table.pkl')
-vector_episodes = [500, 1000, 2000]
-vector_grid_size = [3, 5, 10]
+vector_episodes = [250, 500, 1000]
+vector_grid_size = [5, 10]
+vector_n_enemies = [2, 5, 10]
 columns = ['Grid Size', 'Episodes', 'Suitable']
 result = pd.DataFrame(columns=columns)
 
 df_row = 0
 for n_episodes in vector_episodes:
     for rows in vector_grid_size:
-        cols = rows
-        n_oks = 0
-        print(f'\n Grid size: {rows}x{cols} - {n_episodes} episodes')
-        for sim_n in range(n_simulations):
-            obj_minigame = MiniGame(rows=rows, cols=cols, n_agents=1, n_enemies=1, n_goals=1)
-            df = obj_minigame.create_df(n_episodes=n_episodes)
-
-            " Causal Model "
-            df = process_df(df)
-            causality = Causality(df)
-            causal_table = causality.training()
-            causal_table.dropna(axis=0, how='any', inplace=True)
-
-            if are_dataframes_equal(causal_table, official_causal_table):
-                n_oks += 1
-                print('ok')
-            else:
-                causal_table.to_excel(f'{path_save}\\{rows}x{cols}_{n_episodes}episodes_{sim_n}.xlsx')
-                print('no')
+        for n_enemies in vector_n_enemies:
+            if n_enemies > rows*2:
                 break
+            cols = rows
+            n_oks = 0
+            print(f'\n Grid size: {rows}x{cols} - {n_episodes} episodes')
+            for sim_n in range(n_simulations):
+                obj_minigame = MiniGame(rows=rows, cols=cols, n_agents=1, n_enemies=n_enemies, n_goals=1)
+                df = obj_minigame.create_df(n_episodes=n_episodes)
 
-        result.at[df_row, 'Grid Size'] = rows
-        result.at[df_row, 'Episodes'] = n_episodes
-        if n_oks == n_simulations:
-            result.at[df_row, 'Suitable'] = 'yes'
-        else:
-            result.at[df_row, 'Suitable'] = 'no'
+                " Causal Model "
+                df = process_df(df)
+                causality = Causality(df)
+                causal_table = causality.training()
+                causal_table.dropna(axis=0, how='any', inplace=True)
 
-        df_row += 1
+                if are_dataframes_equal(causal_table, official_causal_table):
+                    n_oks += 1
+                    print('ok')
+                else:
+                    causal_table.to_excel(f'{path_save}\\{rows}x{cols}_{n_enemies}enemies_{n_episodes}episodes_{sim_n}.xlsx')
+                    print('no')
+
+            result.at[df_row, 'Grid Size'] = rows
+            result.at[df_row, 'Episodes'] = n_episodes
+            result.at[df_row, 'Enemies'] = n_enemies
+
+            if n_oks > int(n_simulations/2):
+                result.at[df_row, 'Suitable'] = 'yes'
+            else:
+                result.at[df_row, 'Suitable'] = 'no'
+
+            df_row += 1
 
 result.to_excel(f'{path_save}\\comparison_causality.xlsx')
 
