@@ -108,11 +108,12 @@ class Causality:
         self.features_names = None
         self.structureModel = None
         self.past_structureModel = None
-        self.check_structureModel = False
+        self.check_structureModel = 0
         self.bn = None
         self.ie = None
         self.independents_var = None
         self.dependents_var = None
+        self.th_sm = 5
 
     def process_df(self, df_start):
         start_columns = df_start.columns.to_list()
@@ -144,28 +145,32 @@ class Causality:
             return df_out
 
     def training(self, e, df):
-
         new_df = self.process_df(df)
 
-        if not self.check_structureModel:
+        if self.check_structureModel <= self.th_sm:
+            time1 = time.time()
             self.df = pd.concat([self.df, new_df], axis=0, ignore_index=True)
             # print(f'\nstructuring model...')
             self.structureModel = from_pandas(self.df)
             self.structureModel.remove_edges_below_threshold(0.2)
+            # print('\nConcatenation time: ', time.time() - time1, len(self.df), self.check_structureModel)
 
         self.features_names = self.df.columns.to_list()
-        if nx.number_weakly_connected_components(self.structureModel) == 1:
+
+        if nx.number_weakly_connected_components(self.structureModel) == 1 and nx.is_directed_acyclic_graph(self.structureModel) and len(self.df) > 100:
             # print(f'training bayesian network...')
-            if not self.check_structureModel:
+            if self.check_structureModel <= self.th_sm:
+                time2 = time.time()
                 self.bn = BayesianNetwork(self.structureModel)
                 self.bn.fit_node_states_and_cpds(self.df)
+                # print('BN implementation time: ', time.time() - time2)
             else:
                 self.bn.fit_node_states_and_cpds(new_df)
 
             bad_nodes = [node for node in self.bn.nodes if not re.match("^[0-9a-zA-Z_]+$", node)]
             if bad_nodes:
                 print('Bad nodes: ', bad_nodes)
-
+            time3 = time.time()
             self.ie = InferenceEngine(self.bn)
 
             self.dependents_var = []
@@ -240,11 +245,22 @@ class Causality:
             causal_table.dropna(axis=0, how='any', inplace=True)
             causal_table.to_pickle('online_heuristic_table.pkl')
 
-        if self.structureModel != self.past_structureModel:
-            self.check_structureModel = False
-            self.past_structureModel = self.structureModel
-        else:
-            self.check_structureModel = True
+            #print('do-calculus time: ', time.time() - time3, '\n')
+
+            nodes1 = set(self.structureModel.nodes)
+            edges1 = set(self.structureModel.edges)
+            if self.past_structureModel is not None:
+                edges2 = set(self.past_structureModel.edges)
+                nodes2 = set(self.past_structureModel.nodes)
+            else:
+                edges2 = None
+                nodes2 = None
+
+            if (nodes1 == nodes2) and (edges1 == edges2):
+                self.check_structureModel += 1
+            else:
+                self.past_structureModel = self.structureModel
+                # self.check_structureModel = 0
 
 
 class SoftmaxAnnealingQAgent:
@@ -544,6 +560,11 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
 
 
 def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BATCH_EPISODES_UPDATE_BN=1):
+    try:
+        os.remove('online_heuristic_table.pkl')
+    except:
+        pass
+
     rows = env.rows
     cols = env.cols
     action_space_size = n_act_agents
@@ -568,6 +589,8 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
         agent_n = 0
         if e == 0:
             current_state, _, _, _, _ = env.reset(reset_n_times_loser=True)
+            df_for_causality = create_df(env)
+            counter_e = 0
         else:
             current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
         current_state = current_state[agent_n]
@@ -575,10 +598,6 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
         total_episode_reward = 0
         step_for_episode = 0
         done = False
-
-        if e % BATCH_EPISODES_UPDATE_BN == 0 and e < int(EXPLORATION_GAME_PERCENT * n_episodes):
-            df_for_causality = create_df(env)
-            counter_e = 0
 
         while not done:
             if who_moves_first == 'Enemy':
@@ -645,12 +664,14 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
 
         if e % BATCH_EPISODES_UPDATE_BN == 0 and e < int(EXPLORATION_GAME_PERCENT * n_episodes):
             pbar.set_postfix_str(
-                f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}, do-calculus..")
+                f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}, do-calculus...")
 
             for col in df_for_causality.columns:
                 df_for_causality[str(col)] = df_for_causality[str(col)].astype(str).str.replace(',', '').astype(float)
 
             causality.training(e, df_for_causality)
+            df_for_causality = create_df(env)
+            counter_e = 0
 
         if alg == 'QL_SoftmaxAnnealing' or alg == 'EpsilonGreedyAgent':
             agent.update_exp_fact(e)
