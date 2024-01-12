@@ -312,17 +312,17 @@ class Causality:
         self.dependents_var = None
 
     def training(self):
-        print(f'structuring model...')
+        print(f'structuring model...', len(self.df))
         self.structureModel = from_pandas(self.df)
         self.structureModel.remove_edges_below_threshold(0.2)
 
         " Plot structure "
-        plt.figure(dpi=500)
+        """plt.figure(dpi=500)
         plt.title(f'{self.structureModel} - {n_episodes} episodes - Grid {cols}x{rows}')
         nx.draw(self.structureModel, pos=nx.circular_layout(self.structureModel), with_labels=True, font_size=6,
                 edge_color='orange')
         # nx.draw(self.structureModel, with_labels=True, font_size=4, edge_color='orange')
-        plt.show()
+        plt.show()"""
 
         print(f'training bayesian network...')
         self.bn = BayesianNetwork(self.structureModel)
@@ -368,8 +368,8 @@ class Causality:
                 # print(f'{var} --> externally caused')
                 self.independents_var.append(var)
 
-        print(f'**Externally caused: {self.independents_var}')
-        print(f'**Externally influenced: {self.dependents_var}')
+        # print(f'**Externally caused: {self.independents_var}')
+        # print(f'**Externally influenced: {self.dependents_var}')
         print('do-calculus-2...')
         causal_table = pd.DataFrame(columns=self.features_names)
 
@@ -432,8 +432,6 @@ def process_df(df_start):
         df_out = df_start.drop(columns=n_enemies_columns)
 
         df_out['Enemy0_Nearby_Agent0'] = new_column
-
-        print(df_out.columns)
 
         return df_out
 
