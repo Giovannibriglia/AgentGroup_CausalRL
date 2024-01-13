@@ -37,7 +37,7 @@ col_reward = 'Reward_Agent0'
 col_nearby_enemy = 'Enemy0_Nearby_Agent0'
 col_nearby_goal = 'Goal0_Nearby_Agent0'
 
-causal_table_offline = pd.read_pickle('heuristic_table.pkl')
+causal_table_offline = pd.read_pickle('offline_heuristic_table.pkl')
 
 
 def get_possible_actions(n_act_agents, enemies_nearby_all_agents, goals_nearby_all_agents, if_online):

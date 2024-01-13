@@ -443,19 +443,24 @@ path_save = 'TradeOff_BatchEpisodesEnemies_Causality'
 os.makedirs(path_save, exist_ok=True)
 
 
-def are_dataframes_equal(df1, df2):
+def prepare_df_for_comparison(df1, df2):
+    col_df1 = df1.columns.to_list()
+    col_df2 = df2.columns.to_list()
     # Sort DataFrames by values
-    sorted_df1 = df1.sort_values(by=['Action_Agent0', 'DeltaX_Agent0', 'DeltaY_Agent0',	'Reward_Agent0',
-                                     'Enemy0_Nearby_Agent0', 'Goal0_Nearby_Agent0']).reset_index(drop=True)
-    sorted_df2 = df2.sort_values(by=['Action_Agent0', 'DeltaX_Agent0', 'DeltaY_Agent0',	'Reward_Agent0',
-                                     'Enemy0_Nearby_Agent0', 'Goal0_Nearby_Agent0']).reset_index(drop=True)
+    sorted_df1 = df1.sort_index(axis=0).sort_index(axis=1).reset_index(drop=True)
+    sorted_df2 = df2.sort_index(axis=0).sort_index(axis=1).reset_index(drop=True)
 
-    # Check if the sorted DataFrames are equal
-    return sorted_df1.equals(sorted_df2)
+    new_col_df1_to_drop = [s for s in sorted_df1.columns.to_list() if s not in col_df1]
+    new_col_df2_to_drop = [s for s in sorted_df2.columns.to_list() if s not in col_df2]
+
+    check_df1 = sorted_df1.drop(columns=new_col_df1_to_drop)
+    check_df2 = sorted_df2.drop(columns=new_col_df2_to_drop)
+
+    return check_df1, check_df2
 
 
 n_simulations = 10
-official_causal_table = pd.read_pickle('heuristic_table.pkl')
+official_causal_table = pd.read_pickle('offline_heuristic_table.pkl')
 vector_episodes = [500, 1000, 1500]
 vector_grid_size = [5, 10]
 vector_n_enemies = [2, 5, 10]
@@ -466,11 +471,11 @@ df_row = 0
 for n_episodes in vector_episodes:
     for rows in vector_grid_size:
         for n_enemies in vector_n_enemies:
-            if n_enemies > rows*2:
+            if n_enemies > rows * 2:
                 break
             cols = rows
             n_oks = 0
-            print(f'\n Grid size: {rows}x{cols} - {n_episodes} episodes')
+            print(f'\n Grid size: {rows}x{cols} - {n_episodes} episodes - {n_enemies} enemies')
             for sim_n in range(n_simulations):
                 obj_minigame = MiniGame(rows=rows, cols=cols, n_agents=1, n_enemies=n_enemies, n_goals=1)
                 df = obj_minigame.create_df(n_episodes=n_episodes)
@@ -481,11 +486,14 @@ for n_episodes in vector_episodes:
                 causal_table = causality.training()
                 causal_table.dropna(axis=0, how='any', inplace=True)
 
-                if are_dataframes_equal(causal_table, official_causal_table):
+                official_causal_table, causal_table = prepare_df_for_comparison(official_causal_table, causal_table)
+
+                if official_causal_table.equals(causal_table):
                     n_oks += 1
                     print('ok')
                 else:
-                    causal_table.to_excel(f'{path_save}\\{rows}x{cols}_{n_enemies}enemies_{n_episodes}episodes_{sim_n}.xlsx')
+                    causal_table.to_excel(
+                        f'{path_save}\\Grid{rows}x{cols}_{n_enemies}enemies_{n_episodes}episodes_{sim_n}.xlsx')
                     print('no')
 
             result.at[df_row, 'Grid Size'] = rows
@@ -493,7 +501,7 @@ for n_episodes in vector_episodes:
             result.at[df_row, 'Enemies'] = n_enemies
             result.at[df_row, 'Oks'] = n_oks
 
-            if n_oks > int(n_simulations/2):
+            if n_oks > int(n_simulations / 2):
                 result.at[df_row, 'Suitable'] = 'yes'
             else:
                 result.at[df_row, 'Suitable'] = 'no'
