@@ -445,10 +445,10 @@ os.makedirs(path_save, exist_ok=True)
 
 def are_dataframes_equal(df1, df2):
     # Sort DataFrames by values
-    sorted_df1 = df1.sort_values(by=['Enemy0_Nearby_Agent0', 'Goal0_Nearby_Agent0', 'Action_Agent0']).reset_index(
-        drop=True)
-    sorted_df2 = df2.sort_values(by=['Enemy0_Nearby_Agent0', 'Goal0_Nearby_Agent0', 'Action_Agent0']).reset_index(
-        drop=True)
+    sorted_df1 = df1.sort_values(by=['Action_Agent0', 'DeltaX_Agent0', 'DeltaY_Agent0',	'Reward_Agent0',
+                                     'Enemy0_Nearby_Agent0', 'Goal0_Nearby_Agent0']).reset_index(drop=True)
+    sorted_df2 = df2.sort_values(by=['Action_Agent0', 'DeltaX_Agent0', 'DeltaY_Agent0',	'Reward_Agent0',
+                                     'Enemy0_Nearby_Agent0', 'Goal0_Nearby_Agent0']).reset_index(drop=True)
 
     # Check if the sorted DataFrames are equal
     return sorted_df1.equals(sorted_df2)
@@ -456,10 +456,10 @@ def are_dataframes_equal(df1, df2):
 
 n_simulations = 10
 official_causal_table = pd.read_pickle('heuristic_table.pkl')
-vector_episodes = [250, 500, 1000]
+vector_episodes = [500, 1000, 1500]
 vector_grid_size = [5, 10]
 vector_n_enemies = [2, 5, 10]
-columns = ['Grid Size', 'Episodes', 'Suitable']
+columns = ['Grid Size', 'Episodes', 'Enemies', 'Oks', 'Suitable']
 result = pd.DataFrame(columns=columns)
 
 df_row = 0
@@ -491,6 +491,7 @@ for n_episodes in vector_episodes:
             result.at[df_row, 'Grid Size'] = rows
             result.at[df_row, 'Episodes'] = n_episodes
             result.at[df_row, 'Enemies'] = n_enemies
+            result.at[df_row, 'Oks'] = n_oks
 
             if n_oks > int(n_simulations/2):
                 result.at[df_row, 'Suitable'] = 'yes'
