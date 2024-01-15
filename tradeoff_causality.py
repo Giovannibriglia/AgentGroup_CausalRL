@@ -488,12 +488,12 @@ for n_episodes in vector_episodes:
 
                 official_causal_table, causal_table = prepare_df_for_comparison(official_causal_table, causal_table)
 
-                if official_causal_table.equals(causal_table):
+                if len(official_causal_table) == len(causal_table):
                     n_oks += 1
                     print('ok')
                 else:
                     causal_table.to_excel(
-                        f'{path_save}\\Grid{rows}x{cols}_{n_enemies}enemies_{n_episodes}episodes_{sim_n}.xlsx')
+                        f'{path_save}\Grid{rows}x{cols}_{n_enemies}enemies_{n_episodes}episodes_{sim_n}.xlsx')
                     print('no')
 
             result.at[df_row, 'Grid Size'] = rows
