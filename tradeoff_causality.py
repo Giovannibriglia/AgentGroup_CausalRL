@@ -439,7 +439,7 @@ def process_df(df_start):
 """ ************************************************************************************************************* """
 " EVALUATION ENVIRONMENT AND NUMBER OF EPISODES NEEDED"
 " Dataframe "
-path_save = 'TradeOff_BatchEpisodesEnemies_Causality'
+path_save = 'Tradeoff_causality_batch_episodes_enemies2'
 os.makedirs(path_save, exist_ok=True)
 
 
@@ -459,9 +459,9 @@ def prepare_df_for_comparison(df1, df2):
     return check_df1, check_df2
 
 
-n_simulations = 10
-official_causal_table = pd.read_pickle('offline_heuristic_table.pkl')
-vector_episodes = [500, 1000, 1500]
+n_simulations = 6
+offline_causal_table = pd.read_pickle('offline_heuristic_table.pkl')
+vector_episodes = [100, 250, 500, 1000]
 vector_grid_size = [5, 10]
 vector_n_enemies = [2, 5, 10]
 columns = ['Grid Size', 'Episodes', 'Enemies', 'Oks', 'Suitable']
@@ -486,15 +486,13 @@ for n_episodes in vector_episodes:
                 causal_table = causality.training()
                 causal_table.dropna(axis=0, how='any', inplace=True)
 
-                official_causal_table, causal_table = prepare_df_for_comparison(official_causal_table, causal_table)
+                offline_causal_table, causal_table = prepare_df_for_comparison(offline_causal_table, causal_table)
 
-                if len(official_causal_table) == len(causal_table):
+                causal_table.to_excel(
+                    f'{path_save}\Grid{rows}x{cols}_{n_enemies}enemies_{n_episodes}episodes_{sim_n}.xlsx')
+
+                if len(offline_causal_table) == len(causal_table):
                     n_oks += 1
-                    print('ok')
-                else:
-                    causal_table.to_excel(
-                        f'{path_save}\Grid{rows}x{cols}_{n_enemies}enemies_{n_episodes}episodes_{sim_n}.xlsx')
-                    print('no')
 
             result.at[df_row, 'Grid Size'] = rows
             result.at[df_row, 'Episodes'] = n_episodes
@@ -503,8 +501,10 @@ for n_episodes in vector_episodes:
 
             if n_oks > int(n_simulations / 2):
                 result.at[df_row, 'Suitable'] = 'yes'
+                print(f'Grid size: {rows}x{cols} - {n_episodes} episodes - {n_enemies} enemies - {n_oks} oks --> YES')
             else:
                 result.at[df_row, 'Suitable'] = 'no'
+                print(f'Grid size: {rows}x{cols} - {n_episodes} episodes - {n_enemies} enemies - {n_oks} oks --> NO')
 
             df_row += 1
 
