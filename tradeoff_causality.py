@@ -439,7 +439,7 @@ def process_df(df_start):
 """ ************************************************************************************************************* """
 " EVALUATION ENVIRONMENT AND NUMBER OF EPISODES NEEDED"
 " Dataframe "
-path_save = 'Tradeoff_causality_batch_episodes_enemies2'
+path_save = 'Tradeoff_causality_batch_episodes_enemies'
 os.makedirs(path_save, exist_ok=True)
 
 
@@ -459,12 +459,12 @@ def prepare_df_for_comparison(df1, df2):
     return check_df1, check_df2
 
 
-n_simulations = 6
+n_simulations = 10
 offline_causal_table = pd.read_pickle('offline_heuristic_table.pkl')
 vector_episodes = [100, 250, 500, 1000]
 vector_grid_size = [5, 10]
 vector_n_enemies = [2, 5, 10]
-columns = ['Grid Size', 'Episodes', 'Enemies', 'Oks', 'Suitable']
+columns = ['Grid Size', 'Episodes', 'Enemies', f'Oks_over_{n_simulations}sim', 'Suitable']
 result = pd.DataFrame(columns=columns)
 
 df_row = 0

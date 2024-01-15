@@ -15,14 +15,16 @@ algorithms = ['QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
               'QL_SA_basic', 'QL_SA_causal_offline', 'QL_SA_causal_online',
               'QL_BM_basic', 'QL_BM_causal_offline', 'QL_BM_causal_online']
 n_games = 5
-vect_rows = [5, 10]
-vect_n_enemies = [2, 5, 10]
-n_episodes = 2500
+vect_rows = [5]
+vect_n_enemies = [1]
+n_episodes = 100
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
 dir_start = f'Results_Baseline_Comp1_Comp2_Comp3'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
-BATCH_EPISODES_UPDATE_BN = int(n_episodes/5)  # makes it better
+BATCH_EPISODES_UPDATE_BN = int(n_episodes/5)  # make it better
+
+episodes_to_visualize = [1, int(n_episodes*0.33), int(n_episodes*0.66), n_episodes-1]
 
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:
@@ -58,7 +60,7 @@ for if_maze in vect_if_maze:
                     n_act_enemies = 5
                     n_goals = 1
                     env = new_env_game.CustomEnv(rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals,
-                                                 if_maze, if_same_enemies_actions)
+                                                 if_maze, if_same_enemies_actions, episodes_to_visualize)
 
                     np.save(f"{directory}/env__game{game_n}.npy", env.grid_for_game)
 

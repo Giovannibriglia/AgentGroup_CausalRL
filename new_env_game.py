@@ -8,11 +8,18 @@ from gymnasium.spaces import Discrete
 
 warnings.filterwarnings("ignore")
 
+agent_png = 'images_for_render/supermario.png'
+enemy_png = 'images_for_render/bowser.png'
+wall_png = 'images_for_render/wall.png'
+goal_png = 'images_for_render/goal.png'
+
+" IMPOSTARE REGISTRAZIONE VIDEO, SE e==0 --> start, SE e==n_episodes --> stop, prova a farlo sui movement"
+
 
 class CustomEnv:
 
     def __init__(self, rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals, if_maze,
-                 if_same_enemies_actions):
+                 if_same_enemies_actions, episodes_to_visualize):
         self.rows = rows
         self.cols = cols
         self.n_agents = n_agents
@@ -21,6 +28,8 @@ class CustomEnv:
         self.n_act_enemies = n_act_enemies
         self.n_goals = n_goals
         self.n_walls = rows * 2
+
+        self.episodes_to_visualize = episodes_to_visualize
 
         # reward definition
         self.reward_alive = 0
@@ -202,6 +211,9 @@ class CustomEnv:
 
         for ind in range(len(self.grid_for_game)):
             print(self.grid_for_game[ind])
+
+        if self.episodes_to_visualize:
+            self.init_gui()
 
         # print('INIT)', self.pos_agents_for_reset, self.pos_enemies_for_reset)
 
@@ -440,3 +452,103 @@ class CustomEnv:
             # print('out) wall',[new_stateX, new_stateY])
 
         return new_stateX, new_stateY, action, actionX, actionY
+
+    def init_gui(self):
+
+        pygame.font.init()
+
+        self.delay_visualization = 50
+
+        self.font_size = 20
+        self.FONT = pygame.font.SysFont('comicsans', self.font_size)
+
+        fix_size_width = 900
+        fix_size_height = 750
+        WIDTH, HEIGHT = fix_size_width - self.font_size * 2, fix_size_height - self.font_size * 2
+        self.WINDOW = pygame.display.set_mode((fix_size_width, fix_size_height))
+        pygame.display.set_caption('Game')
+
+        self.width_im = int(WIDTH / self.cols)
+        self.height_im = int(HEIGHT / self.rows)
+        self.new_sizes = (self.width_im, self.height_im)
+
+        self.pics_agents = []
+        for _ in range(self.n_agents):
+            self.pics_agents.append(pygame.transform.scale(pygame.image.load(agent_png), self.new_sizes))
+        self.pics_enemies = []
+        for _ in range(self.n_enemies):
+            self.pics_enemies.append(pygame.transform.scale(pygame.image.load(enemy_png), self.new_sizes))
+        self.pics_walls = []
+        for _ in range(len(self.walls)):
+            self.pics_walls.append(pygame.transform.scale(pygame.image.load(wall_png), self.new_sizes))
+        self.pics_goals = []
+        for _ in range(len(self.pos_goals)):
+            self.pics_goals.append(pygame.transform.scale(pygame.image.load(goal_png), self.new_sizes))
+        """
+        self.WINDOW.fill('black')
+
+        for agent in range(self.n_agents):
+            self.WINDOW.blit(self.pics_agents[agent], (self.pre_ag_coord[agent][1] * self.width_im,
+                                                       self.pre_ag_coord[agent][
+                                                           0] * self.height_im + self.font_size * 2))
+        for enemy in range(self.n_enemies):
+            self.WINDOW.blit(self.pics_enemies[enemy], (self.pre_en_coord[enemy][1] * self.width_im,
+                                                        self.pre_en_coord[enemy][
+                                                            0] * self.height_im + self.font_size * 2))
+        for wall in range(len(self.walls_coord)):
+            self.WINDOW.blit(self.pics_walls[wall], (
+                self.walls_coord[wall][1] * self.width_im,
+                self.walls_coord[wall][0] * self.height_im + self.font_size * 2))
+        for goal in range(len(self.goals_coord)):
+            self.WINDOW.blit(self.pics_goals[goal], (
+                self.goals_coord[goal][1] * self.width_im,
+                self.goals_coord[goal][0] * self.height_im + self.font_size * 2))
+        time_text = self.FONT.render(f'', True, 'white')
+        self.WINDOW.blit(time_text, (10, 10))
+        pygame.display.update()
+        pygame.time.delay(self.delay_visualization)
+        """
+
+    def movement_gui(self, ep, n_episodes, algorithm):
+
+        if ep in self.episodes_to_visualize:
+
+            new_ag_coord = self.pos_agents[-1].copy()
+            new_en_coord = self.pos_enemies[-1].copy()
+
+            self.WINDOW.fill('black')
+
+            for agent in range(self.n_agents):
+                self.WINDOW.blit(self.pics_agents[agent], (new_ag_coord[agent][1] * self.width_im,
+                                                           new_ag_coord[agent][
+                                                               0] * self.height_im + self.font_size * 2))
+
+            for enemy in range(self.n_enemies):
+                self.WINDOW.blit(self.pics_enemies[enemy], (new_en_coord[enemy][1] * self.width_im,
+                                                            new_en_coord[enemy][
+                                                                0] * self.height_im + self.font_size * 2))
+
+            for wall in range(len(self.walls)):
+                self.WINDOW.blit(self.pics_walls[wall], (
+                    self.walls[wall][1] * self.width_im,
+                    self.walls[wall][0] * self.height_im + self.font_size * 2))
+
+            for goal in range(len(self.pos_goals)):
+                self.WINDOW.blit(self.pics_goals[goal], (
+                    self.pos_goals[goal][1] * self.width_im,
+                    self.pos_goals[goal][0] * self.height_im + self.font_size * 2))
+
+            time_text = self.FONT.render(
+                f'Episode: {ep}/{n_episodes} - Algorithm: {algorithm} - Defeats: {self.n_times_loser}',
+                True, 'white')
+            self.WINDOW.blit(time_text, (10, 10))
+            pygame.display.update()
+            pygame.time.delay(self.delay_visualization)
+
+    def close_gui(self):
+        if self.episodes_to_visualize:
+            pygame.quit()
+
+
+
+
