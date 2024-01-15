@@ -439,7 +439,7 @@ def process_df(df_start):
 """ ************************************************************************************************************* """
 " EVALUATION ENVIRONMENT AND NUMBER OF EPISODES NEEDED"
 " Dataframe "
-path_save = 'Tradeoff_causality_batch_episodes_enemies'
+path_save = 'TradeOff_causality_batch_episodes_enemies'
 os.makedirs(path_save, exist_ok=True)
 
 
@@ -489,7 +489,7 @@ for n_episodes in vector_episodes:
                 offline_causal_table, causal_table = prepare_df_for_comparison(offline_causal_table, causal_table)
 
                 causal_table.to_excel(
-                    f'{path_save}\Grid{rows}x{cols}_{n_enemies}enemies_{n_episodes}episodes_{sim_n}.xlsx')
+                    f'{path_save}/Grid{rows}x{cols}_{n_enemies}enemies_{n_episodes}episodes_sim{sim_n}.xlsx')
 
                 if len(offline_causal_table) == len(causal_table):
                     n_oks += 1
@@ -497,7 +497,7 @@ for n_episodes in vector_episodes:
             result.at[df_row, 'Grid Size'] = rows
             result.at[df_row, 'Episodes'] = n_episodes
             result.at[df_row, 'Enemies'] = n_enemies
-            result.at[df_row, 'Oks'] = n_oks
+            result.at[df_row, f'Oks_over_{n_simulations}sim'] = n_oks
 
             if n_oks > int(n_simulations / 2):
                 result.at[df_row, 'Suitable'] = 'yes'
@@ -508,7 +508,8 @@ for n_episodes in vector_episodes:
 
             df_row += 1
 
-result.to_excel(f'{path_save}\\comparison_causality.xlsx')
+result.to_excel(f'{path_save}/results_tradeoff_online_causality.xlsx')
+result.to_pickle(f'{path_save}/results_tradeoff_online_causality.pkl')
 
 """ ************************************************************************************************************* """
 " Grid size and number of episodes already chosen"
