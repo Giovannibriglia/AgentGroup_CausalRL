@@ -1,11 +1,13 @@
 import random
 import sys
 import warnings
-
+import cv2
 import numpy as np
 import pygame
 from gymnasium.spaces import Discrete
-
+import pygame.camera
+import os
+from pygame.locals import *
 warnings.filterwarnings("ignore")
 
 agent_png = 'images_for_render/supermario.png'
@@ -13,13 +15,11 @@ enemy_png = 'images_for_render/bowser.png'
 wall_png = 'images_for_render/wall.png'
 goal_png = 'images_for_render/goal.png'
 
-" IMPOSTARE REGISTRAZIONE VIDEO, SE e==0 --> start, SE e==n_episodes --> stop, prova a farlo sui movement"
-
 
 class CustomEnv:
 
     def __init__(self, rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals, if_maze,
-                 if_same_enemies_actions, episodes_to_visualize):
+                 if_same_enemies_actions, dir_saving, game_n):
         self.rows = rows
         self.cols = cols
         self.n_agents = n_agents
@@ -29,7 +29,8 @@ class CustomEnv:
         self.n_goals = n_goals
         self.n_walls = rows * 2
 
-        self.episodes_to_visualize = episodes_to_visualize
+        self.dir_saving = dir_saving
+        self.game_n = game_n
 
         # reward definition
         self.reward_alive = 0
@@ -211,9 +212,6 @@ class CustomEnv:
 
         for ind in range(len(self.grid_for_game)):
             print(self.grid_for_game[ind])
-
-        if self.episodes_to_visualize:
-            self.init_gui()
 
         # print('INIT)', self.pos_agents_for_reset, self.pos_enemies_for_reset)
 
@@ -453,11 +451,16 @@ class CustomEnv:
 
         return new_stateX, new_stateY, action, actionX, actionY
 
-    def init_gui(self):
+    def init_gui(self, algorithm, ep):
 
         pygame.font.init()
 
-        self.delay_visualization = 50
+        self.episode = ep
+        self.algorithm = algorithm
+
+        self.delay_visualization = 5
+
+        self.n_defeats_start = self.n_times_loser
 
         self.font_size = 20
         self.FONT = pygame.font.SysFont('comicsans', self.font_size)
@@ -484,6 +487,10 @@ class CustomEnv:
         self.pics_goals = []
         for _ in range(len(self.pos_goals)):
             self.pics_goals.append(pygame.transform.scale(pygame.image.load(goal_png), self.new_sizes))
+
+        self.path_output_video = f'{self.dir_saving}/video_{self.algorithm}_episode{self.episode}_game{self.game_n}.mp4'
+        self.count_img = 0
+
         """
         self.WINDOW.fill('black')
 
@@ -509,46 +516,93 @@ class CustomEnv:
         pygame.time.delay(self.delay_visualization)
         """
 
-    def movement_gui(self, ep, n_episodes, algorithm):
+    def movement_gui(self, n_episodes, step_for_episode):
 
-        if ep in self.episodes_to_visualize:
+        new_ag_coord = self.pos_agents[-1].copy()
+        new_en_coord = self.pos_enemies[-1].copy()
 
-            new_ag_coord = self.pos_agents[-1].copy()
-            new_en_coord = self.pos_enemies[-1].copy()
+        self.WINDOW.fill('black')
 
-            self.WINDOW.fill('black')
+        for agent in range(self.n_agents):
+            self.WINDOW.blit(self.pics_agents[agent], (new_ag_coord[agent][1] * self.width_im,
+                                                       new_ag_coord[agent][
+                                                           0] * self.height_im + self.font_size * 2))
 
-            for agent in range(self.n_agents):
-                self.WINDOW.blit(self.pics_agents[agent], (new_ag_coord[agent][1] * self.width_im,
-                                                           new_ag_coord[agent][
-                                                               0] * self.height_im + self.font_size * 2))
+        for enemy in range(self.n_enemies):
+            self.WINDOW.blit(self.pics_enemies[enemy], (new_en_coord[enemy][1] * self.width_im,
+                                                        new_en_coord[enemy][
+                                                            0] * self.height_im + self.font_size * 2))
 
-            for enemy in range(self.n_enemies):
-                self.WINDOW.blit(self.pics_enemies[enemy], (new_en_coord[enemy][1] * self.width_im,
-                                                            new_en_coord[enemy][
-                                                                0] * self.height_im + self.font_size * 2))
+        for wall in range(len(self.walls)):
+            self.WINDOW.blit(self.pics_walls[wall], (
+                self.walls[wall][1] * self.width_im,
+                self.walls[wall][0] * self.height_im + self.font_size * 2))
 
-            for wall in range(len(self.walls)):
-                self.WINDOW.blit(self.pics_walls[wall], (
-                    self.walls[wall][1] * self.width_im,
-                    self.walls[wall][0] * self.height_im + self.font_size * 2))
+        for goal in range(len(self.pos_goals)):
+            self.WINDOW.blit(self.pics_goals[goal], (
+                self.pos_goals[goal][1] * self.width_im,
+                self.pos_goals[goal][0] * self.height_im + self.font_size * 2))
 
-            for goal in range(len(self.pos_goals)):
-                self.WINDOW.blit(self.pics_goals[goal], (
-                    self.pos_goals[goal][1] * self.width_im,
-                    self.pos_goals[goal][0] * self.height_im + self.font_size * 2))
+        time_text = self.FONT.render(
+            f'Episode: {self.episode}/{n_episodes} - Algorithm: {self.algorithm} - #Defeats: {self.n_times_loser - self.n_defeats_start} - '
+            f'#Actions: {step_for_episode}',
+            True, 'white')
+        self.WINDOW.blit(time_text, (10, 10))
+        pygame.display.update()
+        pygame.time.delay(self.delay_visualization)
 
-            time_text = self.FONT.render(
-                f'Episode: {ep}/{n_episodes} - Algorithm: {algorithm} - Defeats: {self.n_times_loser}',
-                True, 'white')
-            self.WINDOW.blit(time_text, (10, 10))
-            pygame.display.update()
-            pygame.time.delay(self.delay_visualization)
+        # Capture the current Pygame screen and convert it to a NumPy array
+        pygame_image = cv2.cvtColor(pygame.surfarray.array3d(pygame.display.get_surface()), cv2.COLOR_RGB2BGR)
+        pygame_image = cv2.rotate(pygame_image, cv2.ROTATE_90_CLOCKWISE)
+        pygame_image = cv2.flip(pygame_image, 1)
 
-    def close_gui(self):
-        if self.episodes_to_visualize:
-            pygame.quit()
+        cv2.imwrite(
+            f'{self.dir_saving}/im{self.count_img}_{self.algorithm}_{self.episode}episode_game{self.game_n}.jpeg',
+            pygame_image)
 
+        self.count_img += 1
 
+    def save_video(self):
 
+        # Set the path to the directory containing your images
+        image_folder = self.dir_saving
 
+        # Set the output video file path
+        output_path = self.path_output_video
+
+        # Set the frame rate (frames per second) for the video
+        fps = 5
+
+        # Get the list of image filenames in the specified folder
+        image_files = sorted([f for f in os.listdir(image_folder) if f.endswith(('.png', '.jpg', '.jpeg'))])
+
+        # Check if there are any images in the folder
+        if not image_files:
+            print("No image files found in the specified folder.")
+            exit()
+
+        # Get the dimensions of the first image to determine the video resolution
+        first_image_path = os.path.join(image_folder, image_files[0])
+        img = cv2.imread(first_image_path)
+        height, width, _ = img.shape
+
+        # Create a VideoWriter object
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # You can use other codecs like 'XVID' or 'H264'
+        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+
+        # Write each image to the video file
+        for image_file in image_files:
+            image_path = os.path.join(image_folder, image_file)
+            img = cv2.imread(image_path)
+
+            # Ensure the image was read successfully
+            if img is not None:
+                out.write(img)
+                os.remove(image_path)
+            else:
+                print(f"Failed to read image: {image_path}")
+
+        # Release the VideoWriter object
+        out.release()
+
+        # print(f"Video created and saved to: {os.path.abspath(output_path)}")

@@ -455,7 +455,7 @@ class EpsilonGreedyQAgent:
         self.exp_proba = max(self.MIN_EXPLORATION_PROBA, np.exp(-self.EXPLORATION_DECREASING_DECAY * episode))
 
 
-def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
+def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize):
     rows = env.rows
     cols = env.cols
     action_space_size = n_act_agents
@@ -473,7 +473,7 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
     steps_for_episode = []
 
     pbar = tqdm(range(n_episodes))
-    time.sleep(1)
+
     for e in pbar:
         agent_n = 0
         if e == 0:
@@ -486,11 +486,18 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
         step_for_episode = 0
         done = False
 
+        if e in episodes_to_visualize:
+            if_visualization = True
+            env.init_gui(alg, e)
+        else:
+            if_visualization = False
+
         while not done:
             possible_actions = None
             if who_moves_first == 'Enemy':
                 env.step_enemies()
-                env.movement_gui(e, n_episodes, alg)
+                if if_visualization:
+                    env.movement_gui(n_episodes, step_for_episode)
                 """_, _, if_lose = env.check_winner_gameover_agent(current_state[0], current_state[1])
                 if not if_lose:"""
                 if 'causal' in alg:
@@ -499,7 +506,8 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
                                                             goals_nearby_all_agents, if_online=False)
                 action = agent.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
-                env.movement_gui(e, n_episodes, alg)
+                if if_visualization:
+                    env.movement_gui(n_episodes, step_for_episode)
                 """else:
                     next_state = current_state"""
                 new_stateX_ag = next_state[0]
@@ -513,13 +521,15 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
 
                 action = agent.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
-                env.movement_gui(e, n_episodes, alg)
+                if if_visualization:
+                    env.movement_gui(n_episodes, step_for_episode)
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
                 _, dones, _ = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
                 if not dones[agent_n]:
                     env.step_enemies()
-                    env.movement_gui(e, n_episodes, alg)
+                    if if_visualization:
+                        env.movement_gui(n_episodes, step_for_episode)
 
             rewards, dones, if_lose = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
             reward = int(rewards[agent_n])
@@ -544,6 +554,9 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
                 current_state = next_state
             step_for_episode += 1
 
+        if if_visualization:
+            env.save_video()
+
         if 'SA' in alg or 'EG' in alg:
             agent.update_exp_fact(e)
 
@@ -562,7 +575,7 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first):
     return average_episodes_rewards, steps_for_episode, q_table
 
 
-def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BATCH_EPISODES_UPDATE_BN=1):
+def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize, BATCH_EPISODES_UPDATE_BN=500):
     try:
         os.remove('online_heuristic_table.pkl')
     except:
@@ -598,6 +611,12 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
             current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
         current_state = current_state[agent_n]
 
+        if e in episodes_to_visualize:
+            if_visualization = True
+            env.init_gui(alg, e)
+        else:
+            if_visualization = False
+
         total_episode_reward = 0
         step_for_episode = 0
         done = False
@@ -605,14 +624,16 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
         while not done:
             if who_moves_first == 'Enemy':
                 env.step_enemies()
-                env.movement_gui(e, n_episodes, alg)
+                if if_visualization:
+                    env.movement_gui(n_episodes, step_for_episode)
                 enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
                 possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
                                                         goals_nearby_all_agents, if_online=True)
 
                 action = agent.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
-                env.movement_gui(e, n_episodes, alg)
+                if if_visualization:
+                    env.movement_gui(n_episodes, step_for_episode)
 
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
@@ -635,13 +656,15 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
 
                 action = agent.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
-                env.movement_gui(e, n_episodes, alg)
+                if if_visualization:
+                    env.movement_gui(n_episodes, step_for_episode)
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
                 _, dones, _ = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
                 if not dones[agent_n]:
                     env.step_enemies()
-                    env.movement_gui(e, n_episodes, alg)
+                    if if_visualization:
+                        env.movement_gui(n_episodes, step_for_episode)
 
             rewards, dones, if_lose = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
             reward = int(rewards[agent_n])
@@ -668,6 +691,9 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, BAT
 
         average_episodes_rewards.append(total_episode_reward)
         steps_for_episode.append(step_for_episode)
+
+        if if_visualization:
+            env.save_video()
 
         if e % BATCH_EPISODES_UPDATE_BN == 0 and e < int(EXPLORATION_GAME_PERCENT * n_episodes):
             pbar.set_postfix_str(
