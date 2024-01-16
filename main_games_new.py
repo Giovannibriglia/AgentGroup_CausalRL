@@ -8,6 +8,19 @@ from scipy.ndimage import gaussian_filter1d
 import plots
 import time
 
+
+def get_batch_episodes(n_enemies, rows):
+    table = pd.read_pickle('TradeOff_causality_batch_episodes_enemies/results_tradeoff_online_causality.pkl')
+
+    condition = (table['Grid Size'] == rows) & (table['Enemies'] == n_enemies)
+    result_column = table.loc[condition, 'Episodes'].to_list()
+    batch = min(result_column)
+    if batch is not None:
+        return batch
+    else:
+        return 1000
+
+
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal' + 'offline'/'online'
 # 'DQN' + 'causal'
 algorithms = ['QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
@@ -24,7 +37,7 @@ vect_if_same_enemies_actions = [False]
 dir_start = f'Results_Baseline_Comp1_Comp2_Comp3'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 
-episodes_to_visualize = [0, int(n_episodes*0.33), int(n_episodes*0.66), n_episodes-1]
+episodes_to_visualize = [0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
 
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:
@@ -47,14 +60,14 @@ for if_maze in vect_if_maze:
             directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem'
             os.makedirs(directory, exist_ok=True)
             for rows in vect_rows:
-                if n_enemies > 2*rows:
+                if n_enemies > 2 * rows:
                     break
 
                 cols = rows
                 directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem' + f'/{rows}x{cols}'
                 os.makedirs(directory, exist_ok=True)
 
-                BATCH_EPISODES_UPDATE_BN = int(n_episodes / 3)  # make it better
+                BATCH_EPISODES_UPDATE_BN = get_batch_episodes(n_enemies, rows)  # int(n_episodes / 3)  # make it better
 
                 for game_n in range(1, n_games + 1, 1):
                     n_agents = 1
