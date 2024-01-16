@@ -8,7 +8,7 @@ from scipy.ndimage import gaussian_filter1d
 import plots
 import time
 
-
+"""
 def get_batch_episodes(n_enemies, rows):
     table = pd.read_pickle('TradeOff_causality_batch_episodes_enemies/results_tradeoff_online_causality.pkl')
 
@@ -19,7 +19,7 @@ def get_batch_episodes(n_enemies, rows):
         return batch
     else:
         return 1000
-
+"""
 
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal' + 'offline'/'online'
 # 'DQN' + 'causal'
@@ -67,7 +67,7 @@ for if_maze in vect_if_maze:
                 directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem' + f'/{rows}x{cols}'
                 os.makedirs(directory, exist_ok=True)
 
-                BATCH_EPISODES_UPDATE_BN = get_batch_episodes(n_enemies, rows)  # int(n_episodes / 3)  # make it better
+                BATCH_EPISODES_UPDATE_BN = 500  # get_batch_episodes(n_enemies, rows)
 
                 for game_n in range(1, n_games + 1, 1):
                     n_agents = 1
