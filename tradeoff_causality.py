@@ -488,8 +488,8 @@ for n_episodes in vector_episodes:
 
                 offline_causal_table, causal_table = prepare_df_for_comparison(offline_causal_table, causal_table)
 
-                causal_table.to_excel(
-                    f'{path_save}/Grid{rows}x{cols}_{n_enemies}enemies_{n_episodes}episodes_sim{sim_n}.xlsx')
+                causal_table.to_pickle(
+                    f'{path_save}/Grid{rows}x{cols}_{n_enemies}enemies_{n_episodes}episodes_sim{sim_n}.pkl')
 
                 if len(offline_causal_table) == len(causal_table):
                     n_oks += 1
@@ -520,4 +520,11 @@ df = obj_minigame.create_df(n_episodes=2000)
 causality = Causality(df)
 causal_table = causality.training()
 causal_table.dropna(axis=0, how='any', inplace=True)
-causal_table.to_pickle('heuristic_table.pkl')"""
+
+col_df = causal_table.columns.to_list()
+sorted_causal_table = causal_table.sort_index(axis=0).sort_index(axis=1).reset_index(drop=True)
+new_cols = [s for s in sorted_causal_table.columns.to_list() if s not in col_df]
+causal_table = sorted_causal_table.drop(columns=new_cols)
+causal_table.to_pickle('offline_heuristic_table.pkl')
+causal_table.to_excel('offline_heuristic_table.xlsx')
+"""
