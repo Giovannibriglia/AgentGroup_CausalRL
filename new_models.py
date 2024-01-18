@@ -18,6 +18,7 @@ from scipy.stats import beta
 from causalnex.inference import InferenceEngine
 from causalnex.network import BayesianNetwork
 from causalnex.structure.notears import from_pandas
+
 warnings.filterwarnings("ignore")
 
 GAMMA = 0.99
@@ -28,6 +29,8 @@ EXPLORATION_GAME_PERCENT = 0.6
 BATCH_SIZE = 64
 TAU = 0.005
 HIDDEN_LAYERS = 128
+
+TIMEOUT_IN_HOURS = 4
 
 col_action = 'Action_Agent0'
 col_deltaX = 'DeltaX_Agent0'
@@ -156,7 +159,8 @@ class Causality:
 
         self.features_names = self.df.columns.to_list()
 
-        if nx.number_weakly_connected_components(self.structureModel) == 1 and nx.is_directed_acyclic_graph(self.structureModel) and len(self.df) > 100:
+        if nx.number_weakly_connected_components(self.structureModel) == 1 and nx.is_directed_acyclic_graph(
+                self.structureModel) and len(self.df) > 100:
             # print(f'training bayesian network...')
             if self.check_structureModel <= self.th_sm:
                 time2 = time.time()
@@ -244,7 +248,7 @@ class Causality:
             causal_table.dropna(axis=0, how='any', inplace=True)
             causal_table.to_pickle('online_heuristic_table.pkl')
 
-            #print('do-calculus time: ', time.time() - time3, '\n')
+            # print('do-calculus time: ', time.time() - time3, '\n')
 
             nodes1 = set(self.structureModel.nodes)
             edges1 = set(self.structureModel.edges)
@@ -472,12 +476,18 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, ep
     average_episodes_rewards = []
     steps_for_episode = []
 
-    pbar = tqdm(range(n_episodes))
+    first_visit = True
 
+    pbar = tqdm(range(n_episodes))
     for e in pbar:
         agent_n = 0
         if e == 0:
-            current_state, _, _, _, _ = env.reset(reset_n_times_loser=True)
+            if first_visit:
+                current_state, _, _, _, _ = env.reset(reset_n_times_loser=True)
+                initial_time = time.time()
+                first_visit = False
+            else:
+                current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
         else:
             current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
         current_state = current_state[agent_n]
@@ -493,6 +503,15 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, ep
             if_visualization = False
 
         while not done:
+
+            if (time.time() - initial_time) > TIMEOUT_IN_HOURS*3600:
+                if 'TS' in alg:
+                    q_table = [agent.alpha, agent.beta]
+                else:
+                    q_table = agent.q_table
+
+                return average_episodes_rewards, steps_for_episode, q_table
+
             possible_actions = None
             if who_moves_first == 'Enemy':
                 env.step_enemies()
@@ -512,7 +531,6 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, ep
                     next_state = current_state"""
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
-
             else:  # who_moves_first == 'Agent':
                 if 'Causal' in alg:
                     enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
@@ -575,7 +593,8 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, ep
     return average_episodes_rewards, steps_for_episode, q_table
 
 
-def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize, BATCH_EPISODES_UPDATE_BN=500):
+def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize,
+                        BATCH_EPISODES_UPDATE_BN=500):
     try:
         os.remove('online_heuristic_table.pkl')
     except:
@@ -598,15 +617,20 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
     steps_for_episode = []
 
     causality = Causality()
+    first_visit = True
 
     pbar = tqdm(range(n_episodes))
-    time.sleep(1)
     for e in pbar:
         agent_n = 0
         if e == 0:
-            current_state, _, _, _, _ = env.reset(reset_n_times_loser=True)
-            df_for_causality = create_df(env)
-            counter_e = 0
+            if first_visit:
+                current_state, _, _, _, _ = env.reset(reset_n_times_loser=True)
+                df_for_causality = create_df(env)
+                counter_e = 0
+                initial_time = time.time()
+                first_visit = False
+            else:
+                current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
         else:
             current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
         current_state = current_state[agent_n]
@@ -622,6 +646,14 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
         done = False
 
         while not done:
+            if (time.time() - initial_time) > TIMEOUT_IN_HOURS * 3600:
+                if 'TS' in alg:
+                    q_table = [agent.alpha, agent.beta]
+                else:
+                    q_table = agent.q_table
+
+                return average_episodes_rewards, steps_for_episode, q_table
+
             if who_moves_first == 'Enemy':
                 env.step_enemies()
                 if if_visualization:

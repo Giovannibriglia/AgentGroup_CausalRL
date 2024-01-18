@@ -15,7 +15,6 @@ enemy_png = 'images_for_render/bowser.png'
 wall_png = 'images_for_render/wall.png'
 goal_png = 'images_for_render/goal.png'
 
-
 class CustomEnv:
 
     def __init__(self, rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals, if_maze,
@@ -571,7 +570,7 @@ class CustomEnv:
         output_path = self.path_output_video
 
         # Set the frame rate (frames per second) for the video
-        fps = 5
+        fps = 2
 
         # Get the list of image filenames in the specified folder
         image_files = sorted([f for f in os.listdir(image_folder) if f.endswith(('.png', '.jpg', '.jpeg'))])
