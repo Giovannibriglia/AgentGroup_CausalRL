@@ -8,7 +8,9 @@ from scipy.ndimage import gaussian_filter1d
 import plots
 import time
 import random
+
 seed_values = np.load('seed_values.npy')
+
 
 def get_batch_episodes(n_enemies, rows):
     table = pd.read_pickle('TradeOff_causality_batch_episodes_enemies/results_tradeoff_online_causality.pkl')
@@ -21,18 +23,19 @@ def get_batch_episodes(n_enemies, rows):
     else:
         return 500
 
+
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal' + 'offline'/'online'
 # 'DQN' + 'causal'
 algorithms = ['QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
-              #'QL_EG_basic', 'QL_EG_causal_offline', 'QL_EG_causal_online',
-              #'QL_SA_basic', 'QL_SA_causal_offline', 'QL_SA_causal_online',
-              #'QL_BM_basic', 'QL_BM_causal_offline', 'QL_BM_causal_online'
+              'QL_EG_basic', 'QL_EG_causal_offline', 'QL_EG_causal_online',
+              'QL_SA_basic', 'QL_SA_causal_offline', 'QL_SA_causal_online',
+              'QL_BM_basic', 'QL_BM_causal_offline', 'QL_BM_causal_online'
               ]
 
 n_games = 5
-vect_rows = [5, 10]
+vect_rows = [10]
 vect_n_enemies = [2, 5, 10]
-n_episodes = 2500
+n_episodes = 3000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
 dir_start = f'Results_Comparison123'
