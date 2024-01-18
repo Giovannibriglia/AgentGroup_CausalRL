@@ -74,15 +74,16 @@ for if_maze in vect_if_maze:
                 BATCH_EPISODES_UPDATE_BN = get_batch_episodes(n_enemies, rows)
 
                 for game_n in range(1, n_games + 1, 1):
-                    np.random.seed(seed_values[game_n])
-                    random.seed(seed_values[game_n])
+                    seed_value = seed_values[game_n]
+                    np.random.seed(seed_value)
+                    random.seed(seed_value)
 
                     n_agents = 1
                     n_act_agents = 5
                     n_act_enemies = 5
                     n_goals = 1
                     env = new_env_game.CustomEnv(rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals,
-                                                 if_maze, if_same_enemies_actions, directory, game_n)
+                                                 if_maze, if_same_enemies_actions, directory, game_n, seed_value)
 
                     np.save(f"{directory}/env_game{game_n}.npy", env.grid_for_game)
 

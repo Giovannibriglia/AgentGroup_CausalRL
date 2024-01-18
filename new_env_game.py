@@ -8,6 +8,7 @@ from gymnasium.spaces import Discrete
 import pygame.camera
 import os
 from pygame.locals import *
+
 warnings.filterwarnings("ignore")
 
 agent_png = 'images_for_render/supermario.png'
@@ -15,10 +16,15 @@ enemy_png = 'images_for_render/bowser.png'
 wall_png = 'images_for_render/wall.png'
 goal_png = 'images_for_render/goal.png'
 
+
 class CustomEnv:
 
     def __init__(self, rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals, if_maze,
-                 if_same_enemies_actions, dir_saving, game_n):
+                 if_same_enemies_actions, dir_saving, game_n, seed_value):
+
+        np.random.seed(seed_value)
+        random.seed(seed_value)
+
         self.rows = rows
         self.cols = cols
         self.n_agents = n_agents
