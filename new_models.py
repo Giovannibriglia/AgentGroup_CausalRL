@@ -652,6 +652,11 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
                 else:
                     q_table = agent.q_table
 
+                try:
+                    os.remove('online_heuristic_table.pkl')
+                except:
+                    pass
+
                 return average_episodes_rewards, steps_for_episode, q_table
 
             if who_moves_first == 'Enemy':
