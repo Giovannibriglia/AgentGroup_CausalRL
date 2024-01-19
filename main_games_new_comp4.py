@@ -43,6 +43,9 @@ who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 
 episodes_to_visualize = [0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
 
+""" FIX: you can do better, think about the directory saving and so on... you only need to pass the predefined env, 
+but you can compute the env characteristics before"""
+
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:
 
@@ -82,9 +85,15 @@ for if_maze in vect_if_maze:
                     n_act_agents = 5
                     n_act_enemies = 5
                     n_goals = 1
-
+                    predefined_env = np.load('envs/env_game1.npy')
                     env = new_env_game.CustomEnv(rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals,
                                                  if_maze, if_same_enemies_actions, directory, game_n, seed_value)
+
+                    env = new_env_game.CustomEnv.init_with_predefined_env(predefined_env, n_act_agents, n_act_enemies,
+                                                                          if_maze,
+                                                                          if_same_enemies_actions, directory, game_n,
+                                                                          seed_value)
+                    print(ex_env)
 
                     np.save(f"{directory}/env_game{game_n}.npy", env.grid_for_game)
 
