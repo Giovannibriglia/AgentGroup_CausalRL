@@ -15,12 +15,15 @@ seed_values = np.load('seed_values.npy')
 def get_batch_episodes(n_enemies, rows):
     table = pd.read_pickle('TradeOff_causality_batch_episodes_enemies/results_tradeoff_online_causality.pkl')
 
-    condition = (table['Grid Size'] == rows) & (table['Enemies'] == n_enemies)
+    condition = (table['Grid Size'] == rows) & (table['Enemies'] == n_enemies) & (table['Suitable'] == 'yes')
     result_column = table.loc[condition, 'Episodes'].to_list()
-    batch = min(result_column)
-    if batch is not None:
-        return batch
-    else:
+    try:
+        batch = min(result_column)
+        if batch is not None:
+            return batch
+        else:
+            return 500
+    except:
         return 500
 
 
