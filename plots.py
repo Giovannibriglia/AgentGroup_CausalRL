@@ -6,20 +6,31 @@ from scipy.ndimage import gaussian_filter1d
 fontsize = 12
 
 
+def is_number(element):
+    return isinstance(element.item(), (int, float))
+
+
 def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, n_enemies):
     targetPattern = fr"{dir_results}\*.npy"
     directories = glob.glob(targetPattern)
     # data_names = [os.path.basename(directories[s]) for s in range(len(directories))]
 
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, dpi=500)
-    fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemy - Averaged over {n_games} games', fontsize=fontsize+3)
+    fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemy - Averaged over {n_games} games', fontsize=fontsize + 3)
 
+    algorithms_checked = []
     for alg in algorithms:
+        if all(is_number(np.load(f'{dir_results}/{alg}_computation_time_game{game}.npy')) for game in range(1, n_games + 1, 1)):
+            algorithms_checked.append(alg)
+        else:
+            print(f'{alg} timeout occurred')
+
+    for alg in algorithms_checked:
         filename_rewards = [s for s in directories if f'{alg}_rewards' in s]
         filename_steps = [s for s in directories if f'{alg}_steps' in s]
 
-        av_rew = np.zeros(len(np.load(filename_rewards[0])))
-        av_steps = np.zeros(len(np.load(filename_steps[0])))
+        av_rew = np.zeros(n_episodes)
+        av_steps = np.zeros(n_episodes)
 
         for n_game in range(n_games):
             av_rew = np.sum([av_rew, np.load(filename_rewards[n_game])], axis=0)
@@ -32,7 +43,8 @@ def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, 
         av_rewards = np.cumsum(av_rew, dtype=int)
 
         x = np.arange(0, len(av_rewards), 1)
-        ax1.plot(x, av_rewards, label=f'{alg} = {round(np.mean(av_rew) / n_games, 2)} \u00B1 {round(np.std(av_rew) / n_games, 2)}')
+        ax1.plot(x, av_rewards,
+                 label=f'{alg} = {round(np.mean(av_rew) / n_games, 2)} \u00B1 {round(np.std(av_rew) / n_games, 2)}')
         confidence_interval_rew = np.std(av_rewards)
         ax1.fill_between(x, (av_rewards - confidence_interval_rew), (av_rewards + confidence_interval_rew), alpha=0.2)
         ax1.set_title('Cumulative average reward')
@@ -41,7 +53,8 @@ def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, 
         av_steps_gauss = gaussian_filter1d(av_steps, 4)
         ax2.plot(x, gaussian_filter1d(av_steps, 8))
         confidence_interval_steps = np.std(av_steps_gauss)
-        ax2.fill_between(x, (av_steps_gauss - confidence_interval_steps), (av_steps_gauss + confidence_interval_steps), alpha=0.2)
+        ax2.fill_between(x, (np.min(av_steps_gauss)), (np.max(av_steps_gauss)),
+                         alpha=0.2)
         ax2.set_yscale('log')
         ax2.set_title('Actions needed to complete the episode')
         ax2.set_xlabel('Episode', fontsize=12)
@@ -58,8 +71,14 @@ def plot_av_computation_time(dir_results, algorithms, n_games, rows, cols, n_ene
     fig = plt.figure(dpi=500)
     fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemy - Averaged over {n_games} games', fontsize=fontsize + 3)
 
-    data = []
+    algorithms_checked = []
     for alg in algorithms:
+        if all(is_number(np.load(f'{dir_results}/{alg}_computation_time_game{game}.npy')) for game in
+               range(1, n_games + 1, 1)):
+            algorithms_checked.append(alg)
+
+    data = []
+    for alg in algorithms_checked:
         filename_comp_time = [s for s in directories if f'{alg}_computation_time' in s]
 
         av_comp_time = 0
@@ -71,7 +90,7 @@ def plot_av_computation_time(dir_results, algorithms, n_games, rows, cols, n_ene
         data.append(data_to_app)
 
         # plt.bar(alg, av_comp_time, label=f'{alg} = {round(av_comp_time, 3)}')
-    plt.boxplot(data, vert=True, patch_artist=True, labels=algorithms)
+    plt.boxplot(data, vert=True, patch_artist=True, labels=algorithms_checked)
 
     # plt.legend(loc='best')
     plt.xticks(rotation=90)

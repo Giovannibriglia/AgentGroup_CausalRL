@@ -19,257 +19,254 @@ goal_png = 'images_for_render/goal.png'
 class CustomEnv:
 
     def __init__(self, rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals, if_maze,
-                 if_same_enemies_actions, dir_saving, game_n, seed_value):
+                 if_same_enemies_actions, dir_saving, game_n, seed_value, predefined_env):
 
         np.random.seed(seed_value)
         random.seed(seed_value)
 
-        self.rows = rows
-        self.cols = cols
-        self.n_agents = n_agents
-        self.n_act_agents = n_act_agents
-        self.n_enemies = n_enemies
-        self.n_act_enemies = n_act_enemies
-        self.n_goals = n_goals
-        self.n_walls = rows * 2
+        if predefined_env is None:
 
-        self.dir_saving = dir_saving
-        self.game_n = game_n
+            self.rows = rows
+            self.cols = cols
+            self.n_agents = n_agents
+            self.n_act_agents = n_act_agents
+            self.n_enemies = n_enemies
+            self.n_act_enemies = n_act_enemies
+            self.n_goals = n_goals
+            self.n_walls = rows * 2
 
-        # reward definition
-        self.reward_alive = 0
-        self.reward_winner = 1
-        self.reward_loser = -1
+            self.dir_saving = dir_saving
+            self.game_n = game_n
 
-        self.n_times_loser = 0
+            # reward definition
+            self.reward_alive = 0
+            self.reward_winner = 1
+            self.reward_loser = -1
 
-        #  game episode
-        self.len_actions_enemies = 50
-        self.n_steps_enemies_actions = 0
+            self.n_times_loser = 0
 
-        # grid for visualize agents and enemies positions
-        self.grid_for_game = []
-        # list for saving enemies positions
-        self.pos_enemies = []
-        self.pos_enemies_for_reset = []
-        # list for saving agents positions
-        self.pos_agents = []
-        self.pos_agents_for_reset = []
-        # goal's position
-        self.pos_goals = []
+            #  game episode
+            self.len_actions_enemies = 50
+            self.n_steps_enemies_actions = 0
 
-        # action space of agents
-        self.action_space = Discrete(self.n_act_agents, start=0)
+            # grid for visualize agents and enemies positions
+            self.grid_for_game = []
+            # list for saving enemies positions
+            self.pos_enemies = []
+            self.pos_enemies_for_reset = []
+            # list for saving agents positions
+            self.pos_agents = []
+            self.pos_agents_for_reset = []
+            # goal's position
+            self.pos_goals = []
 
-        # defining empty matrices for game
-        for ind_row in range(self.rows):
-            row = []
-            for ind_col in range(self.cols):
-                row.append('-')
-            self.grid_for_game.append(row)
+            # action space of agents
+            self.action_space = Discrete(self.n_act_agents, start=0)
 
-        self.observation_space = rows * cols
+            # defining empty matrices for game
+            for ind_row in range(self.rows):
+                row = []
+                for ind_col in range(self.cols):
+                    row.append('-')
+                self.grid_for_game.append(row)
 
-        # positioning agents
-        row_pos_agents = []
-        for agent in range(1, self.n_agents + 1, 1):
-            # check if same position than enemies
-            do = True
-            while do:
-                x_agent = random.randint(0, self.rows - 1)
-                y_agent = random.randint(0, self.cols - 1)
-                if [x_agent, y_agent] not in self.pos_agents_for_reset:
-                    do = False
-            self.grid_for_game[x_agent][y_agent] = 'Agent' + str(agent)
-            row_pos_agents.append([x_agent, y_agent])
-            self.pos_agents_for_reset.append([x_agent, y_agent])
-        self.pos_agents.append(row_pos_agents)
+            self.observation_space = rows * cols
 
-        # positioning goal
-        for goal in range(1, self.n_goals + 1, 1):
-            # check if same position than enemies and agents
-            do = True
-            while do:
-                x_goal = random.randint(0, self.rows - 1)
-                y_goal = random.randint(0, self.cols - 1)
-                if [x_goal, y_goal] not in self.pos_agents[0]:
-                    do = False
-            self.grid_for_game[x_goal][y_goal] = 'Goal' + str(goal)
-            self.pos_goals.append([x_goal, y_goal])
+            # positioning agents
+            row_pos_agents = []
+            for agent in range(1, self.n_agents + 1, 1):
+                # check if same position than enemies
+                do = True
+                while do:
+                    x_agent = random.randint(0, self.rows - 1)
+                    y_agent = random.randint(0, self.cols - 1)
+                    if [x_agent, y_agent] not in self.pos_agents_for_reset:
+                        do = False
+                self.grid_for_game[x_agent][y_agent] = 'Agent' + str(agent)
+                row_pos_agents.append([x_agent, y_agent])
+                self.pos_agents_for_reset.append([x_agent, y_agent])
+            self.pos_agents.append(row_pos_agents)
 
-        self.walls = []
-        if if_maze:
-            self.define_maze()
+            # positioning goal
+            for goal in range(1, self.n_goals + 1, 1):
+                # check if same position than enemies and agents
+                do = True
+                while do:
+                    x_goal = random.randint(0, self.rows - 1)
+                    y_goal = random.randint(0, self.cols - 1)
+                    if [x_goal, y_goal] not in self.pos_agents[0]:
+                        do = False
+                self.grid_for_game[x_goal][y_goal] = 'Goal' + str(goal)
+                self.pos_goals.append([x_goal, y_goal])
 
-        # positioning enemies
-        row_pos_enemies = []
-        for enemy in range(1, self.n_enemies + 1, 1):
-            # check if same position
-            do = True
-            while do:
-                x_nem = random.randint(0, self.rows - 1)
-                y_nem = random.randint(0, self.cols - 1)
-                if [x_nem, y_nem] not in self.pos_agents_for_reset and [x_nem, y_nem] not in self.pos_goals:
-                    do = False
-            self.grid_for_game[x_nem][y_nem] = 'En' + str(enemy)
-            row_pos_enemies.append([x_nem, y_nem])
-            self.pos_enemies_for_reset.append([x_nem, y_nem])
-            # self.pos_enemies.append([x_nem, y_nem])
-        self.pos_enemies.append(row_pos_enemies)
+            self.walls = []
+            if if_maze:
+                self.define_maze()
 
-        self.if_same_enemies_actions = if_same_enemies_actions
-        if self.if_same_enemies_actions:
-            self.list_enemies_actions = []
-            for enemy in range(0, self.n_enemies, 1):
-                enemy_actions = []
-                for act in range(self.len_actions_enemies):
-                    enemy_actions.append(random.randint(0, self.n_act_enemies - 1))
-                self.list_enemies_actions.append(enemy_actions)
+            # positioning enemies
+            row_pos_enemies = []
+            for enemy in range(1, self.n_enemies + 1, 1):
+                # check if same position
+                do = True
+                while do:
+                    x_nem = random.randint(0, self.rows - 1)
+                    y_nem = random.randint(0, self.cols - 1)
+                    if [x_nem, y_nem] not in self.pos_agents_for_reset and [x_nem, y_nem] not in self.pos_goals and [x_nem, y_nem] not in self.walls:
+                        do = False
+                self.grid_for_game[x_nem][y_nem] = 'En' + str(enemy)
+                row_pos_enemies.append([x_nem, y_nem])
+                self.pos_enemies_for_reset.append([x_nem, y_nem])
+                # self.pos_enemies.append([x_nem, y_nem])
+            self.pos_enemies.append(row_pos_enemies)
 
-        self.reset_enemies_attached = [[False] * self.n_enemies] * self.n_agents
+            self.if_same_enemies_actions = if_same_enemies_actions
+            if self.if_same_enemies_actions:
+                self.list_enemies_actions = []
+                for enemy in range(0, self.n_enemies, 1):
+                    enemy_actions = []
+                    for act in range(self.len_actions_enemies):
+                        enemy_actions.append(random.randint(0, self.n_act_enemies - 1))
+                    self.list_enemies_actions.append(enemy_actions)
 
-        self.reset_enemies_nearby = []
-        for agent in range(0, self.n_agents, 1):
-            single_agent = []
-            for enemy in range(0, self.n_enemies, 1):
-                x_ag = self.pos_agents[0][agent][0]
-                y_ag = self.pos_agents[0][agent][1]
-                x_en = self.pos_enemies[0][enemy][0]
-                y_en = self.pos_enemies[0][enemy][1]
-                single_agent.append(self.get_direction(x_ag, y_ag, x_en, y_en))
-            self.reset_enemies_nearby.append(single_agent)
+            self.reset_enemies_attached = [[False] * self.n_enemies] * self.n_agents
 
-        for ind in range(len(self.grid_for_game)):
-            print(self.grid_for_game[ind])
+            self.reset_enemies_nearby = []
+            for agent in range(0, self.n_agents, 1):
+                single_agent = []
+                for enemy in range(0, self.n_enemies, 1):
+                    x_ag = self.pos_agents[0][agent][0]
+                    y_ag = self.pos_agents[0][agent][1]
+                    x_en = self.pos_enemies[0][enemy][0]
+                    y_en = self.pos_enemies[0][enemy][1]
+                    single_agent.append(self.get_direction(x_ag, y_ag, x_en, y_en))
+                self.reset_enemies_nearby.append(single_agent)
 
-        # print('INIT)', self.pos_agents_for_reset, self.pos_enemies_for_reset)
+            for ind in range(len(self.grid_for_game)):
+                print(self.grid_for_game[ind])
 
-    def init_with_predefined_env(self, predefined_env, n_act_agents, n_act_enemies, if_maze,
-                                 if_same_enemies_actions, dir_saving, game_n, seed_value):
+            # print('INIT)', self.pos_agents_for_reset, self.pos_enemies_for_reset)
+        else:
 
-        np.random.seed(seed_value)
-        random.seed(seed_value)
+            string_goal = 'Goal'
+            string_agent = 'Agent'
+            string_enemy = 'En'
 
-        string_goal = 'Goal'
-        string_agent = 'Agent'
-        string_enemy = 'En'
+            rows = len(predefined_env)
+            cols = len(predefined_env[0])
 
-        rows = len(predefined_env)
-        cols = len(predefined_env[0])
+            self.n_agents = 0
+            self.n_enemies = 0
+            self.n_goals = 0
 
-        self.n_agents = 0
-        self.n_enemies = 0
-        self.n_goals = 0
+            for i, row in enumerate(predefined_env):
+                for j, value in enumerate(row):
+                    if string_goal in value:
+                        self.n_goals += 1
+                    if string_enemy in value:
+                        self.n_enemies += 1
+                    if string_agent in value:
+                        self.n_agents += 1
 
-        for i, row in enumerate(predefined_env):
-            for j, value in enumerate(row):
-                if string_goal in value:
-                    self.n_goals += 1
-                if string_enemy in value:
-                    self.n_enemies += 1
-                if string_agent in value:
-                    self.n_agents += 1
+            self.rows = rows
+            self.cols = cols
+            self.n_act_agents = n_act_agents
+            self.n_act_enemies = n_act_enemies
+            self.n_walls = rows * 2
 
-        self.rows = rows
-        self.cols = cols
-        self.n_act_agents = n_act_agents
-        self.n_act_enemies = n_act_enemies
-        self.n_walls = rows * 2
+            self.dir_saving = dir_saving
+            self.game_n = game_n
 
-        self.dir_saving = dir_saving
-        self.game_n = game_n
+            # reward definition
+            self.reward_alive = 0
+            self.reward_winner = 1
+            self.reward_loser = -1
 
-        # reward definition
-        self.reward_alive = 0
-        self.reward_winner = 1
-        self.reward_loser = -1
+            self.n_times_loser = 0
 
-        self.n_times_loser = 0
+            #  game episode
+            self.len_actions_enemies = 50
+            self.n_steps_enemies_actions = 0
 
-        #  game episode
-        self.len_actions_enemies = 50
-        self.n_steps_enemies_actions = 0
+            # grid for visualize agents and enemies positions
+            self.grid_for_game = []
+            # list for saving enemies positions
+            self.pos_enemies = []
+            self.pos_enemies_for_reset = []
+            # list for saving agents positions
+            self.pos_agents = []
+            self.pos_agents_for_reset = []
+            # goal's position
+            self.pos_goals = []
 
-        # grid for visualize agents and enemies positions
-        self.grid_for_game = []
-        # list for saving enemies positions
-        self.pos_enemies = []
-        self.pos_enemies_for_reset = []
-        # list for saving agents positions
-        self.pos_agents = []
-        self.pos_agents_for_reset = []
-        # goal's position
-        self.pos_goals = []
+            # action space of agents
+            self.action_space = Discrete(self.n_act_agents, start=0)
 
-        # action space of agents
-        self.action_space = Discrete(self.n_act_agents, start=0)
+            # defining empty matrices for game
+            for ind_row in range(self.rows):
+                row = []
+                for ind_col in range(self.cols):
+                    row.append('-')
+                self.grid_for_game.append(row)
 
-        # defining empty matrices for game
-        for ind_row in range(self.rows):
-            row = []
-            for ind_col in range(self.cols):
-                row.append('-')
-            self.grid_for_game.append(row)
+            self.observation_space = rows * cols
 
-        self.observation_space = rows * cols
+            # positioning agents and goals
+            row_pos_agents = []
+            for i, row in enumerate(predefined_env):
+                for j, value in enumerate(row):
+                    if string_goal in value:
+                        self.pos_goals.append([i, j])
+                        self.grid_for_game[i][j] = value
+                    if string_agent in value:
+                        self.pos_agents_for_reset.append([i, j])
+                        row_pos_agents.append([i, j])
+                        self.grid_for_game[i][j] = value
+            self.pos_agents.append(row_pos_agents)
 
-        # positioning agents and goals
-        row_pos_agents = []
-        for i, row in enumerate(predefined_env):
-            for j, value in enumerate(row):
-                if string_goal in value:
-                    self.pos_goals.append([i, j])
-                    self.grid_for_game[i][j] = value
-                if string_agent in value:
-                    self.pos_agents_for_reset.append([i, j])
-                    row_pos_agents.append([i, j])
-                    self.grid_for_game[i][j] = value
-        self.pos_agents.append(row_pos_agents)
+            self.walls = []
+            if if_maze:
+                self.define_maze()
 
-        self.walls = []
-        if if_maze:
-            self.define_maze()
+            # positioning enemies
+            row_pos_enemies = []
+            for enemy in range(1, self.n_enemies + 1, 1):
+                # check if same position
+                do = True
+                while do:
+                    x_nem = random.randint(0, self.rows - 1)
+                    y_nem = random.randint(0, self.cols - 1)
+                    if [x_nem, y_nem] not in self.pos_agents_for_reset and [x_nem, y_nem] not in self.pos_goals and [x_nem, y_nem] not in self.walls:
+                        do = False
+                self.grid_for_game[x_nem][y_nem] = 'En' + str(enemy)
+                row_pos_enemies.append([x_nem, y_nem])
+                self.pos_enemies_for_reset.append([x_nem, y_nem])
+                # self.pos_enemies.append([x_nem, y_nem])
+            self.pos_enemies.append(row_pos_enemies)
 
-        # positioning enemies
-        row_pos_enemies = []
-        for enemy in range(1, self.n_enemies + 1, 1):
-            # check if same position
-            do = True
-            while do:
-                x_nem = random.randint(0, self.rows - 1)
-                y_nem = random.randint(0, self.cols - 1)
-                if [x_nem, y_nem] not in self.pos_agents_for_reset and [x_nem, y_nem] not in self.pos_goals:
-                    do = False
-            self.grid_for_game[x_nem][y_nem] = 'En' + str(enemy)
-            row_pos_enemies.append([x_nem, y_nem])
-            self.pos_enemies_for_reset.append([x_nem, y_nem])
-            # self.pos_enemies.append([x_nem, y_nem])
-        self.pos_enemies.append(row_pos_enemies)
+            self.if_same_enemies_actions = if_same_enemies_actions
+            if self.if_same_enemies_actions:
+                self.list_enemies_actions = []
+                for enemy in range(0, self.n_enemies, 1):
+                    enemy_actions = []
+                    for act in range(self.len_actions_enemies):
+                        enemy_actions.append(random.randint(0, self.n_act_enemies - 1))
+                    self.list_enemies_actions.append(enemy_actions)
 
-        self.if_same_enemies_actions = if_same_enemies_actions
-        if self.if_same_enemies_actions:
-            self.list_enemies_actions = []
-            for enemy in range(0, self.n_enemies, 1):
-                enemy_actions = []
-                for act in range(self.len_actions_enemies):
-                    enemy_actions.append(random.randint(0, self.n_act_enemies - 1))
-                self.list_enemies_actions.append(enemy_actions)
+            self.reset_enemies_attached = [[False] * self.n_enemies] * self.n_agents
 
-        self.reset_enemies_attached = [[False] * self.n_enemies] * self.n_agents
+            self.reset_enemies_nearby = []
+            for agent in range(0, self.n_agents, 1):
+                single_agent = []
+                for enemy in range(0, self.n_enemies, 1):
+                    x_ag = self.pos_agents[0][agent][0]
+                    y_ag = self.pos_agents[0][agent][1]
+                    x_en = self.pos_enemies[0][enemy][0]
+                    y_en = self.pos_enemies[0][enemy][1]
+                    single_agent.append(self.get_direction(x_ag, y_ag, x_en, y_en))
+                self.reset_enemies_nearby.append(single_agent)
 
-        self.reset_enemies_nearby = []
-        for agent in range(0, self.n_agents, 1):
-            single_agent = []
-            for enemy in range(0, self.n_enemies, 1):
-                x_ag = self.pos_agents[0][agent][0]
-                y_ag = self.pos_agents[0][agent][1]
-                x_en = self.pos_enemies[0][enemy][0]
-                y_en = self.pos_enemies[0][enemy][1]
-                single_agent.append(self.get_direction(x_ag, y_ag, x_en, y_en))
-            self.reset_enemies_nearby.append(single_agent)
-
-        for ind in range(len(self.grid_for_game)):
-            print(self.grid_for_game[ind])
+            for ind in range(len(self.grid_for_game)):
+                print(self.grid_for_game[ind])
 
     def define_maze(self):
 
@@ -324,11 +321,12 @@ class CustomEnv:
                     # Attempt to insert walls randomly, avoiding the path, agent, and goal
                     wall_attempts = 0
                     while not len(wall_positions) == num_walls and not wall_attempts >= num_walls * 100:
-                        wall_row, wall_col = random.randint(0, grid_size[0] - 1), random.randint(0, grid_size[1] - 1)
+                        wall_row, wall_col = random.randint(0, grid_size[0] - 1), random.randint(0,
+                                                                                                 grid_size[1] - 1)
 
                         if (wall_row, wall_col) not in path and (wall_row, wall_col) not in agents_position and (
                                 wall_row, wall_col) not in goals_positions and (
-                        wall_row, wall_col) not in wall_positions and \
+                                wall_row, wall_col) not in wall_positions and \
                                 grid[wall_row][
                                     wall_col] != -1:
                             grid[wall_row][wall_col] = value_wall  # Mark cell as a wall

@@ -87,7 +87,8 @@ for if_maze in vect_if_maze:
                     n_goals = 1
 
                     env = new_env_game.CustomEnv(rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals,
-                                                 if_maze, if_same_enemies_actions, directory, game_n, seed_value)
+                                                 if_maze, if_same_enemies_actions, directory, game_n, seed_value,
+                                                 predefined_env=None)
 
                     np.save(f"{directory}/env_game{game_n}.npy", env.grid_for_game)
 
@@ -115,9 +116,9 @@ for if_maze in vect_if_maze:
                                                                                          episodes_to_visualize,
                                                                                          BATCH_EPISODES_UPDATE_BN)
 
-                        else:
+                        """else: TO FIX
                             rewards, steps, q_table = new_models.DQN_variations(env_for_alg, n_act_agents, n_episodes,
-                                                                                alg, who_moves_first)
+                                                                                alg, who_moves_first)"""
 
                         if len(rewards) == n_episodes:
                             computation_time = (time.time() - start_time) / 60  # minutes
