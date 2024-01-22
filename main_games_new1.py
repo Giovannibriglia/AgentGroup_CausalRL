@@ -44,7 +44,7 @@ vect_if_same_enemies_actions = [False]
 dir_start = f'Results_Comparison123'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 
-episodes_to_visualize = [0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
+episodes_to_visualize = [] #[0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
 
 os.makedirs(dir_start, exist_ok=True)
 for if_maze in vect_if_maze:

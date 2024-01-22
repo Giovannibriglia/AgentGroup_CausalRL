@@ -100,7 +100,7 @@ def create_df(env):
             cols_df.append(f'Goal{goal}_Nearby_Agent{agent}')
 
     df = pd.DataFrame(columns=cols_df)
-    return df
+    return df, cols_df
 
 
 class Causality:
@@ -625,7 +625,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
         if e == 0:
             if first_visit:
                 current_state, _, _, _, _ = env.reset(reset_n_times_loser=True)
-                df_for_causality = create_df(env)
+                df_for_causality, columns_df_causality = create_df(env)
                 counter_e = 0
                 initial_time = time.time()
                 first_visit = False
@@ -737,7 +737,11 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
                 f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}, do-calculus...")
 
             for col in df_for_causality.columns:
-                df_for_causality[str(col)] = df_for_causality[str(col)].astype(str).str.replace(',', '').astype(float)
+                if col not in columns_df_causality:
+                    df_for_causality.drop([col], axis=1)
+                    print('This column could cause problems: ', col)
+                else:
+                    df_for_causality[str(col)] = df_for_causality[str(col)].astype(str).str.replace(',', '').astype(float)
 
             causality.training(e, df_for_causality)
             df_for_causality = create_df(env)
