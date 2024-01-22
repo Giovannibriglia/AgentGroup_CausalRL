@@ -459,7 +459,11 @@ class EpsilonGreedyQAgent:
         self.exp_proba = max(self.MIN_EXPLORATION_PROBA, np.exp(-self.EXPLORATION_DECREASING_DECAY * episode))
 
 
-def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize):
+def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize, seed_value):
+
+    np.random.seed(seed_value)
+    random.seed(seed_value)
+
     rows = env.rows
     cols = env.cols
     action_space_size = n_act_agents
@@ -593,8 +597,11 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, ep
     return average_episodes_rewards, steps_for_episode, q_table
 
 
-def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize,
+def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize, seed_value,
                         BATCH_EPISODES_UPDATE_BN=500):
+    np.random.seed(seed_value)
+    random.seed(seed_value)
+
     try:
         os.remove('online_heuristic_table.pkl')
     except:

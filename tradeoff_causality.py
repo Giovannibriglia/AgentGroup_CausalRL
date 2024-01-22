@@ -317,12 +317,13 @@ class Causality:
         self.structureModel.remove_edges_below_threshold(0.2)
 
         " Plot structure "
-        """plt.figure(dpi=500)
-        plt.title(f'{self.structureModel} - {n_episodes} episodes - Grid {cols}x{rows}')
-        nx.draw(self.structureModel, pos=nx.circular_layout(self.structureModel), with_labels=True, font_size=6,
+        plt.figure(dpi=1000)
+        plt.title(f'{self.structureModel}', fontsize=20)
+        nx.draw(self.structureModel, pos=nx.circular_layout(self.structureModel), with_labels=True, font_size=8,
                 edge_color='orange')
         # nx.draw(self.structureModel, with_labels=True, font_size=4, edge_color='orange')
-        plt.show()"""
+        plt.savefig('start_graph.pdf')
+        plt.show()
 
         print(f'training bayesian network...')
         self.bn = BayesianNetwork(self.structureModel)
@@ -368,8 +369,8 @@ class Causality:
                 # print(f'{var} --> externally caused')
                 self.independents_var.append(var)
 
-        # print(f'**Externally caused: {self.independents_var}')
-        # print(f'**Externally influenced: {self.dependents_var}')
+        print(f'**Independents vars: {self.independents_var}')
+        print(f'**Dependents vars: {self.dependents_var}')
         print('do-calculus-2...')
         causal_table = pd.DataFrame(columns=self.features_names)
 
@@ -439,7 +440,7 @@ def process_df(df_start):
 """ ************************************************************************************************************* """
 " EVALUATION ENVIRONMENT AND NUMBER OF EPISODES NEEDED"
 " Dataframe "
-path_save = 'TradeOff_causality_batch_episodes_enemies'
+"""path_save = 'TradeOff_causality_batch_episodes_enemies'
 os.makedirs(path_save, exist_ok=True)
 
 
@@ -509,13 +510,16 @@ for n_episodes in vector_episodes:
             df_row += 1
 
 result.to_excel(f'{path_save}/results_tradeoff_online_causality.xlsx')
-result.to_pickle(f'{path_save}/results_tradeoff_online_causality.pkl')
+result.to_pickle(f'{path_save}/results_tradeoff_online_causality.pkl')"""
 
 """ ************************************************************************************************************* """
 " Grid size and number of episodes already chosen"
 " Dataframe "
 """obj_minigame = MiniGame(rows=3, cols=3, n_agents=1, n_enemies=1, n_goals=1)
-df = obj_minigame.create_df(n_episodes=2000)
+df = obj_minigame.create_df(n_episodes=1500)
+df = process_df(df)
+df.to_pickle('mario.pkl')"""
+df = pd.read_pickle('mario.pkl')
 
 causality = Causality(df)
 causal_table = causality.training()
@@ -525,6 +529,6 @@ col_df = causal_table.columns.to_list()
 sorted_causal_table = causal_table.sort_index(axis=0).sort_index(axis=1).reset_index(drop=True)
 new_cols = [s for s in sorted_causal_table.columns.to_list() if s not in col_df]
 causal_table = sorted_causal_table.drop(columns=new_cols)
-causal_table.to_pickle('offline_heuristic_table.pkl')
-causal_table.to_excel('offline_heuristic_table.xlsx')
-"""
+# causal_table.to_pickle('offline_heuristic_table.pkl')
+# causal_table.to_excel('offline_heuristic_table.xlsx')
+

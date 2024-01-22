@@ -36,8 +36,8 @@ algorithms = ['QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
               ]
 
 n_games = 5
-vect_rows = [5]
-vect_n_enemies = [2]
+vect_rows = [10]
+vect_n_enemies = [5]
 n_episodes = 3000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
