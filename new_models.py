@@ -700,13 +700,22 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
 
                 action = agent.choose_action(current_state, possible_actions)
                 next_state = env.step_agent(action)[0]
+                df_for_causality.at[counter_e, f'Action_Agent{agent_n}'] = action
+                df_for_causality.at[counter_e, f'DeltaX_Agent{agent_n}'] = int(new_stateX_ag - current_state[0])
+                df_for_causality.at[counter_e, f'DeltaY_Agent{agent_n}'] = int(new_stateY_ag - current_state[1])
                 if if_visualization:
                     env.movement_gui(n_episodes, step_for_episode)
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
+                for goal in range(env.n_goals):
+                    df_for_causality.at[counter_e, f'Goal{goal}_Nearby_Agent{agent_n}'] = \
+                        goals_nearby_all_agents[agent_n][goal]
                 _, dones, _ = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
                 if not dones[agent_n]:
                     env.step_enemies()
+                    for enemy in range(env.n_enemies):
+                        df_for_causality.at[counter_e, f'Enemy{enemy}_Nearby_Agent{agent_n}'] = \
+                            enemies_nearby_all_agents[agent_n][enemy]
                     if if_visualization:
                         env.movement_gui(n_episodes, step_for_episode)
 
