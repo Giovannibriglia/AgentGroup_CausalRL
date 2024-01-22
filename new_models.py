@@ -770,7 +770,11 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
             f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}, algorithm...")
 
     print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
-    os.remove('online_heuristic_table.pkl')
+
+    try:
+        os.remove('online_heuristic_table.pkl')
+    except:
+        pass
 
     if 'TS' in alg:
         q_table = [agent.alpha, agent.beta]
