@@ -751,7 +751,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
                     df_for_causality[str(col)] = df_for_causality[str(col)].astype(str).str.replace(',', '').astype(float)
 
             causality.training(e, df_for_causality)
-            df_for_causality = create_df(env)
+            df_for_causality, columns_df_causality = create_df(env)
             counter_e = 0
 
         if alg == 'QL_SoftmaxAnnealing' or alg == 'EpsilonGreedyAgent':
