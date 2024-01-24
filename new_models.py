@@ -269,7 +269,7 @@ class Causality:
 
 
 class SoftmaxAnnealingQAgent:
-    def __init__(self, rows, cols, action_space_size, n_episodes, initial_temperature=1.0):
+    def __init__(self, rows, cols, action_space_size, n_episodes, initial_temperature=1.0, predefined_q_table=None):
         self.rows = rows
         self.cols = cols
         self.action_space_size = action_space_size
@@ -280,7 +280,10 @@ class SoftmaxAnnealingQAgent:
         self.gamma = GAMMA
 
         # Q-table initialization
-        self.q_table = np.zeros((self.rows, self.cols, action_space_size))
+        if predefined_q_table is not None:
+            self.q_table = predefined_q_table
+        else:
+            self.q_table = np.zeros((self.rows, self.cols, action_space_size))
 
         self.EXPLORATION_DECREASING_DECAY = -np.log(MIN_EXPLORATION_PROBA) / (
                 EXPLORATION_GAME_PERCENT * self.n_episodes)
@@ -322,7 +325,7 @@ class SoftmaxAnnealingQAgent:
 
 
 class BoltzmannQAgent:
-    def __init__(self, rows, cols, action_space_size, temperature=1.0):
+    def __init__(self, rows, cols, action_space_size, temperature=1.0, predefined_q_table=None):
         self.rows = rows
         self.cols = cols
         self.action_space_size = action_space_size
@@ -332,7 +335,10 @@ class BoltzmannQAgent:
         self.gamma = GAMMA
 
         # Q-table initialization
-        self.q_table = np.zeros((self.rows, self.cols, action_space_size))
+        if predefined_q_table is not None:
+            self.q_table = predefined_q_table
+        else:
+            self.q_table = np.zeros((self.rows, self.cols, self.action_space_size))
 
     def softmax(self, values):
         exp_values = np.exp(values / self.temperature)
@@ -367,14 +373,18 @@ class BoltzmannQAgent:
 
 
 class ThompsonSamplingQAgent:
-    def __init__(self, rows, cols, action_space_size, alpha=1, beta=1):
+    def __init__(self, rows, cols, action_space_size, alpha=1, beta=1, predefined_alpha_beta=None):
         self.rows = rows
         self.cols = cols
         self.action_space_size = action_space_size
 
         # Initialize Beta distribution parameters for each action
-        self.alpha = np.maximum(np.zeros((self.rows, self.cols, action_space_size)) * alpha, 1)
-        self.beta = np.maximum(np.zeros((self.rows, self.cols, action_space_size)) * beta, 1)
+        if predefined_alpha_beta is None:
+            self.alpha = np.maximum(np.zeros((self.rows, self.cols, self.action_space_size)) * alpha, 1)
+            self.beta = np.maximum(np.zeros((self.rows, self.cols, self.action_space_size)) * beta, 1)
+        else:
+            self.alpha = predefined_alpha_beta[0]
+            self.beta = predefined_alpha_beta[1]
 
     def choose_action(self, state, possible_actions=None):
         # Sample from the Beta distribution for each action
@@ -406,13 +416,16 @@ class ThompsonSamplingQAgent:
 
 class EpsilonGreedyQAgent:
 
-    def __init__(self, rows, cols, n_agent_actions, n_episodes):
+    def __init__(self, rows, cols, n_agent_actions, n_episodes, predefined_q_table=None):
         self.rows = rows
         self.cols = cols
         self.n_agent_actions = n_agent_actions
         self.n_episodes = n_episodes
 
-        self.q_table = np.zeros((self.rows, self.cols, self.n_agent_actions))
+        if predefined_q_table is not None:
+            self.q_table = predefined_q_table
+        else:
+            self.q_table = np.zeros((self.rows, self.cols, self.n_agent_actions))
 
         self.lr = LEARNING_RATE
         self.gamma = GAMMA
@@ -459,7 +472,7 @@ class EpsilonGreedyQAgent:
         self.exp_proba = max(self.MIN_EXPLORATION_PROBA, np.exp(-self.EXPLORATION_DECREASING_DECAY * episode))
 
 
-def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize, seed_value):
+def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize, seed_value, predefined_q_table=None):
     np.random.seed(seed_value)
     random.seed(seed_value)
 
@@ -468,13 +481,14 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, ep
     action_space_size = n_act_agents
 
     if 'SA' in alg:
-        agent = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes)
+        agent = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes, predefined_q_table=predefined_q_table)
     elif 'EG' in alg:
-        agent = EpsilonGreedyQAgent(rows, cols, action_space_size, n_episodes)
+        agent = EpsilonGreedyQAgent(rows, cols, action_space_size, n_episodes, predefined_q_table=predefined_q_table)
     elif 'BM' in alg:
-        agent = BoltzmannQAgent(rows, cols, action_space_size, n_episodes)
-    elif 'TS' in alg:
-        agent = ThompsonSamplingQAgent(rows, cols, action_space_size, n_episodes)
+        agent = BoltzmannQAgent(rows, cols, action_space_size, n_episodes, predefined_q_table=predefined_q_table)
+    else:  # 'TS'
+        agent = ThompsonSamplingQAgent(rows, cols, action_space_size, n_episodes,
+                                       predefined_alpha_beta=predefined_q_table)
 
     average_episodes_rewards = []
     steps_for_episode = []
@@ -597,7 +611,7 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, ep
 
 
 def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize, seed_value,
-                        BATCH_EPISODES_UPDATE_BN=500):
+                        BATCH_EPISODES_UPDATE_BN=500, predefined_q_table=None):
     np.random.seed(seed_value)
     random.seed(seed_value)
 
@@ -611,13 +625,13 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
     action_space_size = n_act_agents
 
     if 'SA' in alg:
-        agent = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes)
+        agent = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes, predefined_q_table=predefined_q_table)
     elif 'EG' in alg:
-        agent = EpsilonGreedyQAgent(rows, cols, action_space_size, n_episodes)
+        agent = EpsilonGreedyQAgent(rows, cols, action_space_size, n_episodes, predefined_q_table=predefined_q_table)
     elif 'BM' in alg:
-        agent = BoltzmannQAgent(rows, cols, action_space_size, n_episodes)
+        agent = BoltzmannQAgent(rows, cols, action_space_size, n_episodes, predefined_q_table=predefined_q_table)
     else:  # 'TS'
-        agent = ThompsonSamplingQAgent(rows, cols, action_space_size, n_episodes)
+        agent = ThompsonSamplingQAgent(rows, cols, action_space_size, n_episodes, predefined_alpha_beta=predefined_q_table)
 
     average_episodes_rewards = []
     steps_for_episode = []

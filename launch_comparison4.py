@@ -121,12 +121,15 @@ for path_game in paths_with_pattern:
     dict_vars = extract_variables_from_path(path_game, dir_start)
 
     n_enemies = dict_vars['n_enemies']
+    if_maze = dict_vars['Grid/Maze']
     rows = dict_vars['rows_x_cols'][dict_vars['rows_x_cols'].find('x'):]
     cols = dict_vars['rows_x_cols'][:dict_vars['rows_x_cols'].find('x') + 1]
     game_n = dict_vars['game_n']
+    if_same_enemy_actions = dict_vars['SameEnAct/RandEnAct']
+
     predefined_env = np.load(path_game)
 
-    path_game = change_first_and_second_path_remove_last(path_game, dir_results, 'Maze')
+    path_game = change_first_and_second_path_remove_last(path_game, dir_results, 'Maze' if if_maze == 'Grid' else 'Grid')
     os.makedirs(path_game, exist_ok=True)
 
     seed_value = seed_values[game_n]
@@ -139,8 +142,10 @@ for path_game in paths_with_pattern:
     n_goals = 1
 
     env = new_env_game.CustomEnv(rows=rows, cols=cols, n_agents=n_agents, n_act_agents=n_act_agents,
-                                 n_enemies=n_enemies, n_act_enemies=n_act_enemies, n_goals=n_goals, if_maze=True,
-                                 if_same_enemies_actions=False, dir_saving=path_game, game_n=game_n,
+                                 n_enemies=n_enemies, n_act_enemies=n_act_enemies, n_goals=n_goals,
+                                 if_maze=False if if_maze == 'Grid' else True,
+                                 if_same_enemies_actions=True if if_same_enemy_actions == 'SameEnAct' else False,
+                                 dir_saving=path_game, game_n=game_n,
                                  seed_value=seed_value, predefined_env=predefined_env)
 
     np.save(f"{path_game}/env_game{game_n}.npy", env.grid_for_game)
@@ -157,19 +162,29 @@ for path_game in paths_with_pattern:
         rewards = []
         steps = []
 
+        dir_q_table = f' {dir_start}/{if_maze}/{if_same_enemy_actions}/{n_enemies}/{rows}x{cols}'
+        if 'TS' in alg:
+            alpha = np.load(f'{dir_q_table}/{alg}_alpha_game{game_n}.npy')
+            beta = np.load(f'{dir_q_table}/{alg}_beta_game{game_n}.npy')
+            predefined_q_table = [alpha, beta]
+        else:
+            predefined_q_table = np.load(f'{dir_q_table}/{alg}_q_table_game{game_n}.npy')
+
         # returned: reward for episode, actions for episode and the final Q-table
         if 'QL' in alg:
             if 'offline' in alg or 'basic' in alg:
                 rewards, steps, q_table = new_models.QL_causality_offline(env_for_alg, n_act_agents,
                                                                           n_episodes,
                                                                           alg, who_moves_first,
-                                                                          episodes_to_visualize)
+                                                                          episodes_to_visualize,
+                                                                          predefined_q_table)
             else:
                 rewards, steps, q_table = new_models.QL_causality_online(env_for_alg, n_act_agents,
                                                                          n_episodes,
                                                                          alg, who_moves_first,
                                                                          episodes_to_visualize,
-                                                                         BATCH_EPISODES_UPDATE_BN)
+                                                                         BATCH_EPISODES_UPDATE_BN,
+                                                                         predefined_q_table)
 
         else:
             rewards, steps, q_table = new_models.DQN_variations(env_for_alg, n_act_agents, n_episodes,
