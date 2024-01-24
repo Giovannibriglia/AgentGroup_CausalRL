@@ -32,6 +32,8 @@ HIDDEN_LAYERS = 128
 
 TIMEOUT_IN_HOURS = 4
 
+TH_CHECKS_CAUSAL_TABLE = 3
+
 col_action = 'Action_Agent0'
 col_deltaX = 'DeltaX_Agent0'
 col_deltaY = 'DeltaY_Agent0'
@@ -425,7 +427,7 @@ class EpsilonGreedyQAgent:
             if possible_actions is not None and len(possible_actions) > 0:
                 action = random.sample(possible_actions, 1)[0]
             else:
-                action = np.random.randint(0, self.n_agent_actions, size=1)
+                action = np.random.randint(0, self.n_agent_actions, size=1)[0]
         else:  # exploitation
             stateX = int(state[0])
             stateY = int(state[1])
@@ -437,10 +439,8 @@ class EpsilonGreedyQAgent:
 
                 dict_valid_actions = {act: dict_all_actions[act] for act in possible_actions}
                 action, _ = max(dict_valid_actions.items(), key=lambda x: x[1])
-                # print('Exploration) ', action, type(action))
             else:
                 action = np.argmax(self.q_table[stateX, stateY, :])
-                # print('Exploitation) ', action, type(action))
 
         return action
 
@@ -460,7 +460,6 @@ class EpsilonGreedyQAgent:
 
 
 def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize, seed_value):
-
     np.random.seed(seed_value)
     random.seed(seed_value)
 
@@ -508,7 +507,7 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, ep
 
         while not done:
 
-            if (time.time() - initial_time) > TIMEOUT_IN_HOURS*3600:
+            if (time.time() - initial_time) > TIMEOUT_IN_HOURS * 3600:
                 if 'TS' in alg:
                     q_table = [agent.alpha, agent.beta]
                 else:
@@ -585,9 +584,9 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, ep
         average_episodes_rewards.append(total_episode_reward)
         steps_for_episode.append(step_for_episode)
         pbar.set_postfix_str(
-            f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
+            f"Average reward: {round(np.mean(average_episodes_rewards),3)}, Number of defeats: {env.n_times_loser}")
 
-    print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
+    print(f'Average reward: {round(np.mean(average_episodes_rewards), 3)}, Number of defeats: {env.n_times_loser}')
 
     if 'TS' in alg:
         q_table = [agent.alpha, agent.beta]
@@ -625,6 +624,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
 
     causality = Causality()
     first_visit = True
+    check_causal_table = 0
 
     pbar = tqdm(range(n_episodes))
     for e in pbar:
@@ -748,14 +748,22 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
         if if_visualization:
             env.save_video()
 
-        if e % BATCH_EPISODES_UPDATE_BN == 0 and e < int(EXPLORATION_GAME_PERCENT * n_episodes):
+        if 'SA' in alg or 'EG' in alg:
+            agent.update_exp_fact(e)
+
+        if e % BATCH_EPISODES_UPDATE_BN == 0 and e < int(EXPLORATION_GAME_PERCENT * n_episodes) and check_causal_table < TH_CHECKS_CAUSAL_TABLE:
             pbar.set_postfix_str(
-                f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}, do-calculus...")
+                f"Average reward: {round(np.mean(average_episodes_rewards), 3)}, Number of defeats: {env.n_times_loser}, do-calculus...")
+
+            try:
+                os.rename('online_heuristic_table.pkl', 'past_online_heuristic_table.pkl')
+            except:
+                pass
 
             for col in df_for_causality.columns:
                 if col not in columns_df_causality:
                     df_for_causality.drop([col], axis=1)
-                    print('This column could cause problems: ', col)
+                    print('This column was not in the initial columns: ', col)
                 else:
                     df_for_causality[str(col)] = df_for_causality[str(col)].astype(str).str.replace(',', '').astype(float)
 
@@ -763,13 +771,19 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
             df_for_causality, columns_df_causality = create_df(env)
             counter_e = 0
 
-        if alg == 'QL_SoftmaxAnnealing' or alg == 'EpsilonGreedyAgent':
-            agent.update_exp_fact(e)
+            try:
+                if len(pd.read_pickle('past_online_heuristic_table.pkl')) == len(pd.read_pickle('online_heuristic_table.pkl')):
+                    check_causal_table += 1
+                    os.remove('past_online_heuristic_table.pkl')
+                else:
+                    check_causal_table = 0
+            except:
+                pass
 
         pbar.set_postfix_str(
-            f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}, algorithm...")
+            f"Average reward: {round(np.mean(average_episodes_rewards), 3)}, Number of defeats: {env.n_times_loser}, algorithm...")
 
-    print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
+    print(f'Average reward: {round(np.mean(average_episodes_rewards), 3)}, Number of defeats: {env.n_times_loser}')
 
     try:
         os.remove('online_heuristic_table.pkl')
