@@ -1,6 +1,19 @@
 import plots
 import os
 
+
+def find_common_words(list1, list2):
+    # Split each string into words using underscores and convert them to sets
+    set1 = set(word for s in list1 for word in s.split('_'))
+    set2 = set(word for s in list2 for word in s.split('_'))
+
+    # Find the intersection of the sets to get common words
+    common_words = set1.intersection(set2)
+    common_words_str = '_'.join(common_words)
+
+    return common_words_str
+
+
 possible_algorithms = ['QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
                        'QL_EG_basic', 'QL_EG_causal_offline', 'QL_EG_causal_online',
                        'QL_SA_basic', 'QL_SA_causal_offline', 'QL_SA_causal_online',
@@ -22,8 +35,19 @@ vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
 dir_start = f'Results_Comparison123'
 
-for comb_algorithms in [combs_algorithms_by_strategy, combs_algorithms_by_kind]:
+for comb_algorithms in [combs_algorithms_by_kind, combs_algorithms_by_strategy]:
+
+    if comb_algorithms == combs_algorithms_by_strategy:
+        kind_of_comparison_start = 'comparison_by_strategy'
+    elif comb_algorithms == combs_algorithms_by_kind:
+        kind_of_comparison_start = 'comparison_by_kind'
+
     for algorithms in comb_algorithms:
+        if comb_algorithms == combs_algorithms_by_strategy:
+            kind_of_comparison = kind_of_comparison_start + '_' + str(find_common_words(algorithms, group_by_strategy))
+        elif comb_algorithms == combs_algorithms_by_kind:
+            kind_of_comparison = kind_of_comparison_start + '_' + str(find_common_words(algorithms, group_by_kind))
+
         for if_maze in vect_if_maze:
             if if_maze:
                 env_name = 'Maze'
@@ -43,7 +67,7 @@ for comb_algorithms in [combs_algorithms_by_strategy, combs_algorithms_by_kind]:
                     directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem'
                     os.makedirs(directory, exist_ok=True)
                     for rows in vect_rows:
-                        if n_enemies > 2 * rows:
+                        if (n_enemies == 10 and rows == 5) or (n_enemies > 2 * rows):
                             break
 
                         cols = rows
@@ -54,13 +78,13 @@ for comb_algorithms in [combs_algorithms_by_strategy, combs_algorithms_by_kind]:
                         os.makedirs(directory_for_saving, exist_ok=True)
 
                         plots.plot_cumulative_average_rewards(directory, algorithms, n_games, n_episodes, rows, cols,
-                                                              n_enemies, directory_for_saving)
+                                                              n_enemies, directory_for_saving, kind_of_comparison)
                         plots.plot_average_rewards_episode(directory, algorithms, n_games, n_episodes, rows, cols,
-                                                           n_enemies, directory_for_saving)
+                                                           n_enemies, directory_for_saving, kind_of_comparison)
                         plots.plot_average_steps_episode(directory, algorithms, n_games, n_episodes, rows, cols,
-                                                         n_enemies, directory_for_saving)
+                                                         n_enemies, directory_for_saving, kind_of_comparison)
                         plots.plot_average_computation_time(directory, algorithms, n_games, rows, cols, n_enemies,
-                                                            directory_for_saving)
+                                                            directory_for_saving, kind_of_comparison)
 
 # plots.plot_cumulative_average_rewards('5x5', algorithms, 5, 3000, 5, 5, 2)
 # plots.plot_average_rewards_episode('5x5', algorithms, 5, 3000, 5, 5, 2)
