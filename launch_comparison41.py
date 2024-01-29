@@ -108,7 +108,7 @@ algorithms = ['QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
 
 n_episodes = 3000
 vect_if_maze = [False]
-dir_start = f'Results_Comparison123'
+dir_start = f'home/gbriglia/CausalRL/Results_Comparison123'
 pattern_env_game = 'env_game'
 dir_results = f'Results_Comparison4'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
