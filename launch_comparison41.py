@@ -126,7 +126,6 @@ for path_game in paths_with_pattern:
     if_maze = dict_vars['Grid/Maze']
     rows = dict_vars['rows_x_cols'][dict_vars['rows_x_cols'].find('x')+1:]
     cols = dict_vars['rows_x_cols'][:dict_vars['rows_x_cols'].find('x')]
-
     game_n = dict_vars['game_n']
     if_same_enemy_actions = dict_vars['SameEnAct/RandEnAct']
 
