@@ -1,6 +1,8 @@
 import numpy as np
 import os
 
+print(np.load('Results_Comparison123/Grid/RandEnAct/2Enem/5x5/env_game1.npy'))
+
 current_directory = os.getcwd()
 print("Current directory:", current_directory)
 
