@@ -100,10 +100,10 @@ def change_first_and_second_path_remove_last(input_string, new_first_component, 
 
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal' + 'offline'/'online'
 # 'DQN' + 'causal'
-algorithms = ['QL_TS_causal_online',
-              'QL_EG_causal_online',
-              'QL_BM_causal_online',
-              'QL_SA_causal_online'
+algorithms = ['QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
+              'QL_EG_basic', 'QL_EG_causal_offline', 'QL_EG_causal_online',
+              'QL_SA_basic', 'QL_SA_causal_offline', 'QL_SA_causal_online',
+              'QL_BM_basic', 'QL_BM_causal_offline', 'QL_BM_causal_online'
               ]
 
 n_episodes = 3000
@@ -117,7 +117,7 @@ n_games = 5
 episodes_to_visualize = [0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
 
 paths_with_pattern = extract_paths_with_pattern(dir_start, pattern_env_game)
-paths_with_pattern = [s for s in paths_with_pattern if '10Enem' in s]
+paths_with_pattern = [s for s in paths_with_pattern if '2Enem' in s]
 
 for path_game in paths_with_pattern:
     dict_vars = extract_variables_from_path(path_game, dir_start)

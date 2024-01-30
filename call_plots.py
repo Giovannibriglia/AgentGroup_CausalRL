@@ -26,10 +26,10 @@ group_by_strategy = ['TS', 'EG', 'SA', 'BM']
 combs_algorithms_by_kind = [[s for s in possible_algorithms if kind in s] for kind in group_by_kind]
 combs_algorithms_by_strategy = [[s for s in possible_algorithms if strategy in s] for strategy in group_by_strategy]
 
-# algorithms = ['QL_TS_basic']
+
 n_games = 5
-vect_rows = [5, 10]
-vect_n_enemies = [2, 5, 10]
+vect_rows = [10, 5]
+vect_n_enemies = [10, 5, 2]
 n_episodes = 3000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
@@ -67,7 +67,8 @@ for comb_algorithms in [combs_algorithms_by_kind, combs_algorithms_by_strategy]:
                     directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem'
                     os.makedirs(directory, exist_ok=True)
                     for rows in vect_rows:
-                        if (n_enemies == 10 and rows == 5) or (n_enemies > 2 * rows):
+                        if n_enemies >= 2 * rows:
+                            print(f'No {n_enemies} enemies - {rows}x{rows} grid')
                             break
 
                         cols = rows
