@@ -2,7 +2,7 @@ import numpy as np
 import os
 
 try:
-    print(np.load('/home/gbriglia/AgentGroup_CausalRL/Results_Comparison123/Grid/RandEnAct/2Enem/5x5/env_game1.npy'))
+    print(np.load('/home/gbriglia/AgentGroup_CausalRL/MyEnv/Results_Comparison123/Grid/RandEnAct/2Enem/5x5/env_game1.npy'))
 except:
     pass
 
