@@ -100,10 +100,10 @@ def change_first_and_second_path_remove_last(input_string, new_first_component, 
 
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal' + 'offline'/'online'
 # 'DQN' + 'causal'
-algorithms = ['QL_TS_causal_online',
-              'QL_EG_causal_online',
-              'QL_BM_causal_online',
-              'QL_SA_causal_online'
+algorithms = ['QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
+              'QL_EG_basic', 'QL_EG_causal_offline', 'QL_EG_causal_online',
+              'QL_SA_basic', 'QL_SA_causal_offline', 'QL_SA_causal_online',
+              'QL_BM_basic', 'QL_BM_causal_offline', 'QL_BM_causal_online'
               ]
 
 n_episodes = 3000
@@ -145,7 +145,7 @@ for path_game in paths_with_pattern:
 
     env = new_env_game.CustomEnv(rows=rows, cols=cols, n_agents=n_agents, n_act_agents=n_act_agents,
                                  n_enemies=n_enemies, n_act_enemies=n_act_enemies, n_goals=n_goals,
-                                 if_maze=False if if_maze == 'Grid' else True,
+                                 if_maze=True if if_maze == 'Grid' else False,
                                  if_same_enemies_actions=True if if_same_enemy_actions == 'SameEnAct' else False,
                                  dir_saving=path_game, game_n=game_n,
                                  seed_value=seed_value, predefined_env=predefined_env)

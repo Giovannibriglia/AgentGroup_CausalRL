@@ -146,7 +146,7 @@ for path_game in paths_with_pattern:
 
     env = new_env_game.CustomEnv(rows=rows, cols=cols, n_agents=n_agents, n_act_agents=n_act_agents,
                                  n_enemies=n_enemies, n_act_enemies=n_act_enemies, n_goals=n_goals,
-                                 if_maze=False if if_maze == 'Grid' else True,
+                                 if_maze=True if if_maze == 'Grid' else False,
                                  if_same_enemies_actions=True if if_same_enemy_actions == 'SameEnAct' else False,
                                  dir_saving=path_game, game_n=game_n,
                                  seed_value=seed_value, predefined_env=predefined_env)

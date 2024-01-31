@@ -20,7 +20,7 @@ possible_algorithms = ['QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_onli
                        'QL_BM_basic', 'QL_BM_causal_offline', 'QL_BM_causal_online'
                        ]
 
-group_by_kind = ['basic', 'causal_online', 'causal_offline']
+group_by_kind = ['basic', 'causal_offline', 'causal_online']
 group_by_strategy = ['TS', 'EG', 'SA', 'BM']
 
 combs_algorithms_by_kind = [[s for s in possible_algorithms if kind in s] for kind in group_by_kind]
@@ -28,14 +28,14 @@ combs_algorithms_by_strategy = [[s for s in possible_algorithms if strategy in s
 
 
 n_games = 5
-vect_rows = [10, 5]
-vect_n_enemies = [10, 5, 2]
+vect_rows = [5, 10]
+vect_n_enemies = [2, 5, 10]
 n_episodes = 3000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
 dir_start = f'Results_Comparison123'
 
-for comb_algorithms in [combs_algorithms_by_kind, combs_algorithms_by_strategy]:
+for comb_algorithms in [combs_algorithms_by_strategy, combs_algorithms_by_kind]:
 
     if comb_algorithms == combs_algorithms_by_strategy:
         kind_of_comparison_start = 'comparison_by_strategy'
