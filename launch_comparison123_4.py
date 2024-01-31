@@ -36,17 +36,19 @@ algorithms = ['QL_EG_basic', 'QL_EG_causal_offline', 'QL_EG_causal_online',
               ]
 
 n_games = 5
-vect_rows = [5, 10]
-vect_n_enemies = [2]
+vect_rows = [10]
+vect_n_enemies = [5]
 n_episodes = 3000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
 dir_start = f'Results_Comparison123'
+dir_start_env = f'Env_Comparison123'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 
 episodes_to_visualize = [0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
 
 os.makedirs(dir_start, exist_ok=True)
+os.makedirs(dir_start_env, exist_ok=True)
 for if_maze in vect_if_maze:
 
     if if_maze:
@@ -54,7 +56,9 @@ for if_maze in vect_if_maze:
     else:
         env_name = 'Grid'
     directory = dir_start + f'/{env_name}'
+    directory_env = dir_start_env + f'/{env_name}'
     os.makedirs(directory, exist_ok=True)
+    os.makedirs(directory_env, exist_ok=True)
 
     for if_same_enemies_actions in vect_if_same_enemies_actions:
         if if_same_enemies_actions:
@@ -62,17 +66,24 @@ for if_maze in vect_if_maze:
         else:
             en_act = 'RandEnAct'
         directory = dir_start + f'/{env_name}' + f'/{en_act}'
+        directory_env = dir_start_env + f'/{env_name}' + f'/{en_act}'
         os.makedirs(directory, exist_ok=True)
+        os.makedirs(directory_env, exist_ok=True)
+
         for n_enemies in vect_n_enemies:
             directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem'
+            directory_env = dir_start_env + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem'
             os.makedirs(directory, exist_ok=True)
+            os.makedirs(directory_env, exist_ok=True)
             for rows in vect_rows:
                 if n_enemies > 2 * rows:
                     break
 
                 cols = rows
                 directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem' + f'/{rows}x{cols}'
+                directory_env = dir_start_env + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem' + f'/{rows}x{cols}'
                 os.makedirs(directory, exist_ok=True)
+                os.makedirs(directory_env, exist_ok=True)
 
                 BATCH_EPISODES_UPDATE_BN = get_batch_episodes(n_enemies, rows)
 
@@ -91,6 +102,7 @@ for if_maze in vect_if_maze:
                                                  predefined_env=None)
 
                     np.save(f"{directory}/env_game{game_n}.npy", env.grid_for_game)
+                    np.save(f"{directory_env}/env_game{game_n}.npy", env.grid_for_game)
 
                     for alg in algorithms:
                         print(f'\n*** {alg} - Game {game_n}/{n_games} ****')
