@@ -1,5 +1,6 @@
 import random
 import sys
+import re
 import warnings
 import cv2
 import numpy as np
@@ -697,6 +698,12 @@ class CustomEnv:
 
     def save_video(self):
 
+        def sort_key(filename):
+            # Extract the numeric part from the filename using regular expression
+            numeric_part = re.search(r'\d+', filename).group()
+            # Convert the extracted numeric part to an integer for sorting
+            return int(numeric_part)
+
         # Set the path to the directory containing your images
         image_folder = self.dir_saving
 
@@ -722,6 +729,8 @@ class CustomEnv:
         # Create a VideoWriter object
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # You can use other codecs like 'XVID' or 'H264'
         out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+
+        image_files = sorted(image_files, key=sort_key)
 
         # Write each image to the video file
         for image_file in image_files:
