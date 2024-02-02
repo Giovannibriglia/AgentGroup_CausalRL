@@ -1,3 +1,5 @@
+import pandas as pd
+
 import plots
 import os
 
@@ -34,6 +36,9 @@ n_episodes = 3000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
 dir_start = f'Results_Comparison123'
+dir_saving_plots = f'Plots_Comparison123'
+dir_saving_resume_metrics = f'Resume_Metrics_Comparison123'
+
 
 for comb_algorithms in [combs_algorithms_by_strategy, combs_algorithms_by_kind]:
 
@@ -73,19 +78,33 @@ for comb_algorithms in [combs_algorithms_by_strategy, combs_algorithms_by_kind]:
 
                         cols = rows
                         directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem' + f'/{rows}x{cols}'
+                        directory_for_saving_plots = dir_saving_plots + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem' + f'/{rows}x{cols}'
+                        directory_for_saving_resume_results = dir_saving_resume_metrics + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem' + f'/{rows}x{cols}'
 
-                        directory_for_saving = directory + '/plots'
+                        os.makedirs(directory_for_saving_plots, exist_ok=True)
+                        os.makedirs(directory_for_saving_resume_results, exist_ok=True)
 
-                        os.makedirs(directory_for_saving, exist_ok=True)
+                        resume_metrics_table = pd.DataFrame(columns=['Algorithm'])
+                        resume_metrics_table['Algorithm'] = algorithms
 
-                        plots.plot_cumulative_average_rewards(directory, algorithms, n_games, n_episodes, rows, cols,
-                                                              n_enemies, directory_for_saving, kind_of_comparison)
-                        plots.plot_average_rewards_episode(directory, algorithms, n_games, n_episodes, rows, cols,
-                                                           n_enemies, directory_for_saving, kind_of_comparison)
-                        plots.plot_average_steps_episode(directory, algorithms, n_games, n_episodes, rows, cols,
-                                                         n_enemies, directory_for_saving, kind_of_comparison)
-                        plots.plot_average_computation_time(directory, algorithms, n_games, rows, cols, n_enemies,
-                                                            directory_for_saving, kind_of_comparison)
+                        dict_res = plots.plot_cumulative_average_rewards(directory, algorithms, n_games, n_episodes, rows, cols,
+                                                              n_enemies, directory_for_saving_plots, kind_of_comparison)
+                        resume_metrics_table['Cumulative_average_reward'] = dict_res
+
+                        dict_res = plots.plot_average_rewards_episode(directory, algorithms, n_games, n_episodes, rows, cols,
+                                                           n_enemies, directory_for_saving_plots, kind_of_comparison)
+                        resume_metrics_table['Average_reward_episode'] = dict_res
+
+                        dict_res = plots.plot_average_steps_episode(directory, algorithms, n_games, n_episodes, rows, cols,
+                                                         n_enemies, directory_for_saving_plots, kind_of_comparison)
+                        resume_metrics_table['Average_exploitation_steps'] = dict_res
+
+                        dict_res = plots.plot_average_computation_time(directory, algorithms, n_games, rows, cols, n_enemies,
+                                                            directory_for_saving_plots, kind_of_comparison)
+                        resume_metrics_table['Average_computation_time'] = dict_res
+
+                        resume_metrics_table.to_pickle('resume_metrics.pkl')
+                        resume_metrics_table.to_excel('resume_metrics.xlsx')
 
 # plots.plot_cumulative_average_rewards('5x5', algorithms, 5, 3000, 5, 5, 2)
 # plots.plot_average_rewards_episode('5x5', algorithms, 5, 3000, 5, 5, 2)

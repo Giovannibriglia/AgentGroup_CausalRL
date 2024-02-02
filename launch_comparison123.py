@@ -147,8 +147,11 @@ for if_maze in vect_if_maze:
                             alpha, beta = q_table[0], q_table[1]
                             np.save(f'{directory}/{alg}_alpha_game{game_n}.npy', alpha)
                             np.save(f'{directory}/{alg}_beta_game{game_n}.npy', beta)
+                            np.save(f'{directory_env}/{alg}_alpha_game{game_n}.npy', alpha)
+                            np.save(f'{directory_env}/{alg}_beta_game{game_n}.npy', beta)
                         else:
                             np.save(f'{directory}/{alg}_q_table_game{game_n}.npy', q_table)
+                            np.save(f'{directory_env}/{alg}_q_table_game{game_n}.npy', q_table)
 
                 # plots.plot_av_rew_steps(directory, algorithms, n_games, n_episodes, rows, cols, n_enemies)
                 # plots.plot_av_computation_time(directory, algorithms, n_games, rows, cols, n_enemies)

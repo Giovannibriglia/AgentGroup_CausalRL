@@ -108,7 +108,7 @@ algorithms = ['QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
 
 n_episodes = 3000
 vect_if_maze = [False]
-dir_start = f'Results_Comparison123'
+dir_start = f'Env_Comparison123'
 pattern_env_game = 'env_game'
 dir_results = f'Results_Comparison4'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
@@ -117,7 +117,7 @@ n_games = 5
 episodes_to_visualize = [0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
 
 paths_with_pattern = extract_paths_with_pattern(dir_start, pattern_env_game)
-paths_with_pattern = [s for s in paths_with_pattern if '2Enem' in s]
+paths_with_pattern = [s for s in paths_with_pattern if '10Enem' in s]
 
 for path_game in paths_with_pattern:
     dict_vars = extract_variables_from_path(path_game, dir_start)

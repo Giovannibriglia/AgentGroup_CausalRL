@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import glob
 import os
+
+import pandas as pd
 from scipy.ndimage import gaussian_filter1d
 
 fontsize = 12
@@ -66,9 +68,12 @@ def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, 
 """
 
 
-def plot_cumulative_average_rewards(dir_results, algorithms, n_games, n_episodes, rows, cols, n_enemies, dir_saving, kind_of_comparison):
+def plot_cumulative_average_rewards(dir_results, algorithms, n_games, n_episodes, rows, cols, n_enemies,
+                                    dir_saving_plots, kind_of_comparison):
     target_pattern = fr"{dir_results}\*.npy"
     directories = glob.glob(target_pattern)
+
+    dict_res = {key: None for key in algorithms}
 
     fig, ax1 = plt.subplots(dpi=1000)
     fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemies - Averaged over {n_games} games', fontsize=fontsize + 3)
@@ -78,6 +83,8 @@ def plot_cumulative_average_rewards(dir_results, algorithms, n_games, n_episodes
         if all(is_number(np.load(f'{dir_results}/{alg}_computation_time_game{game}.npy')) for game in
                range(1, n_games + 1, 1)):
             algorithms_checked.append(alg)
+        else:
+            dict_res[alg] = 'timeout'
 
     for alg in algorithms_checked:
         filename_rewards = [s for s in directories if f'{alg}_rewards' in s]
@@ -91,20 +98,26 @@ def plot_cumulative_average_rewards(dir_results, algorithms, n_games, n_episodes
         av_rewards = np.cumsum(av_rew, dtype=int) / n_games
 
         x = np.arange(0, len(av_rewards), 1)
-        ax1.plot(x, av_rewards,
-                 label=f'{alg} = {round(av_rewards[-1], 2)} \u00B1 {round(np.std(av_rewards), 2)}')
         confidence_interval_rew = np.std(av_rewards)
+        ax1.plot(x, av_rewards,
+                 label=f'{alg} = {round(av_rewards[-1], 2)} \u00B1 {round(confidence_interval_rew, 2)}')
+        dict_res[alg] = f'{round(av_rewards[-1], 2)} \u00B1 {round(confidence_interval_rew, 2)}'
         ax1.fill_between(x, (av_rewards - confidence_interval_rew), (av_rewards + confidence_interval_rew), alpha=0.2)
         ax1.set_title('Cumulative average reward')
         ax1.legend(fontsize='x-small')
-    plt.savefig(f'{dir_saving}/cumulative_average_reward_{kind_of_comparison}.pdf')
+    plt.savefig(f'{dir_saving_plots}/cumulative_average_reward_{kind_of_comparison}.pdf')
     # plt.show()
     plt.close(fig)
 
+    return dict_res
 
-def plot_average_rewards_episode(dir_results, algorithms, n_games, n_episodes, rows, cols, n_enemies, dir_saving, kind_of_comparison):
+
+def plot_average_rewards_episode(dir_results, algorithms, n_games, n_episodes, rows, cols, n_enemies,
+                                 dir_saving_plots, kind_of_comparison):
     target_pattern = fr"{dir_results}\*.npy"
     directories = glob.glob(target_pattern)
+
+    dict_res = {key: None for key in algorithms}
 
     fig, ax1 = plt.subplots(dpi=1000)
     fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemies - Averaged over {n_games} games', fontsize=fontsize + 3)
@@ -114,6 +127,8 @@ def plot_average_rewards_episode(dir_results, algorithms, n_games, n_episodes, r
         if all(is_number(np.load(f'{dir_results}/{alg}_computation_time_game{game}.npy')) for game in
                range(1, n_games + 1, 1)):
             algorithms_checked.append(alg)
+        else:
+            dict_res[alg] = 'timeout'
 
     for alg in algorithms_checked:
         filename_rewards = [s for s in directories if f'{alg}_rewards' in s]
@@ -127,20 +142,26 @@ def plot_average_rewards_episode(dir_results, algorithms, n_games, n_episodes, r
         av_rewards = gaussian_filter1d(av_rew, 3)
 
         x = np.arange(0, len(av_rewards), 1)
-        ax1.plot(x, av_rewards,
-                 label=f'{alg} = {round(np.mean(av_rewards), 2)} \u00B1 {round(np.std(av_rewards), 2)}')
         confidence_interval_rew = np.std(av_rewards)
+        ax1.plot(x, av_rewards,
+                 label=f'{alg} = {round(np.mean(av_rewards), 2)} \u00B1 {round(confidence_interval_rew, 2)}')
+        dict_res[alg] = f'{round(np.mean(av_rewards), 2)} \u00B1 {round(confidence_interval_rew, 2)}'
         ax1.fill_between(x, (av_rewards - confidence_interval_rew), (av_rewards + confidence_interval_rew), alpha=0.2)
         ax1.set_title('Average reward on each episode')
         ax1.legend(fontsize='x-small')
-    plt.savefig(f'{dir_saving}/average_reward_episode_{kind_of_comparison}.pdf')
+    plt.savefig(f'{dir_saving_plots}/average_reward_episode_{kind_of_comparison}.pdf')
     # plt.show()
     plt.close(fig)
 
+    return dict_res
 
-def plot_average_steps_episode(dir_results, algorithms, n_games, n_episodes, rows, cols, n_enemies, dir_saving, kind_of_comparison):
+
+def plot_average_steps_episode(dir_results, algorithms, n_games, n_episodes, rows, cols, n_enemies,
+                               dir_saving_plots, kind_of_comparison):
     target_pattern = fr"{dir_results}\*.npy"
     directories = glob.glob(target_pattern)
+
+    dict_res = {key: None for key in algorithms}
 
     fig, ax2 = plt.subplots(dpi=1000)
     fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemies - Averaged over {n_games} games', fontsize=fontsize + 3)
@@ -150,6 +171,8 @@ def plot_average_steps_episode(dir_results, algorithms, n_games, n_episodes, row
         if all(is_number(np.load(f'{dir_results}/{alg}_computation_time_game{game}.npy')) for game in
                range(1, n_games + 1, 1)):
             algorithms_checked.append(alg)
+        else:
+            dict_res[alg] = 'timeout'
 
     for alg in algorithms_checked:
         filename_steps = [s for s in directories if f'{alg}_steps' in s]
@@ -165,20 +188,25 @@ def plot_average_steps_episode(dir_results, algorithms, n_games, n_episodes, row
         x = np.arange(0, len(av_steps), 1)
         ax2.plot(x, av_steps_gauss, label=f'{alg}')
         confidence_interval_steps = np.std(av_steps_gauss)
+        dict_res[alg] = f'{np.mean(av_steps[int(n_episodes * 0.6):])} \u00B1 {round(np.std(av_steps[int(n_episodes * 0.6):]), 2)}'
         ax2.fill_between(x, (av_steps_gauss - confidence_interval_steps), (av_steps_gauss + confidence_interval_steps), alpha=0.2)
         ax2.set_yscale('log')
         ax2.set_title('Actions needed to complete the episode')
         ax2.set_xlabel('Episode', fontsize=12)
         ax2.legend(fontsize='x-small')
-    plt.savefig(f'{dir_saving}/steps_for_episode_{kind_of_comparison}.pdf')
+    plt.savefig(f'{dir_saving_plots}/steps_for_episode_{kind_of_comparison}.pdf')
     # plt.show()
     plt.close(fig)
 
+    return dict_res
 
-def plot_average_computation_time(dir_results, algorithms, n_games, rows, cols, n_enemies, dir_saving, kind_of_comparison):
+
+def plot_average_computation_time(dir_results, algorithms, n_games, rows, cols, n_enemies,
+                                  dir_saving_plots, kind_of_comparison):
     targetPattern = fr"{dir_results}\*.npy"
     directories = glob.glob(targetPattern)
-    # data_names = [os.path.basename(directories[s]) for s in range(len(directories))]
+
+    dict_res = {key: None for key in algorithms}
 
     fig, ax3 = plt.subplots(dpi=1000)
     fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemies - Averaged over {n_games} games', fontsize=fontsize + 3)
@@ -190,6 +218,7 @@ def plot_average_computation_time(dir_results, algorithms, n_games, rows, cols, 
             algorithms_checked.append(alg)
         else:
             print(f'{kind_of_comparison} - Grid {rows}x{cols} - {n_enemies} enemies - {alg} timeout occurred')
+            dict_res[alg] = 'timeout'
 
     data = []
     if algorithms_checked:
@@ -203,6 +232,7 @@ def plot_average_computation_time(dir_results, algorithms, n_games, rows, cols, 
                 data_to_app.append(av_comp_time)
             av_comp_time = av_comp_time / n_games
             data.append(data_to_app)
+            dict_res[alg] = f'{round(av_comp_time, 2)} \u00B1 {np.std(data_to_app)}'
 
         ax3.boxplot(data, vert=True, patch_artist=True, labels=algorithms_checked)
 
@@ -212,6 +242,8 @@ def plot_average_computation_time(dir_results, algorithms, n_games, rows, cols, 
         ax3.grid()
         ax3.set_title('Average computation time')
         fig.subplots_adjust(bottom=0.4)
-        plt.savefig(f'{dir_saving}/average_comp_time_{kind_of_comparison}.pdf')
+        plt.savefig(f'{dir_saving_plots}/average_comp_time_{kind_of_comparison}.pdf')
         # plt.show()
         plt.close(fig)
+
+    return dict_res
