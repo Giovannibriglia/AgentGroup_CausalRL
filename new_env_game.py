@@ -723,7 +723,7 @@ class CustomEnv:
 
         # Get the dimensions of the first image to determine the video resolution
         first_image_path = os.path.join(image_folder, image_files[0])
-        img = cv2.imread(first_image_path)
+        cv2.imwrite('frame.pdf', img)
         height, width, _ = img.shape
 
         # Create a VideoWriter object
