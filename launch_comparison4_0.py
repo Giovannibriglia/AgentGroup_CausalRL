@@ -131,7 +131,9 @@ for path_game in paths_with_pattern:
     if_same_enemy_actions = dict_vars['SameEnAct/RandEnAct']
 
     predefined_env = np.load(path_game)
-
+    print(dict_vars)
+    print(predefined_env)
+    time.sleep(10)
     path_game = change_first_and_second_path_remove_last(path_game, dir_results, 'Maze' if if_maze == 'Grid' else 'Grid')
     os.makedirs(path_game, exist_ok=True)
 
