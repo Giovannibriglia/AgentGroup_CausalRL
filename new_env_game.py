@@ -622,7 +622,12 @@ class CustomEnv:
         for _ in range(len(self.pos_goals)):
             self.pics_goals.append(pygame.transform.scale(pygame.image.load(goal_png), self.new_sizes))
 
-        self.path_output_video = f'{self.dir_saving}/video_{self.algorithm}_episode{self.episode}_game{self.game_n}.mp4'
+        components = self.dir_saving.split("/")
+        numerical_part = components[0].split("_")[-1]
+        components[0] = "Video_" + numerical_part
+        self.dir_saving_video = "/".join(components)
+        os.makedirs(self.dir_saving_video, exist_ok=True)
+        self.path_output_video = f'{self.dir_saving_video}/video_{self.algorithm}_episode{self.episode}_game{self.game_n}.mp4'
         self.count_img = 0
 
         """
@@ -691,7 +696,7 @@ class CustomEnv:
         pygame_image = cv2.flip(pygame_image, 1)
 
         cv2.imwrite(
-            f'{self.dir_saving}/im{self.count_img}_{self.algorithm}_{self.episode}episode_game{self.game_n}.jpeg',
+            f'{self.dir_saving_video}/im{self.count_img}_{self.algorithm}_{self.episode}episode_game{self.game_n}.jpeg',
             pygame_image)
 
         self.count_img += 1
@@ -705,7 +710,7 @@ class CustomEnv:
             return int(numeric_part)
 
         # Set the path to the directory containing your images
-        image_folder = self.dir_saving
+        image_folder = self.dir_saving_video
 
         # Set the output video file path
         output_path = self.path_output_video
@@ -723,7 +728,7 @@ class CustomEnv:
 
         # Get the dimensions of the first image to determine the video resolution
         first_image_path = os.path.join(image_folder, image_files[0])
-        cv2.imwrite('frame.pdf', img)
+        img = cv2.imread(first_image_path)
         height, width, _ = img.shape
 
         # Create a VideoWriter object

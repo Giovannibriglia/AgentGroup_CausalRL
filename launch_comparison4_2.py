@@ -135,6 +135,12 @@ for path_game in paths_with_pattern:
     path_game = change_first_and_second_path_remove_last(path_game, dir_results, 'Maze' if if_maze == 'Grid' else 'Grid')
     os.makedirs(path_game, exist_ok=True)
 
+    components = path_game.split("/")
+    numerical_part = components[0].split("_")[-1]
+    components[0] = "Env_" + numerical_part
+    directory_env = "/".join(components)
+    os.makedirs(directory_env, exist_ok=True)
+
     seed_value = seed_values[game_n]
     np.random.seed(seed_value)
     random.seed(seed_value)
@@ -152,6 +158,7 @@ for path_game in paths_with_pattern:
                                  seed_value=seed_value, predefined_env=predefined_env)
 
     np.save(f"{path_game}/env_game{game_n}.npy", env.grid_for_game)
+    np.save(f"{directory_env}/env_game{game_n}.npy", env.grid_for_game)
 
     BATCH_EPISODES_UPDATE_BN = get_batch_episodes(n_enemies, rows)
 
@@ -208,8 +215,11 @@ for path_game in paths_with_pattern:
             alpha, beta = q_table[0], q_table[1]
             np.save(f'{path_game}/{alg}_alpha_game{game_n}.npy', alpha)
             np.save(f'{path_game}/{alg}_beta_game{game_n}.npy', beta)
+            np.save(f'{directory_env}/{alg}_alpha_game{game_n}.npy', alpha)
+            np.save(f'{directory_env}/{alg}_beta_game{game_n}.npy', beta)
         else:
             np.save(f'{path_game}/{alg}_q_table_game{game_n}.npy', q_table)
+            np.save(f'{directory_env}/{alg}_q_table_game{game_n}.npy', q_table)
 
     # plots.plot_av_rew_steps(directory, algorithms, n_games, n_episodes, rows, cols, n_enemies)
     # plots.plot_av_computation_time(directory, algorithms, n_games, rows, cols, n_enemies)

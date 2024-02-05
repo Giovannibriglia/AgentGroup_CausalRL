@@ -117,7 +117,6 @@ n_games = 5
 episodes_to_visualize = [0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
 
 paths_with_pattern = extract_paths_with_pattern(dir_start, pattern_env_game)
-paths_with_pattern = [s for s in paths_with_pattern if '2Enem' in s]
 
 for path_game in paths_with_pattern:
     dict_vars = extract_variables_from_path(path_game, dir_start)
