@@ -81,8 +81,8 @@ def drop_last_folder_from_path(path):
 
 
 def change_first_and_second_path_remove_last(input_string, new_first_component, new_second_component):
-    # Split the input string into components using backslashes
-    path_components = input_string.split('\\')  # Adjust the separator based on your specific case
+    input_string = input_string.replace("\\", "/")
+    path_components = input_string.split('/')  # Adjust the separator based on your specific case
 
     # Change the first and second path components (if there are at least two components)
     if len(path_components) >= 2:
@@ -93,7 +93,7 @@ def change_first_and_second_path_remove_last(input_string, new_first_component, 
     path_components.pop()
 
     # Join the components back into a single path using backslashes
-    result_path = '\\'.join(path_components)  # Adjust the separator based on your specific case
+    result_path = '/'.join(path_components)  # Adjust the separator based on your specific case
 
     return result_path
 
