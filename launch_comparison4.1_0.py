@@ -110,7 +110,7 @@ n_episodes = 3000
 vect_if_maze = [False]
 dir_start = f'Env_Comparison123'
 pattern_env_game = 'env_game'
-dir_results = f'Results_Comparison4'
+dir_results = f'Results_Comparison5'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 n_games = 5
 
@@ -172,14 +172,6 @@ for path_game in paths_with_pattern:
         rewards = []
         steps = []
 
-        dir_q_table = f'{dir_start}/{if_maze}/{if_same_enemy_actions}/{n_enemies}/{rows}x{cols}'
-        if 'TS' in alg:
-            alpha = np.load(f'{dir_q_table}/{alg}_alpha_game{game_n}.npy')
-            beta = np.load(f'{dir_q_table}/{alg}_beta_game{game_n}.npy')
-            predefined_q_table = [alpha, beta]
-        else:
-            predefined_q_table = np.load(f'{dir_q_table}/{alg}_q_table_game{game_n}.npy')
-
         # returned: reward for episode, actions for episode and the final Q-table
         if 'QL' in alg:
             if 'offline' in alg or 'basic' in alg:
@@ -187,20 +179,20 @@ for path_game in paths_with_pattern:
                                                                           n_episodes,
                                                                           alg, who_moves_first,
                                                                           episodes_to_visualize,
-                                                                          seed_value,
-                                                                          predefined_q_table)
+                                                                          seed_value
+                                                                          )
             else:
                 rewards, steps, q_table = new_models.QL_causality_online(env_for_alg, n_act_agents,
                                                                          n_episodes,
                                                                          alg, who_moves_first,
                                                                          episodes_to_visualize,
                                                                          seed_value,
-                                                                         BATCH_EPISODES_UPDATE_BN,
-                                                                         predefined_q_table)
+                                                                         BATCH_EPISODES_UPDATE_BN
+                                                                         )
 
-        else:
+        """else:
             rewards, steps, q_table = new_models.DQN_variations(env_for_alg, n_act_agents, n_episodes,
-                                                                alg, who_moves_first)
+                                                                alg, who_moves_first)"""
 
         if len(rewards) == n_episodes:
             computation_time = (time.time() - start_time) / 60  # minutes
