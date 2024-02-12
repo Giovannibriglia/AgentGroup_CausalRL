@@ -188,7 +188,7 @@ def plot_average_steps_episode(dir_results, algorithms, n_games, n_episodes, row
         x = np.arange(0, len(av_steps), 1)
         ax2.plot(x, av_steps_gauss, label=f'{alg}')
         confidence_interval_steps = np.std(av_steps_gauss)
-        dict_res[alg] = f'{np.mean(av_steps[int(n_episodes * 0.6):])} \u00B1 {round(np.std(av_steps[int(n_episodes * 0.6):]), 2)}'
+        dict_res[alg] = f'{round(np.mean(av_steps[int(n_episodes * 0.6):]), 2)} \u00B1 {round(np.std(av_steps[int(n_episodes * 0.6):]), 2)}'
         ax2.fill_between(x, (av_steps_gauss - confidence_interval_steps), (av_steps_gauss + confidence_interval_steps), alpha=0.2)
         ax2.set_yscale('log')
         ax2.set_title('Actions needed to complete the episode')
@@ -232,7 +232,7 @@ def plot_average_computation_time(dir_results, algorithms, n_games, rows, cols, 
                 data_to_app.append(av_comp_time)
             av_comp_time = av_comp_time / n_games
             data.append(data_to_app)
-            dict_res[alg] = f'{round(av_comp_time, 2)} \u00B1 {np.std(data_to_app)}'
+            dict_res[alg] = f'{round(av_comp_time, 2)} \u00B1 {round(np.std(data_to_app), 2)}'
 
         ax3.boxplot(data, vert=True, patch_artist=True, labels=algorithms_checked)
 
