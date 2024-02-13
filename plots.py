@@ -69,14 +69,14 @@ def plot_av_rew_steps(dir_results, algorithms, n_games, n_episodes, rows, cols, 
 
 
 def plot_cumulative_average_rewards(dir_results, algorithms, n_games, n_episodes, rows, cols, n_enemies,
-                                    dir_saving_plots, kind_of_comparison):
+                                    dir_saving_plots, kind_of_comparison, env_name):
     target_pattern = fr"{dir_results}\*.npy"
     directories = glob.glob(target_pattern)
 
     dict_res = {key: None for key in algorithms}
 
     fig, ax1 = plt.subplots(dpi=1000)
-    fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemies - Averaged over {n_games} games', fontsize=fontsize + 3)
+    fig.suptitle(f'{env_name} {rows}x{cols} - {n_enemies} enemies - Averaged over {n_games} games', fontsize=fontsize + 3)
 
     algorithms_checked = []
     for alg in algorithms:
@@ -113,14 +113,14 @@ def plot_cumulative_average_rewards(dir_results, algorithms, n_games, n_episodes
 
 
 def plot_average_rewards_episode(dir_results, algorithms, n_games, n_episodes, rows, cols, n_enemies,
-                                 dir_saving_plots, kind_of_comparison):
+                                 dir_saving_plots, kind_of_comparison, env_name):
     target_pattern = fr"{dir_results}\*.npy"
     directories = glob.glob(target_pattern)
 
     dict_res = {key: None for key in algorithms}
 
     fig, ax1 = plt.subplots(dpi=1000)
-    fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemies - Averaged over {n_games} games', fontsize=fontsize + 3)
+    fig.suptitle(f'{env_name} {rows}x{cols} - {n_enemies} enemies - Averaged over {n_games} games', fontsize=fontsize + 3)
 
     algorithms_checked = []
     for alg in algorithms:
@@ -157,14 +157,14 @@ def plot_average_rewards_episode(dir_results, algorithms, n_games, n_episodes, r
 
 
 def plot_average_steps_episode(dir_results, algorithms, n_games, n_episodes, rows, cols, n_enemies,
-                               dir_saving_plots, kind_of_comparison):
+                               dir_saving_plots, kind_of_comparison, env_name):
     target_pattern = fr"{dir_results}\*.npy"
     directories = glob.glob(target_pattern)
 
     dict_res = {key: None for key in algorithms}
 
     fig, ax2 = plt.subplots(dpi=1000)
-    fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemies - Averaged over {n_games} games', fontsize=fontsize + 3)
+    fig.suptitle(f'{env_name} {rows}x{cols} - {n_enemies} enemies - Averaged over {n_games} games', fontsize=fontsize + 3)
 
     algorithms_checked = []
     for alg in algorithms:
@@ -202,14 +202,14 @@ def plot_average_steps_episode(dir_results, algorithms, n_games, n_episodes, row
 
 
 def plot_average_computation_time(dir_results, algorithms, n_games, rows, cols, n_enemies,
-                                  dir_saving_plots, kind_of_comparison):
+                                  dir_saving_plots, kind_of_comparison, env_name):
     targetPattern = fr"{dir_results}\*.npy"
     directories = glob.glob(targetPattern)
 
     dict_res = {key: None for key in algorithms}
 
     fig, ax3 = plt.subplots(dpi=1000)
-    fig.suptitle(f'Grid {rows}x{cols} - {n_enemies} enemies - Averaged over {n_games} games', fontsize=fontsize + 3)
+    fig.suptitle(f'{env_name} {rows}x{cols} - {n_enemies} enemies - Averaged over {n_games} games', fontsize=fontsize + 3)
 
     algorithms_checked = []
     for alg in algorithms:

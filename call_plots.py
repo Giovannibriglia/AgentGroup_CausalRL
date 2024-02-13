@@ -34,9 +34,9 @@ vect_n_enemies = [10, 5, 2]
 n_episodes = 3000
 vect_if_maze = [True]
 vect_if_same_enemies_actions = [False]
-dir_start = f'Results_Comparison5'
-dir_saving_plots = f'Plots_Comparison5'
-dir_saving_resume_metrics = f'Resume_Metrics_Comparison5'
+dir_start = f'Results_Comparison4'
+dir_saving_plots = f'Plots_Comparison4'
+dir_saving_resume_metrics = f'Resume_Metrics_Comparison4'
 
 
 for comb_algorithms in [combs_algorithms_by_strategy, combs_algorithms_by_kind]:
@@ -87,19 +87,19 @@ for comb_algorithms in [combs_algorithms_by_strategy, combs_algorithms_by_kind]:
                         resume_metrics_table['Algorithm'] = algorithms
 
                         dict_res = plots.plot_cumulative_average_rewards(directory, algorithms, n_games, n_episodes, rows, cols,
-                                                              n_enemies, directory_for_saving_plots, kind_of_comparison)
+                                                              n_enemies, directory_for_saving_plots, kind_of_comparison, env_name)
                         resume_metrics_table['Cumulative_average_reward'] = list(dict_res.values())
 
                         dict_res = plots.plot_average_rewards_episode(directory, algorithms, n_games, n_episodes, rows, cols,
-                                                           n_enemies, directory_for_saving_plots, kind_of_comparison)
+                                                           n_enemies, directory_for_saving_plots, kind_of_comparison, env_name)
                         resume_metrics_table['Average_reward_episode'] = list(dict_res.values())
 
                         dict_res = plots.plot_average_steps_episode(directory, algorithms, n_games, n_episodes, rows, cols,
-                                                         n_enemies, directory_for_saving_plots, kind_of_comparison)
+                                                         n_enemies, directory_for_saving_plots, kind_of_comparison, env_name)
                         resume_metrics_table['Average_exploitation_steps'] = list(dict_res.values())
 
                         dict_res = plots.plot_average_computation_time(directory, algorithms, n_games, rows, cols, n_enemies,
-                                                            directory_for_saving_plots, kind_of_comparison)
+                                                            directory_for_saving_plots, kind_of_comparison, env_name)
                         resume_metrics_table['Average_computation_time'] = list(dict_res.values())
 
                         resume_metrics_table.to_pickle(f'{directory_for_saving_resume_results}/resume_metrics_{kind_of_comparison}.pkl')
