@@ -35,8 +35,8 @@ n_episodes = 3000
 vect_if_maze = [True]
 vect_if_same_enemies_actions = [False]
 dir_start = f'Results_Comparison4'
-dir_saving_plots = f'Plots_Comparison4'
-dir_saving_resume_metrics = f'Resume_Metrics_Comparison4'
+dir_saving_plots = f'xxx'
+dir_saving_resume_metrics = f'xxx2'
 
 
 for comb_algorithms in [combs_algorithms_by_strategy, combs_algorithms_by_kind]:
@@ -74,7 +74,7 @@ for comb_algorithms in [combs_algorithms_by_strategy, combs_algorithms_by_kind]:
                         if n_enemies >= 2 * rows:
                             print(f'No {n_enemies} enemies - {rows}x{rows} grid')
                             break
-
+                        print('\n')
                         cols = rows
                         directory = dir_start + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem' + f'/{rows}x{cols}'
                         directory_for_saving_plots = dir_saving_plots + f'/{env_name}' + f'/{en_act}' + f'/{n_enemies}Enem' + f'/{rows}x{cols}'

@@ -472,7 +472,8 @@ class EpsilonGreedyQAgent:
         self.exp_proba = max(self.MIN_EXPLORATION_PROBA, np.exp(-self.EXPLORATION_DECREASING_DECAY * episode))
 
 
-def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize, seed_value, predefined_q_table=None):
+def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize, seed_value,
+                         predefined_q_table=None):
     np.random.seed(seed_value)
     random.seed(seed_value)
 
@@ -549,7 +550,7 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, ep
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
             else:  # who_moves_first == 'Agent':
-                if 'Causal' in alg:
+                if 'causal' in alg:
                     enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
                     possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
                                                             goals_nearby_all_agents, if_online=False)
@@ -570,7 +571,7 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, ep
             reward = int(rewards[agent_n])
             done = dones[agent_n]  # If agent wins, end loop and restart
 
-            if possible_actions is not None and if_lose and [current_state] != [next_state] and len(
+            if 'causal' in alg and if_lose and not ([current_state] == [next_state] and action != 0) and len(
                     possible_actions) > 0:
                 print(f'\nLose: wrong causal gameover model in {alg}')
                 print(f'New agents pos: {env.pos_agents[-1]}')
@@ -598,7 +599,7 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, ep
         average_episodes_rewards.append(total_episode_reward)
         steps_for_episode.append(step_for_episode)
         pbar.set_postfix_str(
-            f"Average reward: {round(np.mean(average_episodes_rewards),3)}, Number of defeats: {env.n_times_loser}")
+            f"Average reward: {round(np.mean(average_episodes_rewards), 3)}, Number of defeats: {env.n_times_loser}")
 
     print(f'Average reward: {round(np.mean(average_episodes_rewards), 3)}, Number of defeats: {env.n_times_loser}')
 
@@ -631,7 +632,8 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
     elif 'BM' in alg:
         agent = BoltzmannQAgent(rows, cols, action_space_size, n_episodes, predefined_q_table=predefined_q_table)
     else:  # 'TS'
-        agent = ThompsonSamplingQAgent(rows, cols, action_space_size, n_episodes, predefined_alpha_beta=predefined_q_table)
+        agent = ThompsonSamplingQAgent(rows, cols, action_space_size, n_episodes,
+                                       predefined_alpha_beta=predefined_q_table)
 
     average_episodes_rewards = []
     steps_for_episode = []
@@ -765,7 +767,8 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
         if 'SA' in alg or 'EG' in alg:
             agent.update_exp_fact(e)
 
-        if e % BATCH_EPISODES_UPDATE_BN == 0 and e < int(EXPLORATION_GAME_PERCENT * n_episodes) and check_causal_table < TH_CHECKS_CAUSAL_TABLE:
+        if e % BATCH_EPISODES_UPDATE_BN == 0 and e < int(
+                EXPLORATION_GAME_PERCENT * n_episodes) and check_causal_table < TH_CHECKS_CAUSAL_TABLE:
             pbar.set_postfix_str(
                 f"Average reward: {round(np.mean(average_episodes_rewards), 3)}, Number of defeats: {env.n_times_loser}, do-calculus...")
 
@@ -779,14 +782,16 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
                     df_for_causality.drop([col], axis=1)
                     print('This column was not in the initial columns: ', col)
                 else:
-                    df_for_causality[str(col)] = df_for_causality[str(col)].astype(str).str.replace(',', '').astype(float)
+                    df_for_causality[str(col)] = df_for_causality[str(col)].astype(str).str.replace(',', '').astype(
+                        float)
 
             causality.training(e, df_for_causality)
             df_for_causality, columns_df_causality = create_df(env)
             counter_e = 0
 
             try:
-                if len(pd.read_pickle('past_online_heuristic_table.pkl')) == len(pd.read_pickle('online_heuristic_table.pkl')):
+                if len(pd.read_pickle('past_online_heuristic_table.pkl')) == len(
+                        pd.read_pickle('online_heuristic_table.pkl')):
                     check_causal_table += 1
                     os.remove('past_online_heuristic_table.pkl')
                 else:
@@ -812,7 +817,9 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
     return average_episodes_rewards, steps_for_episode, q_table
 
 
-"""
+" ******************************************************************************************************************* "
+
+
 class ReplayMemory(object):
 
     def __init__(self, capacity):
@@ -884,7 +891,8 @@ class DeepQNetwork:
                     return torch.tensor([[possible_actions[torch.randint(0, len(possible_actions), (1,)).item()]]],
                                         device=self.device, dtype=torch.long)
                 else:
-                    return torch.tensor([[np.random.randint(0, self.n_agent_actions, 1)]], device=self.device, dtype=torch.long)
+                    return torch.tensor([[np.random.randint(0, self.n_agent_actions, 1)]], device=self.device,
+                                        dtype=torch.long)
             else:  # exploitation
                 actions_to_avoid = [s for s in range(self.n_agent_actions) if s not in possible_actions]
 
@@ -895,7 +903,8 @@ class DeepQNetwork:
                 return actions_values.max(1).indices.view(1, 1)
         else:
             if np.random.uniform(0, 1) < self.exp_proba:  # exploration
-                return torch.tensor([[np.random.randint(0, self.n_agent_actions, 1)]], device=self.device, dtype=torch.long)
+                return torch.tensor([[np.random.randint(0, self.n_agent_actions, 1)]], device=self.device,
+                                    dtype=torch.long)
             else:
                 with torch.no_grad():
                     actions_values = self.policy_net(state)
@@ -961,98 +970,120 @@ class DeepQNetwork:
         for key in policy_net_state_dict:
             target_net_state_dict[key] = policy_net_state_dict[key] * TAU + target_net_state_dict[key] * (1 - TAU)
         self.target_net.load_state_dict(target_net_state_dict)
-        
-def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
+
+
+def DQNs(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize, seed_value,
+         predefined_q_table=None):
+    np.random.seed(seed_value)
+    random.seed(seed_value)
 
     rows = env.rows
     cols = env.cols
     action_space_size = n_act_agents
 
-    if 'DQN' in alg:
-        agent = DeepQNetwork(rows, cols, action_space_size, n_episodes)
-    elif 'DeepQNetwork_Multi' in alg:
-        agent = DeepQNetwork(rows, cols, action_space_size, n_episodes)
+    agent = DeepQNetwork(rows, cols, action_space_size, n_episodes)
 
     average_episodes_rewards = []
     steps_for_episode = []
 
+    first_visit = True
+
     pbar = tqdm(range(n_episodes))
-    time.sleep(1)
     for e in pbar:
         agent_n = 0
         if e == 0:
-            current_state, _, _, _, _ = env.reset(reset_n_times_loser=True)
+            if first_visit:
+                current_state, _, _, _, _ = env.reset(reset_n_times_loser=True)
+                initial_time = time.time()
+                first_visit = False
+            else:
+                current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
         else:
             current_state, _, _, _, _ = env.reset(reset_n_times_loser=False)
+
         current_state = current_state[agent_n]
 
         total_episode_reward = 0
         step_for_episode = 0
         done = False
 
+        if e in episodes_to_visualize:
+            if_visualization = True
+            env.init_gui(alg, e)
+        else:
+            if_visualization = False
+
         while not done:
 
+            if (time.time() - initial_time) > TIMEOUT_IN_HOURS * 3600:
+                q_table = agent.policy_net
+
+                return average_episodes_rewards, steps_for_episode, q_table
+
+            possible_actions = None
             if who_moves_first == 'Enemy':
                 env.step_enemies()
-                _, _, if_lose = env.check_winner_gameover_agent(current_state[0], current_state[1])
-                if_lose = False
-                if not if_lose:
-                    if 'causal' in alg:
-                        enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
-                        possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
-                                                                goals_nearby_all_agents)
-                    else:
-                        possible_actions = None
-                    general_state = np.zeros(rows * cols)
-                    current_stateX = current_state[0]
-                    current_stateY = current_state[1]
-                    general_state[current_stateX * rows + current_stateY] = 1
-
-                    action = agent.choose_action(general_state, possible_actions)
-                    next_state = env.step_agent(action)[agent_n]
-                else:
-                    next_state = current_state
-                    print('perso subito')
-                new_stateX_ag = next_state[0]
-                new_stateY_ag = next_state[1]
-
-            elif who_moves_first == 'Agent':
-                if 'Causal' in alg:
+                if if_visualization:
+                    env.movement_gui(n_episodes, step_for_episode)
+                """_, _, if_lose = env.check_winner_gameover_agent(current_state[0], current_state[1])
+                if not if_lose:"""
+                if 'causal' in alg:
                     enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
                     possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
-                                                            goals_nearby_all_agents)
-                else:
-                    possible_actions = None
+                                                            goals_nearby_all_agents, if_online=False)
 
                 general_state = np.zeros(rows * cols)
                 current_stateX = current_state[0]
                 current_stateY = current_state[1]
-
-                general_state[current_stateY * env.cols + current_stateX] = 1
+                general_state[current_stateX * rows + current_stateY] = 1
 
                 action = agent.choose_action(general_state, possible_actions)
                 next_state = env.step_agent(action)[agent_n]
+
+                if if_visualization:
+                    env.movement_gui(n_episodes, step_for_episode)
+                """else:
+                    next_state = current_state"""
+                new_stateX_ag = next_state[0]
+                new_stateY_ag = next_state[1]
+            else:  # who_moves_first == 'Agent':
+                if 'causal' in alg:
+                    enemies_nearby_all_agents, goals_nearby_all_agents = env.get_nearbies_agent()
+                    possible_actions = get_possible_actions(n_act_agents, enemies_nearby_all_agents,
+                                                            goals_nearby_all_agents, if_online=False)
+
+                general_state = np.zeros(rows * cols)
+                current_stateX = current_state[0]
+                current_stateY = current_state[1]
+                general_state[current_stateX * rows + current_stateY] = 1
+
+                action = agent.choose_action(general_state, possible_actions)
+                next_state = env.step_agent(action)[0]
+
+                if if_visualization:
+                    env.movement_gui(n_episodes, step_for_episode)
                 new_stateX_ag = next_state[0]
                 new_stateY_ag = next_state[1]
                 _, dones, _ = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
                 if not dones[agent_n]:
                     env.step_enemies()
+                    if if_visualization:
+                        env.movement_gui(n_episodes, step_for_episode)
 
             rewards, dones, if_lose = env.check_winner_gameover_agent(new_stateX_ag, new_stateY_ag)
             reward = int(rewards[agent_n])
-            done = dones[agent_n]
-            if_lose = if_lose
+            done = dones[agent_n]  # If agent wins, end loop and restart
 
-            if possible_actions is not None and len(possible_actions) > 0 and if_lose and [current_state] != [next_state]:
+            if 'causal' in alg and if_lose and not ([current_state] == [next_state] and action != 0) and len(possible_actions) > 0:
                 print(f'\nLose: wrong causal gameover model in {alg}')
                 print(f'New agents pos: {env.pos_agents[-1]}')
                 print(f'Enemies pos: {env.pos_enemies[-1]} - enemies nearby: {enemies_nearby_all_agents}')
                 print(f'Possible actions: {possible_actions} - chosen action: {action}')
 
-            next_state = np.zeros(env.rows * env.cols)
-            next_state[new_stateX_ag * rows + new_stateY_ag] = 1
+            next_general_state = np.zeros(env.rows * env.cols)
+            next_general_state[new_stateX_ag * rows + new_stateY_ag] = 1
 
-            agent.update_memory(general_state, action, next_state, reward)
+            agent.update_memory(general_state, action, next_general_state, reward)
 
             agent.optimize_model()
 
@@ -1065,16 +1096,21 @@ def DQN_variations(env, n_act_agents, n_episodes, alg, who_moves_first):
                 current_state = current_state[agent_n]
             else:
                 current_state = next_state
-
             step_for_episode += 1
 
-        agent.update_exp_factor(e)
+        if if_visualization:
+            env.save_video()
 
+        agent.update_exp_factor(e)
+        if total_episode_reward > 1:
+            print('**** marioooo ***')
         average_episodes_rewards.append(total_episode_reward)
         steps_for_episode.append(step_for_episode)
         pbar.set_postfix_str(
-            f"Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}")
+            f"Average reward: {round(np.mean(average_episodes_rewards), 3)}, Number of defeats: {env.n_times_loser}")
 
-    print(f'Average reward: {np.mean(average_episodes_rewards)}, Number of defeats: {env.n_times_loser}')
-    return average_episodes_rewards, steps_for_episode
-"""
+    print(f'Average reward: {round(np.mean(average_episodes_rewards), 3)}, Number of defeats: {env.n_times_loser}')
+
+    q_table = agent.policy_net
+
+    return average_episodes_rewards, steps_for_episode, q_table
