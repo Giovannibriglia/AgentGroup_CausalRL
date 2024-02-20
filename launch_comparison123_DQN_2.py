@@ -36,8 +36,8 @@ vect_n_enemies = [5]
 n_episodes = 3000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
-dir_start = f'Results_Comparison6'
-dir_start_env = f'Env_Comparison6'
+dir_start = f'Results_Comparison123_DQN'
+dir_start_env = f'Env_Comparison123_DQN'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 
 episodes_to_visualize = [0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
