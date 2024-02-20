@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import new_env_game
+import env_game
 import os
 import models
 from scipy.ndimage import gaussian_filter1d
@@ -149,7 +149,7 @@ for path_game in paths_with_pattern:
     n_act_enemies = 5
     n_goals = 1
 
-    env = new_env_game.CustomEnv(rows=rows, cols=cols, n_agents=n_agents, n_act_agents=n_act_agents,
+    env = env_game.CustomEnv(rows=rows, cols=cols, n_agents=n_agents, n_act_agents=n_act_agents,
                                  n_enemies=n_enemies, n_act_enemies=n_act_enemies, n_goals=n_goals,
                                  if_maze=True if if_maze == 'Grid' else False,
                                  if_same_enemies_actions=True if if_same_enemy_actions == 'SameEnAct' else False,

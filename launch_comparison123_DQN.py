@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import new_env_game
+import env_game
 import os
 import models
 import time
@@ -26,8 +26,9 @@ def get_batch_episodes(n_enemies, rows):
 
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + 'basic' + all 'causal' 'offline'/'online'
 # 'DQN' + 'causal'
-algorithms = [#'DQN_EG_basic', 'DQN_BM_basic', 'DQN_TS_basic', 'DQN_SA_basic',
-             'DQN_EG_causal_offline', 'DQN_BM_causal_offline', 'DQN_TS_causal_offline', 'DQN_SA_causal_offline']
+algorithms = ['DQN_EG_basic', 'DQN_BM_basic', 'DQN_TS_basic', 'DQN_SA_basic',
+              'DQN_EG_causal_offline', 'DQN_BM_causal_offline', 'DQN_TS_causal_offline', 'DQN_SA_causal_offline'
+              ]
 
 n_games = 5
 vect_rows = [5, 10]
@@ -39,7 +40,7 @@ dir_start = f'Results_Comparison6'
 dir_start_env = f'Env_Comparison6'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 
-episodes_to_visualize = []  # [0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
+episodes_to_visualize = [0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
 
 os.makedirs(dir_start, exist_ok=True)
 os.makedirs(dir_start_env, exist_ok=True)
@@ -91,7 +92,7 @@ for if_maze in vect_if_maze:
                     n_act_enemies = 5
                     n_goals = 1
 
-                    env = new_env_game.CustomEnv(rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals,
+                    env = env_game.CustomEnv(rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals,
                                                  if_maze, if_same_enemies_actions, directory, game_n, seed_value,
                                                  predefined_env=None)
 

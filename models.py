@@ -1082,15 +1082,13 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, ep
     action_space_size = n_act_agents
 
     if 'SA' in alg:
-        agent = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes, alg,
-                                       predefined_q_table=predefined_q_table)
+        agent = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes, alg, predefined_q_table=predefined_q_table)
     elif 'TS' in alg:
         agent = ThompsonSamplingQAgent(rows, cols, action_space_size, alg, predefined_alpha_beta=predefined_q_table)
     elif 'BM' in alg:
         agent = BoltzmannQAgent(rows, cols, action_space_size, alg, predefined_q_table=predefined_q_table)
     else:  # 'EG'
-        agent = EpsilonGreedyQAgent(rows, cols, action_space_size, n_episodes, alg,
-                                    predefined_q_table=predefined_q_table)
+        agent = EpsilonGreedyQAgent(rows, cols, action_space_size, n_episodes, alg, predefined_q_table=predefined_q_table)
 
     average_episodes_rewards = []
     steps_for_episode = []
@@ -1349,7 +1347,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
                 pass
 
             # Update the Q-table/values
-            agent.update_Q(current_state, action, reward, next_state)
+            agent.update_Q_or_memory(current_state, action, reward, next_state)
 
             total_episode_reward += reward
 

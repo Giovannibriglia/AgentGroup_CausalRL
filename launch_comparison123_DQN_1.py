@@ -1,11 +1,8 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import env_game
 import os
 import models
-from scipy.ndimage import gaussian_filter1d
-import plots
 import time
 import random
 
@@ -27,22 +24,20 @@ def get_batch_episodes(n_enemies, rows):
         return 500
 
 
-# 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal' + 'offline'/'online'
+# 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + 'basic' + all 'causal' 'offline'/'online'
 # 'DQN' + 'causal'
-algorithms = ['QL_EG_basic', 'QL_EG_causal_offline', 'QL_EG_causal_online',
-              'QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
-              'QL_SA_basic', 'QL_SA_causal_offline', 'QL_SA_causal_online',
-              'QL_BM_basic', 'QL_BM_causal_offline', 'QL_BM_causal_online'
+algorithms = ['DQN_EG_basic', 'DQN_BM_basic', 'DQN_TS_basic', 'DQN_SA_basic',
+              'DQN_EG_causal_offline', 'DQN_BM_causal_offline', 'DQN_TS_causal_offline', 'DQN_SA_causal_offline'
               ]
 
 n_games = 5
 vect_rows = [5, 10]
-vect_n_enemies = [2, 5, 10]
+vect_n_enemies = [2]
 n_episodes = 3000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
-dir_start = f'Results_Comparison123'
-dir_start_env = f'Env_Comparison123'
+dir_start = f'Results_Comparison6'
+dir_start_env = f'Env_Comparison6'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 
 episodes_to_visualize = [0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
@@ -131,8 +126,7 @@ for if_maze in vect_if_maze:
                                                                                      BATCH_EPISODES_UPDATE_BN)
 
                         elif 'DQN' in alg:
-                            rewards, steps, _ = models.DQNs(env_for_alg, n_act_agents,
-                                                            n_episodes,
+                            rewards, steps, _ = models.DQNs(env_for_alg, n_act_agents, n_episodes,
                                                             alg, who_moves_first,
                                                             episodes_to_visualize,
                                                             seed_value)
@@ -153,3 +147,6 @@ for if_maze in vect_if_maze:
                                 np.save(f'{directory}/{alg}_beta_game{game_n}.npy', beta)
                             else:
                                 np.save(f'{directory}/{alg}_q_table_game{game_n}.npy', q_table)
+
+                # plots.plot_av_rew_steps(directory, algorithms, n_games, n_episodes, rows, cols, n_enemies)
+                # plots.plot_av_computation_time(directory, algorithms, n_games, rows, cols, n_enemies)

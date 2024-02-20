@@ -213,8 +213,8 @@ def plot_average_computation_time(dir_results, algorithms, n_games, rows, cols, 
 
     algorithms_checked = []
     for alg in algorithms:
-        x = [np.load(f'{dir_results}/{alg}_computation_time_game{game}.npy') for game in range(1, n_games + 1, 1)]
-        print(x)
+        """x = [np.load(f'{dir_results}/{alg}_computation_time_game{game}.npy') for game in range(1, n_games + 1, 1)]
+        print(x)"""
         if all(is_number(np.load(f'{dir_results}/{alg}_computation_time_game{game}.npy')) for game in
                range(1, n_games + 1, 1)):
             algorithms_checked.append(alg)

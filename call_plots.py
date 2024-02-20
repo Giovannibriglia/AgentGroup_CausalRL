@@ -29,12 +29,12 @@ combs_algorithms_by_strategy = [[s for s in possible_algorithms if strategy in s
 
 
 n_games = 5
-vect_rows = [10, 5]
-vect_n_enemies = [10, 5, 2]
+vect_rows = [5]
+vect_n_enemies = [2]
 n_episodes = 3000
-vect_if_maze = [True]
+vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
-dir_start = f'Results_Comparison4'
+dir_start = f'Results/Results_Comparison123'
 dir_saving_plots = f'xxx'
 dir_saving_resume_metrics = f'xxx2'
 
