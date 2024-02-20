@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import new_env_game
 import os
-import new_models
+import models
 from scipy.ndimage import gaussian_filter1d
 import plots
 import time
@@ -117,22 +117,25 @@ for if_maze in vect_if_maze:
                         # returned: reward for episode, actions for episode and the final Q-table
                         if 'QL' in alg:
                             if 'offline' in alg or 'basic' in alg:
-                                rewards, steps, q_table = new_models.QL_causality_offline(env_for_alg, n_act_agents,
-                                                                                          n_episodes,
-                                                                                          alg, who_moves_first,
-                                                                                          episodes_to_visualize,
-                                                                                          seed_value)
-                            else:
-                                rewards, steps, q_table = new_models.QL_causality_online(env_for_alg, n_act_agents,
-                                                                                         n_episodes,
-                                                                                         alg, who_moves_first,
-                                                                                         episodes_to_visualize,
-                                                                                         seed_value,
-                                                                                         BATCH_EPISODES_UPDATE_BN)
+                                rewards, steps, q_table = models.QL_causality_offline(env_for_alg, n_act_agents,
+                                                                                      n_episodes,
+                                                                                      alg, who_moves_first,
+                                                                                      episodes_to_visualize,
+                                                                                      seed_value)
+                            elif 'online' in alg:
+                                rewards, steps, q_table = models.QL_causality_online(env_for_alg, n_act_agents,
+                                                                                     n_episodes,
+                                                                                     alg, who_moves_first,
+                                                                                     episodes_to_visualize,
+                                                                                     seed_value,
+                                                                                     BATCH_EPISODES_UPDATE_BN)
 
-                        """else: TO FIX
-                            rewards, steps, q_table = new_models.DQN_variations(env_for_alg, n_act_agents, n_episodes,
-                                                                                alg, who_moves_first)"""
+                        elif 'DQN' in alg:
+                            rewards, steps, _ = models.DQNs(env_for_alg, n_act_agents,
+                                                            n_episodes,
+                                                            alg, who_moves_first,
+                                                            episodes_to_visualize,
+                                                            seed_value)
 
                         if len(rewards) == n_episodes:
                             computation_time = (time.time() - start_time) / 60  # minutes
@@ -143,12 +146,10 @@ for if_maze in vect_if_maze:
                         np.save(f"{directory}/{alg}_steps_game{game_n}.npy", steps)
                         np.save(f'{directory}/{alg}_computation_time_game{game_n}.npy', computation_time)
 
-                        if 'TS' in alg:
-                            alpha, beta = q_table[0], q_table[1]
-                            np.save(f'{directory}/{alg}_alpha_game{game_n}.npy', alpha)
-                            np.save(f'{directory}/{alg}_beta_game{game_n}.npy', beta)
-                        else:
-                            np.save(f'{directory}/{alg}_q_table_game{game_n}.npy', q_table)
-
-                # plots.plot_av_rew_steps(directory, algorithms, n_games, n_episodes, rows, cols, n_enemies)
-                # plots.plot_av_computation_time(directory, algorithms, n_games, rows, cols, n_enemies)
+                        if not 'DQN' in alg:
+                            if 'TS' in alg:
+                                alpha, beta = q_table[0], q_table[1]
+                                np.save(f'{directory}/{alg}_alpha_game{game_n}.npy', alpha)
+                                np.save(f'{directory}/{alg}_beta_game{game_n}.npy', beta)
+                            else:
+                                np.save(f'{directory}/{alg}_q_table_game{game_n}.npy', q_table)

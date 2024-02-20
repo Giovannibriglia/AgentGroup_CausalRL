@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import new_env_game
 import os
-import new_models
+import models
 from scipy.ndimage import gaussian_filter1d
 import plots
 import time
@@ -175,24 +175,24 @@ for path_game in paths_with_pattern:
         # returned: reward for episode, actions for episode and the final Q-table
         if 'QL' in alg:
             if 'offline' in alg or 'basic' in alg:
-                rewards, steps, q_table = new_models.QL_causality_offline(env_for_alg, n_act_agents,
-                                                                          n_episodes,
-                                                                          alg, who_moves_first,
-                                                                          episodes_to_visualize,
-                                                                          seed_value
-                                                                          )
-            else:
-                rewards, steps, q_table = new_models.QL_causality_online(env_for_alg, n_act_agents,
-                                                                         n_episodes,
-                                                                         alg, who_moves_first,
-                                                                         episodes_to_visualize,
-                                                                         seed_value,
-                                                                         BATCH_EPISODES_UPDATE_BN
-                                                                         )
+                rewards, steps, q_table = models.QL_causality_offline(env_for_alg, n_act_agents,
+                                                                      n_episodes,
+                                                                      alg, who_moves_first,
+                                                                      episodes_to_visualize,
+                                                                      seed_value)
+            elif 'online' in alg:
+                rewards, steps, q_table = models.QL_causality_online(env_for_alg, n_act_agents,
+                                                                     n_episodes,
+                                                                     alg, who_moves_first,
+                                                                     episodes_to_visualize,
+                                                                     seed_value,
+                                                                     BATCH_EPISODES_UPDATE_BN)
 
-        """else:
-            rewards, steps, q_table = new_models.DQN_variations(env_for_alg, n_act_agents, n_episodes,
-                                                                alg, who_moves_first)"""
+        elif 'DQN' in alg:
+            rewards, steps, _ = models.DQNs(env_for_alg, n_act_agents, n_episodes,
+                                            alg, who_moves_first,
+                                            episodes_to_visualize,
+                                            seed_value)
 
         if len(rewards) == n_episodes:
             computation_time = (time.time() - start_time) / 60  # minutes

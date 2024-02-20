@@ -1,11 +1,8 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import new_env_game
 import os
-import new_models
-from scipy.ndimage import gaussian_filter1d
-import plots
+import models
 import time
 import random
 
@@ -29,9 +26,8 @@ def get_batch_episodes(n_enemies, rows):
 
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + 'basic' + all 'causal' 'offline'/'online'
 # 'DQN' + 'causal'
-algorithms = ['DQN_EG', 'DQN_SA', 'DQN_BM', 'DQN_TS',
-              'DQN_EG_causal_offline', 'DQN_SA_causal_offline', 'DQN_BM_causal_offline', 'DQN_TS_causal_offline']
-algorithms = ['QL_EG_basic', 'QL_EG_causal_offline', 'DQN_EG_basic', 'DQN_EG_causal_offline']
+algorithms = [#'DQN_EG_basic', 'DQN_BM_basic', 'DQN_TS_basic', 'DQN_SA_basic',
+             'DQN_EG_causal_offline', 'DQN_BM_causal_offline', 'DQN_TS_causal_offline', 'DQN_SA_causal_offline']
 
 n_games = 5
 vect_rows = [5, 10]
@@ -43,7 +39,7 @@ dir_start = f'Results_Comparison6'
 dir_start_env = f'Env_Comparison6'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 
-episodes_to_visualize = [] # [0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
+episodes_to_visualize = []  # [0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
 
 os.makedirs(dir_start, exist_ok=True)
 os.makedirs(dir_start_env, exist_ok=True)
@@ -115,25 +111,24 @@ for if_maze in vect_if_maze:
                         # returned: reward for episode, actions for episode and the final Q-table
                         if 'QL' in alg:
                             if 'offline' in alg or 'basic' in alg:
-                                rewards, steps, q_table = new_models.QL_causality_offline(env_for_alg, n_act_agents,
-                                                                                          n_episodes,
-                                                                                          alg, who_moves_first,
-                                                                                          episodes_to_visualize,
-                                                                                          seed_value)
-                            elif 'online' in alg:
-                                rewards, steps, q_table = new_models.QL_causality_online(env_for_alg, n_act_agents,
-                                                                                         n_episodes,
-                                                                                         alg, who_moves_first,
-                                                                                         episodes_to_visualize,
-                                                                                         seed_value,
-                                                                                         BATCH_EPISODES_UPDATE_BN)
-
-                        elif 'DQN' in alg:
-                            rewards, steps, q_table = new_models.DQNs(env_for_alg, n_act_agents,
+                                rewards, steps, q_table = models.QL_causality_offline(env_for_alg, n_act_agents,
                                                                                       n_episodes,
                                                                                       alg, who_moves_first,
                                                                                       episodes_to_visualize,
                                                                                       seed_value)
+                            elif 'online' in alg:
+                                rewards, steps, q_table = models.QL_causality_online(env_for_alg, n_act_agents,
+                                                                                     n_episodes,
+                                                                                     alg, who_moves_first,
+                                                                                     episodes_to_visualize,
+                                                                                     seed_value,
+                                                                                     BATCH_EPISODES_UPDATE_BN)
+
+                        elif 'DQN' in alg:
+                            rewards, steps, _ = models.DQNs(env_for_alg, n_act_agents, n_episodes,
+                                                            alg, who_moves_first,
+                                                            episodes_to_visualize,
+                                                            seed_value)
 
                         if len(rewards) == n_episodes:
                             computation_time = (time.time() - start_time) / 60  # minutes
@@ -144,12 +139,13 @@ for if_maze in vect_if_maze:
                         np.save(f"{directory}/{alg}_steps_game{game_n}.npy", steps)
                         np.save(f'{directory}/{alg}_computation_time_game{game_n}.npy', computation_time)
 
-                        if 'TS' in alg:
-                            alpha, beta = q_table[0], q_table[1]
-                            np.save(f'{directory}/{alg}_alpha_game{game_n}.npy', alpha)
-                            np.save(f'{directory}/{alg}_beta_game{game_n}.npy', beta)
-                        else:
-                            np.save(f'{directory}/{alg}_q_table_game{game_n}.npy', q_table)
+                        if not 'DQN' in alg:
+                            if 'TS' in alg:
+                                alpha, beta = q_table[0], q_table[1]
+                                np.save(f'{directory}/{alg}_alpha_game{game_n}.npy', alpha)
+                                np.save(f'{directory}/{alg}_beta_game{game_n}.npy', beta)
+                            else:
+                                np.save(f'{directory}/{alg}_q_table_game{game_n}.npy', q_table)
 
                 # plots.plot_av_rew_steps(directory, algorithms, n_games, n_episodes, rows, cols, n_enemies)
                 # plots.plot_av_computation_time(directory, algorithms, n_games, rows, cols, n_enemies)

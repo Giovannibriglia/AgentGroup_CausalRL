@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import new_env_game
 import os
-import new_models
+import models
 from scipy.ndimage import gaussian_filter1d
 import plots
 import time
@@ -182,14 +182,14 @@ for path_game in paths_with_pattern:
         # returned: reward for episode, actions for episode and the final Q-table
         if 'QL' in alg:
             if 'offline' in alg or 'basic' in alg:
-                rewards, steps, q_table = new_models.QL_causality_offline(env_for_alg, n_act_agents,
+                rewards, steps, q_table = models.QL_causality_offline(env_for_alg, n_act_agents,
                                                                           n_episodes,
                                                                           alg, who_moves_first,
                                                                           episodes_to_visualize,
                                                                           seed_value,
                                                                           predefined_q_table)
             else:
-                rewards, steps, q_table = new_models.QL_causality_online(env_for_alg, n_act_agents,
+                rewards, steps, q_table = models.QL_causality_online(env_for_alg, n_act_agents,
                                                                          n_episodes,
                                                                          alg, who_moves_first,
                                                                          episodes_to_visualize,
@@ -198,8 +198,9 @@ for path_game in paths_with_pattern:
                                                                          predefined_q_table)
 
         else:
-            rewards, steps, q_table = new_models.DQN_variations(env_for_alg, n_act_agents, n_episodes,
-                                                                alg, who_moves_first)
+            rewards, steps, q_table = models.DQNs(env_for_alg, n_act_agents, n_episodes,
+                                                                alg, who_moves_first, episodes_to_visualize,
+                                                                seed_value, predefined_q_table)
 
         if len(rewards) == n_episodes:
             computation_time = (time.time() - start_time) / 60  # minutes
