@@ -35,8 +35,8 @@ n_episodes = 3000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
 dir_start = f'Results/Results_Comparison123'
-dir_saving_plots = f'xxx'
-dir_saving_resume_metrics = f'xxx2'
+dir_saving_plots = f'Plots/Plots_Comparison123'
+dir_saving_resume_metrics = f'Resume_Metrics/Metrics_Comparison123'
 
 
 for comb_algorithms in [combs_algorithms_by_strategy, combs_algorithms_by_kind]:
@@ -92,20 +92,18 @@ for comb_algorithms in [combs_algorithms_by_strategy, combs_algorithms_by_kind]:
 
                         dict_res = plots.plot_average_rewards_episode(directory, algorithms, n_games, n_episodes, rows, cols,
                                                            n_enemies, directory_for_saving_plots, kind_of_comparison, env_name)
-                        resume_metrics_table['Average_reward_episode'] = list(dict_res.values())
+                        resume_metrics_table['Average_episode_reward'] = list(dict_res.values())
 
                         dict_res = plots.plot_average_steps_episode(directory, algorithms, n_games, n_episodes, rows, cols,
                                                          n_enemies, directory_for_saving_plots, kind_of_comparison, env_name)
-                        resume_metrics_table['Average_exploitation_steps'] = list(dict_res.values())
+                        resume_metrics_table['Average_episode_steps'] = list(dict_res.values())
 
                         dict_res = plots.plot_average_computation_time(directory, algorithms, n_games, rows, cols, n_enemies,
                                                             directory_for_saving_plots, kind_of_comparison, env_name)
                         resume_metrics_table['Average_computation_time'] = list(dict_res.values())
 
+                        dict_res = plots.reports_timeout_info(directory, algorithms, n_games, n_episodes)
+                        resume_metrics_table['Timeout_info'] = list(dict_res.values())
+
                         resume_metrics_table.to_pickle(f'{directory_for_saving_resume_results}/resume_metrics_{kind_of_comparison}.pkl')
                         resume_metrics_table.to_excel(f'{directory_for_saving_resume_results}/resume_metrics_{kind_of_comparison}.xlsx')
-
-# plots.plot_cumulative_average_rewards('5x5', algorithms, 5, 3000, 5, 5, 2)
-# plots.plot_average_rewards_episode('5x5', algorithms, 5, 3000, 5, 5, 2)
-# plots.plot_average_steps_episode('5x5', algorithms, 5, 3000, 5, 5, 2)
-# plots.plot_average_computation_time('5x5', algorithms, 5, 5, 5, 2)
