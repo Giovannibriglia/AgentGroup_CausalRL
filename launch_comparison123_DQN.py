@@ -26,8 +26,8 @@ def get_batch_episodes(n_enemies, rows):
 
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + 'basic' + all 'causal' 'offline'/'online'
 # 'DQN' + 'causal'
-algorithms = ['DQN_EG_basic', 'DQN_BM_basic', 'DQN_TS_basic', 'DQN_SA_basic',
-              'DQN_EG_causal_offline', 'DQN_BM_causal_offline', 'DQN_TS_causal_offline', 'DQN_SA_causal_offline'
+algorithms = ['DQN_EG_basic', 'DQN_TS_basic',
+              'DQN_EG_causal_offline', 'DQN_TS_causal_offline',
               ]
 
 n_games = 5

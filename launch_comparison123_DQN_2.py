@@ -26,13 +26,13 @@ def get_batch_episodes(n_enemies, rows):
 
 # 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + 'basic' + all 'causal' 'offline'/'online'
 # 'DQN' + 'causal'
-algorithms = ['DQN_EG_basic', 'DQN_BM_basic', 'DQN_TS_basic', 'DQN_SA_basic',
-              'DQN_EG_causal_offline', 'DQN_BM_causal_offline', 'DQN_TS_causal_offline', 'DQN_SA_causal_offline'
+algorithms = ['DQN_EG_basic', 'DQN_TS_basic',
+              'DQN_EG_causal_offline', 'DQN_TS_causal_offline',
               ]
 
 n_games = 5
 vect_rows = [5, 10]
-vect_n_enemies = [5]
+vect_n_enemies = [2, 5, 10]
 n_episodes = 3000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]

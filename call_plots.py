@@ -29,8 +29,8 @@ combs_algorithms_by_strategy = [[s for s in possible_algorithms if strategy in s
 
 
 n_games = 5
-vect_rows = [5]
-vect_n_enemies = [2]
+vect_rows = [5, 10]
+vect_n_enemies = [10, 5, 2]
 n_episodes = 3000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
