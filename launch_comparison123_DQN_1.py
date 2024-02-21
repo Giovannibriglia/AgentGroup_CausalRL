@@ -32,7 +32,7 @@ algorithms = ['DQN_EG_basic', 'DQN_TS_basic',
 
 n_games = 5
 vect_rows = [5, 10]
-vect_n_enemies = [2, 5, 10]
+vect_n_enemies = [2]
 n_episodes = 3000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
