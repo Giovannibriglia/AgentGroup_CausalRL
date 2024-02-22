@@ -19,11 +19,13 @@ def find_common_words(list1, list2):
        'QL_SA_basic', 'QL_SA_causal_offline', 'QL_SA_causal_online',
        'QL_BM_basic', 'QL_BM_causal_offline', 'QL_BM_causal_online'"""
 
-possible_algorithms = ['DQN_EG_basic', 'DQN_TS_basic',
-                       'DQN_TS_causal_offline', 'DQN_EG_causal_offline',]
+possible_algorithms = ['QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
+       'QL_EG_basic', 'QL_EG_causal_offline', 'QL_EG_causal_online',
+       'QL_SA_basic', 'QL_SA_causal_offline', 'QL_SA_causal_online',
+       'QL_BM_basic', 'QL_BM_causal_offline', 'QL_BM_causal_online']
 
-group_by_kind = ['basic', 'causal_offline']
-group_by_strategy = ['TS', 'EG']
+group_by_kind = ['basic', 'causal_offline', 'causal_online']
+group_by_strategy = ['TS', 'EG', 'BM', 'SA']
 
 combs_algorithms_by_kind = [[s for s in possible_algorithms if kind in s] for kind in group_by_kind]
 combs_algorithms_by_strategy = [[s for s in possible_algorithms if strategy in s] for strategy in group_by_strategy]
@@ -33,11 +35,11 @@ n_games = 5
 vect_rows = [10, 5]
 vect_n_enemies = [10, 5, 2]
 n_episodes = 3000
-vect_if_maze = [False]
+vect_if_maze = [True]
 vect_if_same_enemies_actions = [False]
-dir_start = f'Results/Results_Comparison123_DQN'
-dir_saving_plots = f'Plots/Plots_Comparison123_DQN'
-dir_saving_resume_metrics = f'Resume_Metrics/Metrics_Comparison123_DQN'
+dir_start = f'Results/Results_Comparison4_NoTF'
+dir_saving_plots = f'Plots/Plots_Comparison4_NoTF'
+dir_saving_resume_metrics = f'Resume_Metrics/Metrics_Comparison4_NoTF'
 
 
 for comb_algorithms in [combs_algorithms_by_strategy, combs_algorithms_by_kind]:
