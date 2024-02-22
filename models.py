@@ -322,30 +322,31 @@ class SoftmaxAnnealingQAgent:
 
     def choose_action(self, state, possible_actions=None):
         if self.if_deep:
-            state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-            values_tensor = self.policy_net(state).squeeze()
-            dict_act = {i: values_tensor[i] for i in range(self.action_space_size)}
+            with torch.no_grad():
+                state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
+                values_tensor = self.policy_net(state).squeeze()
+                dict_act = {i: values_tensor[i] for i in range(self.action_space_size)}
 
-            if possible_actions is not None and len(possible_actions) > 0:
-                dict_act = {key: dict_act[key] for key in possible_actions}
+                if possible_actions is not None and len(possible_actions) > 0:
+                    dict_act = {key: dict_act[key] for key in possible_actions}
 
-            action_probabilities = self.softmax(dict_act)
+                action_probabilities = self.softmax(dict_act)
 
-            prob_tensor = torch.stack(list(action_probabilities.values()))
-            prob_tensor[torch.isnan(prob_tensor)] = 0  # Set NaN values to 0
-            prob_tensor[prob_tensor < 0] = 0  # Set negative values to 0
-            prob_tensor[prob_tensor == float('inf')] = 0  # Set inf values to 0
-            prob_tensor = torch.clamp(prob_tensor, min=0)  # Ensure non-negative probabilities
-            prob_sum = torch.sum(prob_tensor)
-            if prob_sum <= 0:
-                # Handle the case when probabilities sum up to zero or less
-                # You might want to handle this case based on your specific scenario
-                # For example, you could assign equal probabilities to all actions
-                prob_tensor.fill_(1.0 / len(prob_tensor))
-            chosen_index = torch.multinomial(prob_tensor, 1, replacement=True).to(torch.int64)
-            chosen_action = list(action_probabilities.keys())[chosen_index]
+                prob_tensor = torch.stack(list(action_probabilities.values()))
+                prob_tensor[torch.isnan(prob_tensor)] = 0  # Set NaN values to 0
+                prob_tensor[prob_tensor < 0] = 0  # Set negative values to 0
+                prob_tensor[prob_tensor == float('inf')] = 0  # Set inf values to 0
+                prob_tensor = torch.clamp(prob_tensor, min=0)  # Ensure non-negative probabilities
+                prob_sum = torch.sum(prob_tensor)
+                if prob_sum <= 0:
+                    # Handle the case when probabilities sum up to zero or less
+                    # You might want to handle this case based on your specific scenario
+                    # For example, you could assign equal probabilities to all actions
+                    prob_tensor.fill_(1.0 / len(prob_tensor))
+                chosen_index = torch.multinomial(prob_tensor, 1, replacement=True).to(torch.int64)
+                chosen_action = list(action_probabilities.keys())[chosen_index]
 
-            return chosen_action
+                return chosen_action
 
         else:
             stateX = int(state[0])
@@ -480,30 +481,33 @@ class BoltzmannQAgent:
 
     def choose_action(self, state, possible_actions=None):
         if self.if_deep:
-            state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-            values_tensor = self.policy_net(state).squeeze()
-            dict_act = {i: values_tensor[i] for i in range(self.action_space_size)}
+            with torch.no_grad():
+                state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
+                values_tensor = self.policy_net(state).squeeze()
+                dict_act = {i: values_tensor[i] for i in range(self.action_space_size)}
 
-            if possible_actions is not None and len(possible_actions) > 0:
-                dict_act = {key: dict_act[key] for key in possible_actions}
+                if possible_actions is not None and len(possible_actions) > 0:
+                    dict_act = {key: dict_act[key] for key in possible_actions}
 
-            action_probabilities = self.softmax(dict_act)
+                action_probabilities = self.softmax(dict_act)
 
-            prob_tensor = torch.stack(list(action_probabilities.values()))
-            prob_tensor[torch.isnan(prob_tensor)] = 0  # Set NaN values to 0
-            prob_tensor[prob_tensor < 0] = 0  # Set negative values to 0
-            prob_tensor[prob_tensor == float('inf')] = 0  # Set inf values to 0
-            prob_tensor = torch.clamp(prob_tensor, min=0)  # Ensure non-negative probabilities
-            prob_sum = torch.sum(prob_tensor)
-            if prob_sum <= 0:
-                # Handle the case when probabilities sum up to zero or less
-                # You might want to handle this case based on your specific scenario
-                # For example, you could assign equal probabilities to all actions
-                prob_tensor.fill_(1.0 / len(prob_tensor))
-            chosen_index = torch.multinomial(prob_tensor, 1, replacement=True).to(torch.int64)
-            chosen_action = list(action_probabilities.keys())[chosen_index]
+                prob_tensor = torch.stack(list(action_probabilities.values()))
+                prob_tensor[torch.isnan(prob_tensor)] = 0  # Set NaN values to 0
+                prob_tensor[prob_tensor < 0] = 0  # Set negative values to 0
+                prob_tensor[prob_tensor == float('inf')] = 0  # Set inf values to 0
+                prob_tensor = torch.clamp(prob_tensor, min=0)  # Ensure non-negative probabilities
+                prob_sum = torch.sum(prob_tensor)
+                if prob_sum <= 0:
+                    # Handle the case when probabilities sum up to zero or less
+                    # You might want to handle this case based on your specific scenario
+                    # For example, you could assign equal probabilities to all actions
+                    prob_tensor.fill_(1.0 / len(prob_tensor))
 
-            return chosen_action
+                # Apply Boltzmann exploration
+                chosen_index = torch.multinomial(prob_tensor, 1, replacement=True).to(torch.int64)
+                chosen_action = list(action_probabilities.keys())[chosen_index]
+
+                return chosen_action
 
         else:
             stateX = int(state[0])
@@ -626,29 +630,30 @@ class ThompsonSamplingQAgent:
 
     def choose_action(self, state, possible_actions=None):
         if self.if_deep:
-            stateX = int(state[0])
-            stateY = int(state[1])
+            with torch.no_grad():
+                stateX = int(state[0])
+                stateY = int(state[1])
 
-            # Convert alpha and beta to tensors
-            alpha_tensor = torch.tensor(self.alpha[stateX, stateY, :], dtype=torch.float)
-            beta_tensor = torch.tensor(self.beta[stateX, stateY, :], dtype=torch.float)
+                # Convert alpha and beta to tensors
+                alpha_tensor = torch.tensor(self.alpha[stateX, stateY, :], dtype=torch.float)
+                beta_tensor = torch.tensor(self.beta[stateX, stateY, :], dtype=torch.float)
 
-            # Sample from Beta distribution using PyTorch
-            beta_dist = torch.distributions.beta.Beta(alpha_tensor, beta_tensor)
-            sampled_values = beta_dist.sample()
+                # Sample from Beta distribution using PyTorch
+                beta_dist = torch.distributions.beta.Beta(alpha_tensor, beta_tensor)
+                sampled_values = beta_dist.sample()
 
-            if possible_actions is not None and len(possible_actions) > 0:
-                all_actions = list(range(self.action_space_size))
-                dict_all_actions = {}
-                for act in all_actions:
-                    dict_all_actions[act] = sampled_values[act].item()
+                if possible_actions is not None and len(possible_actions) > 0:
+                    all_actions = list(range(self.action_space_size))
+                    dict_all_actions = {}
+                    for act in all_actions:
+                        dict_all_actions[act] = sampled_values[act].item()
 
-                dict_valid_actions = {act: dict_all_actions[act] for act in possible_actions}
-                chosen_action, _ = max(dict_valid_actions.items(), key=lambda x: x[1])
-            else:
-                chosen_action = torch.argmax(sampled_values).item()
+                    dict_valid_actions = {act: dict_all_actions[act] for act in possible_actions}
+                    chosen_action, _ = max(dict_valid_actions.items(), key=lambda x: x[1])
+                else:
+                    chosen_action = torch.argmax(sampled_values).item()
 
-            return chosen_action
+                return chosen_action
         else:
             # Sample from the Beta distribution for each action
             stateX = int(state[0])
@@ -765,32 +770,33 @@ class EpsilonGreedyQAgent:
 
     def choose_action(self, state, possible_actions=None):
         if self.if_deep:
-            state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
+            with torch.no_grad():
+                state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
 
-            if possible_actions is not None and len(possible_actions) > 0:
-                if np.random.uniform(0, 1) < self.exp_proba:  # exploration
-                    if len(possible_actions) > 0:
-                        return torch.tensor([[possible_actions[torch.randint(0, len(possible_actions), (1,)).item()]]],
-                                            device=self.device, dtype=torch.long)
-                    else:
+                if possible_actions is not None and len(possible_actions) > 0:
+                    if np.random.uniform(0, 1) < self.exp_proba:  # exploration
+                        if len(possible_actions) > 0:
+                            return torch.tensor([[possible_actions[torch.randint(0, len(possible_actions), (1,)).item()]]],
+                                                device=self.device, dtype=torch.long)
+                        else:
+                            return torch.tensor([[np.random.randint(0, self.n_agent_actions, 1)]], device=self.device,
+                                                dtype=torch.long)
+                    else:  # exploitation
+                        actions_to_avoid = [s for s in range(self.n_agent_actions) if s not in possible_actions]
+
+                        actions_values = self.policy_net(state)
+                        for act_to_avoid in actions_to_avoid:
+                            actions_values[:, act_to_avoid] = - 10000
+
+                        return actions_values.max(1).indices.view(1, 1)
+                else:
+                    if np.random.uniform(0, 1) < self.exp_proba:  # exploration
                         return torch.tensor([[np.random.randint(0, self.n_agent_actions, 1)]], device=self.device,
                                             dtype=torch.long)
-                else:  # exploitation
-                    actions_to_avoid = [s for s in range(self.n_agent_actions) if s not in possible_actions]
-
-                    actions_values = self.policy_net(state)
-                    for act_to_avoid in actions_to_avoid:
-                        actions_values[:, act_to_avoid] = - 10000
-
-                    return actions_values.max(1).indices.view(1, 1)
-            else:
-                if np.random.uniform(0, 1) < self.exp_proba:  # exploration
-                    return torch.tensor([[np.random.randint(0, self.n_agent_actions, 1)]], device=self.device,
-                                        dtype=torch.long)
-                else:
-                    with torch.no_grad():
-                        actions_values = self.policy_net(state)
-                        return actions_values.max(1).indices.view(1, 1)
+                    else:
+                        with torch.no_grad():
+                            actions_values = self.policy_net(state)
+                            return actions_values.max(1).indices.view(1, 1)
         else:
             if np.random.uniform(0, 1) < self.exp_proba:  # exploration
                 if possible_actions is not None and len(possible_actions) > 0:
