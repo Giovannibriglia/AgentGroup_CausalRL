@@ -90,6 +90,8 @@ def plot_cumulative_average_rewards(dir_results, algorithms, n_games, n_episodes
     for alg in algorithms_checked:
         filename_rewards = [s for s in directories if f'{alg}_rewards' in s]
 
+        alg_label = alg.replace('basic', 'vanilla')
+
         av_rew = np.zeros(n_episodes)
         count_games_ok = 0
         for n_game in range(n_games):
@@ -105,16 +107,16 @@ def plot_cumulative_average_rewards(dir_results, algorithms, n_games, n_episodes
         confidence_interval_rew = np.std(av_rewards)
         if count_games_ok == n_games:
             ax1.plot(x, av_rewards,
-                     label=f'{alg} = {round(av_rewards[-1], 2)} \u00B1 {round(confidence_interval_rew, 2)}')
+                     label=f'{alg_label} = {round(av_rewards[-1], 2)} \u00B1 {round(confidence_interval_rew, 2)}')
             dict_res[alg] = f'{round(av_rewards[-1], 2)} \u00B1 {round(confidence_interval_rew, 2)}'
         else:
             ax1.plot(x, av_rewards,
-                     label=f'{alg} = {round(av_rewards[-1], 2)} \u00B1 {round(confidence_interval_rew, 2)} ({count_games_ok}/{n_games})')
+                     label=f'{alg_label} = {round(av_rewards[-1], 2)} \u00B1 {round(confidence_interval_rew, 2)} ({count_games_ok}/{n_games})')
             dict_res[
                 alg] = f'{round(av_rewards[-1], 2)} \u00B1 {round(confidence_interval_rew, 2)} ({count_games_ok}/{n_games})'
         ax1.fill_between(x, (av_rewards - confidence_interval_rew), (av_rewards + confidence_interval_rew), alpha=0.2)
         ax1.set_title('Cumulative average reward')
-        ax1.legend(fontsize='x-small')
+        ax1.legend(fontsize='small')
     plt.savefig(f'{dir_saving_plots}/cumulative_average_reward_{kind_of_comparison}.pdf')
     # plt.show()
     plt.close(fig)
@@ -144,6 +146,8 @@ def plot_average_rewards_episode(dir_results, algorithms, n_games, n_episodes, r
     for alg in algorithms_checked:
         filename_rewards = [s for s in directories if f'{alg}_rewards' in s]
 
+        alg_label = alg.replace('basic', 'vanilla')
+
         av_rew = np.zeros(n_episodes)
         count_games_ok = 0
         for n_game in range(n_games):
@@ -159,16 +163,16 @@ def plot_average_rewards_episode(dir_results, algorithms, n_games, n_episodes, r
         confidence_interval_rew = np.std(av_rewards)
         if count_games_ok == n_games:
             ax1.plot(x, av_rewards,
-                     label=f'{alg} = {round(np.mean(av_rewards), 2)} \u00B1 {round(confidence_interval_rew, 2)}')
+                     label=f'{alg_label} = {round(np.mean(av_rewards), 2)} \u00B1 {round(confidence_interval_rew, 2)}')
             dict_res[alg] = f'{round(np.mean(av_rewards), 2)} \u00B1 {round(confidence_interval_rew, 2)}'
         else:
             ax1.plot(x, av_rewards,
-                     label=f'{alg} = {round(np.mean(av_rewards), 2)} \u00B1 {round(confidence_interval_rew, 2)} ({count_games_ok}/{n_games})')
+                     label=f'{alg_label} = {round(np.mean(av_rewards), 2)} \u00B1 {round(confidence_interval_rew, 2)} ({count_games_ok}/{n_games})')
             dict_res[
                 alg] = f'{round(np.mean(av_rewards), 2)} \u00B1 {round(confidence_interval_rew, 2)} ({count_games_ok}/{n_games})'
         ax1.fill_between(x, (av_rewards - confidence_interval_rew), (av_rewards + confidence_interval_rew), alpha=0.2)
         ax1.set_title('Average reward on each episode')
-        ax1.legend(fontsize='x-small')
+        ax1.legend(fontsize='small')
     plt.savefig(f'{dir_saving_plots}/average_reward_episode_{kind_of_comparison}.pdf')
     # plt.show()
     plt.close(fig)
@@ -198,6 +202,8 @@ def plot_average_steps_episode(dir_results, algorithms, n_games, n_episodes, row
     for alg in algorithms_checked:
         filename_steps = [s for s in directories if f'{alg}_steps' in s]
 
+        alg_label = alg.replace('basic', 'vanilla')
+
         av_steps = np.zeros(n_episodes)
         count_games_ok = 0
         for n_game in range(n_games):
@@ -212,10 +218,10 @@ def plot_average_steps_episode(dir_results, algorithms, n_games, n_episodes, row
         x = np.arange(0, len(av_steps), 1)
         confidence_interval_steps = np.std(av_steps_gauss)
         if count_games_ok == n_games:
-            ax2.plot(x, av_steps_gauss, label=f'{alg}')
+            ax2.plot(x, av_steps_gauss, label=f'{alg_label}')
             dict_res[alg] = f'{round(np.mean(av_steps), 2)} \u00B1 {round(confidence_interval_steps, 2)}'
         else:
-            ax2.plot(x, av_steps_gauss, label=f'{alg} ({count_games_ok}/{n_games})')
+            ax2.plot(x, av_steps_gauss, label=f'{alg_label} ({count_games_ok}/{n_games})')
             dict_res[
                 alg] = f'{round(np.mean(av_steps), 2)} \u00B1 {round(confidence_interval_steps, 2)} ({count_games_ok}/{n_games})'
         ax2.fill_between(x, (av_steps_gauss - confidence_interval_steps), (av_steps_gauss + confidence_interval_steps),
@@ -223,7 +229,7 @@ def plot_average_steps_episode(dir_results, algorithms, n_games, n_episodes, row
         ax2.set_yscale('log')
         ax2.set_title('Actions needed to complete the episode')
         ax2.set_xlabel('Episode', fontsize=12)
-        ax2.legend(fontsize='x-small')
+        ax2.legend(fontsize='small')
     plt.savefig(f'{dir_saving_plots}/steps_for_episode_{kind_of_comparison}.pdf')
     # plt.show()
     plt.close(fig)

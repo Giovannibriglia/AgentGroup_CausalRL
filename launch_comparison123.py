@@ -1,11 +1,8 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import env_game
 import os
 import models
-from scipy.ndimage import gaussian_filter1d
-import plots
 import time
 import random
 
@@ -27,17 +24,21 @@ def get_batch_episodes(n_enemies, rows):
         return 500
 
 
-# 'QL_EG', 'QL_SA', 'QL_BM', 'QL_TS' + all 'causal' + 'offline'/'online'
-# 'DQN' + 'causal'
-algorithms = ['QL_EG_basic', 'QL_EG_causal_offline', 'QL_EG_causal_online',
-              'QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
-              'QL_SA_basic', 'QL_SA_causal_offline', 'QL_SA_causal_online',
-              'QL_BM_basic', 'QL_BM_causal_offline', 'QL_BM_causal_online'
+"""
+'QL_EG_basic', 'QL_EG_causal_offline', 'QL_EG_causal_online',
+'QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
+'QL_SA_basic', 'QL_SA_causal_offline', 'QL_SA_causal_online',
+'QL_BM_basic', 'QL_BM_causal_offline', 'QL_BM_causal_online'
+'DQN_EG_basic', 'DQN_TS_basic', 'DQN_BM_basic', 'DQN_SA_basic',
+'DQN_EG_causal_offline', 'DQN_TS_causal_offline', 'DQN_BM_causal_offline', 'DQN_SA_causal_offline'
+"""
+algorithms = ['DQN_BM_basic', 'DQN_SA_basic',
+              'DQN_BM_causal_offline', 'DQN_SA_causal_offline'
               ]
 
 n_games = 5
 vect_rows = [5, 10]
-vect_n_enemies = [2, 5, 10]
+vect_n_enemies = [2]
 n_episodes = 3000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
@@ -98,8 +99,8 @@ for if_maze in vect_if_maze:
                     n_goals = 1
 
                     env = env_game.CustomEnv(rows, cols, n_agents, n_act_agents, n_enemies, n_act_enemies, n_goals,
-                                                 if_maze, if_same_enemies_actions, directory, game_n, seed_value,
-                                                 predefined_env=None)
+                                             if_maze, if_same_enemies_actions, directory, game_n, seed_value,
+                                             predefined_env=None)
 
                     np.save(f"{directory}/env_game{game_n}.npy", env.grid_for_game)
                     np.save(f"{directory_env}/env_game{game_n}.npy", env.grid_for_game)
@@ -131,8 +132,7 @@ for if_maze in vect_if_maze:
                                                                                      BATCH_EPISODES_UPDATE_BN)
 
                         elif 'DQN' in alg:
-                            rewards, steps, _ = models.DQNs(env_for_alg, n_act_agents,
-                                                            n_episodes,
+                            rewards, steps, _ = models.DQNs(env_for_alg, n_act_agents, n_episodes,
                                                             alg, who_moves_first,
                                                             episodes_to_visualize,
                                                             seed_value)
@@ -153,3 +153,6 @@ for if_maze in vect_if_maze:
                                 np.save(f'{directory}/{alg}_beta_game{game_n}.npy', beta)
                             else:
                                 np.save(f'{directory}/{alg}_q_table_game{game_n}.npy', q_table)
+
+                # plots.plot_av_rew_steps(directory, algorithms, n_games, n_episodes, rows, cols, n_enemies)
+                # plots.plot_av_computation_time(directory, algorithms, n_games, rows, cols, n_enemies)
