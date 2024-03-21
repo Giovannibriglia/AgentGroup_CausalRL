@@ -16,6 +16,8 @@ This repository provides the Framework detailed in [Generalisable Improvement to
 ```
 abstract.png
 
+LICENSE
+
 requirements.txt
 
 results
