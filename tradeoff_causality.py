@@ -316,14 +316,6 @@ class Causality:
         self.structureModel = from_pandas(self.df)
         self.structureModel.remove_edges_below_threshold(0.2)
 
-        " Plot structure "
-        """plt.figure(dpi=1000)
-        plt.title(f'{self.structureModel}', fontsize=20)
-        nx.draw(self.structureModel, pos=nx.circular_layout(self.structureModel), with_labels=True, font_size=8,
-                edge_color='orange')
-        # nx.draw(self.structureModel, with_labels=True, font_size=4, edge_color='orange')
-        plt.show()"""
-
         print(f'training bayesian network...')
         self.bn = BayesianNetwork(self.structureModel)
         self.bn = self.bn.fit_node_states_and_cpds(self.df)
@@ -334,11 +326,20 @@ class Causality:
 
         self.ie = InferenceEngine(self.bn)
 
+        print('do-calculus-1...')
+        # understand who influences whom
+        self._identify_ind_dep_variables()
+
+        print('do-calculus-2...')
+        # resume results in a table
+        table = self._get_causal_table()
+
+        return table
+
+    def _identify_ind_dep_variables(self):
         self.dependents_var = []
         self.independents_var = []
 
-        print('do-calculus-1...')
-        " understand who influences whom "
         before = self.ie.query()
         for var in self.features_names:
             count_var = 0
@@ -368,10 +369,11 @@ class Causality:
                 # print(f'{var} --> externally caused')
                 self.independents_var.append(var)
 
-        # print(f'**Independents vars: {self.independents_var}')
-        # print(f'**Dependents vars: {self.dependents_var}')
-        print('do-calculus-2...')
-        causal_table = pd.DataFrame(columns=self.features_names)
+        print(f'**Independents vars: {self.independents_var}')
+        print(f'**Dependents vars: {self.dependents_var}')
+
+    def _get_causal_table(self):
+        table = pd.DataFrame(columns=self.features_names)
 
         arrays = []
         for feat_ind in self.dependents_var:
@@ -380,30 +382,32 @@ class Causality:
 
         for n, comb_n in enumerate(var_combinations):
             # print('\n')
-            for var_ind in range(len(self.dependents_var)):
+            for var_dep in range(len(self.dependents_var)):
                 try:
-                    self.ie.do_intervention(self.dependents_var[var_ind], int(comb_n[var_ind]))
-                    # print(f'{self.dependents_var[var_ind]} = {int(comb_n[var_ind])}')
-                    causal_table.at[n, f'{self.dependents_var[var_ind]}'] = int(comb_n[var_ind])
+                    self.ie.do_intervention(self.dependents_var[var_dep], int(comb_n[var_dep]))
+                    # print(f'{self.dependents_var[var_dep]} = {int(comb_n[var_dep])}')
+                    table.at[n, f'{self.dependents_var[var_dep]}'] = int(comb_n[var_dep])
                 except:
-                    # print(f'no {self.dependents_var[var_ind]} = {int(comb_n[var_ind])}')
-                    causal_table.at[n, f'{self.dependents_var[var_ind]}'] = pd.NA
+                    # print(f'no {self.dependents_var[var_dep]} = {int(comb_n[var_dep])}')
+                    table.at[n, f'{self.dependents_var[var_dep]}'] = pd.NA
 
             after = self.ie.query()
-            for var_dep in self.independents_var:
-                # print(f'{var_dep}) {after[var_dep]}')
-                max_key, max_value = max(after[var_dep].items(), key=lambda x: x[1])
-                if round(max_value, 4) != round(1 / len(after[var_dep]), 4):
-                    causal_table.at[n, f'{var_dep}'] = int(max_key)
-                    # print(f'{var_dep}) -> {max_key}: {max_value}')
+            for var_ind in self.independents_var:
+                # print(f'{var_ind}) {after[var_ind]}')
+                max_key, max_value = max(after[var_ind].items(), key=lambda x: x[1])
+                if round(max_value, 4) != round(1 / len(after[var_ind]), 4):
+                    table.at[n, f'{var_ind}'] = int(max_key)
+                    # print(f'{var_ind}) -> {max_key}: {max_value}')
                 else:
-                    causal_table.at[n, f'{var_dep}'] = pd.NA
-                    # print(f'{var_dep}) -> unknown')
+                    table.at[n, f'{var_ind}'] = pd.NA
+                    # print(f'{var_ind}) -> unknown')
 
-            for var_ind in range(len(self.dependents_var)):
-                self.ie.reset_do(self.dependents_var[var_ind])
+            for var_dep in range(len(self.dependents_var)):
+                self.ie.reset_do(self.dependents_var[var_dep])
 
-        return causal_table
+        return table
+
+
 
 
 def process_df(df_start):
@@ -439,7 +443,7 @@ def process_df(df_start):
 """ ************************************************************************************************************* """
 " EVALUATION ENVIRONMENT AND NUMBER OF EPISODES NEEDED"
 " Dataframe "
-path_save = 'TradeOff_causality_batch_episodes_enemies'
+"""path_save = 'TradeOff_causality_batch_episodes_enemies'
 os.makedirs(path_save, exist_ok=True)
 
 
@@ -509,12 +513,12 @@ for n_episodes in vector_episodes:
             df_row += 1
 
 result.to_excel(f'{path_save}/results_tradeoff_online_causality.xlsx')
-result.to_pickle(f'{path_save}/results_tradeoff_online_causality.pkl')
+result.to_pickle(f'{path_save}/results_tradeoff_online_causality.pkl')"""
 
 """ ************************************************************************************************************* """
 " Grid size and number of episodes already chosen"
 " Dataframe "
-"""obj_minigame = MiniGame(rows=3, cols=3, n_agents=1, n_enemies=1, n_goals=1)
+obj_minigame = MiniGame(rows=3, cols=3, n_agents=1, n_enemies=1, n_goals=1)
 df = obj_minigame.create_df(n_episodes=1500)
 df = process_df(df)
 
