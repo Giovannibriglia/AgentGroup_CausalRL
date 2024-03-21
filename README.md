@@ -1,37 +1,55 @@
 # Generalisable Improvement to Q-Learning Exploration with Causal Models of Core Environment Mechanics
 
-This repository provides the Framework detailed in [Generalisable Improvement to Q-Learning Exploration with Causal Models of Core Environment Mechanics](https://www.ecai2024.eu/calls/main-track)
+This repository provides the Framework detailed in [Generalisable Improvement to Q-Learning Exploration with Causal Models of Core Environment Mechanics](https://www.ecai2024.eu/calls/main-track) that enables to integrate causal knowledge within the Q-Learning algorithm.
 
 ![abstract](abstract.png)
 
-**Paper**: [Generalisable Improvement to Q-Learning Exploration with Causal Models of Core Environment Mechanics]([https://arxiv.org/abs/2209.07899](https://www.ecai2024.eu/calls/main-track))  
+**Paper**: [Generalisable Improvement to Q-Learning Exploration with Causal Models of Core Environment Mechanics](https://www.ecai2024.eu/calls/main-track)
 **Project website**: ...
 
 **Maintainer**: [Giovanni Briglia](https://github.com/Giovannibriglia)  
 **Affiliation**: [Distributed and Pervasive Intelligence Group](https://dipi-unimore.netlify.app/) at [University of Modena and Reggio Emilia](https://www.unimore.it/)  
 **Contact**: [gbriglia@unimore.it](mailto:gbriglia@unimore.it)
 
-This project
-Goal 
-Motivation
-
-### Project Structure
+## Project Structure
 
 ```
-slime_environments
-|__environments
-   |__SlimeEnvSingleAgent.py         # single agent learning environment
-   |__SlimeEnvMultiAgent.py          # multi-agent learning environment
-|__agents
-   |__MA_QLearning.py                # independent Q-learning
-   |__SA_QLearning.py                # single agent Q-learning
-   |__multi-agent-params.json        # multi-agent environment params
-   |__single-agent-params.json       # single agent environment params
-   |__ma-learning-params.json        # multi-agent learning params
-   |__sa-learning-params.json        # single agent learning params
+abstract.png
+
+requirements.txt
+
+results
+|__Results_Comparison123
+|__Results_Comparison4
+
+resume_metrics
+|__Metrics_Comparison123
+|__Metrics_Comparison4
+
+scripts
+|__algorithms
+   |__models.py
+|__env
+   |__env_game.py
+|__launch_experimens
+   |__launch_comparison123.py
+   |__launch_comparison4.py
+   |__launch_tradeoff_causality.py
+   |__offline_heuristic_table.pkl
+|__show_results
+   |__view_plots.py
+   |__plots.py
+|__utils
+   |__seed_values.npy
+   |__images_for_gui
+      |__bowser.png
+      |__goal.png
+      |__supermario.png
+      |__wall.png
+
 ```
 
-### Installation
+## Installation
 1. Create a new python virtual environment with 'python 3.10'
 2. Install 'requirements'
    ```
@@ -39,16 +57,21 @@ slime_environments
    ```
 3. Try running example
    ```
-   develop something here
+   TODO: @gio sviluppa un breve test
    ```
 
-### Configuration
+## Configuration 
+### Main Parameters
+### Other Parameters
+
+## How to Reproduce Paper Results
 
 
+## How to Develop your Own Extension
 
-### How to Reproduce Paper Results
 
-
-### How to Develop your Own Extension
-
+## Citation 
+```
+@inproceedings{}
+```
 
