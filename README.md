@@ -14,20 +14,12 @@ This repository provides the Framework detailed in [Generalisable Improvement to
 ## Project Structure
 
 ```
-abstract.png
-
-LICENSE
-
-requirements.txt
-
 results
 |__Results_Comparison123
 |__Results_Comparison4
-
 resume_metrics
 |__Metrics_Comparison123
 |__Metrics_Comparison4
-
 scripts
 |__algorithms
    |__models.py
@@ -48,7 +40,10 @@ scripts
       |__goal.png
       |__supermario.png
       |__wall.png
-
+abstract.png
+LICENSE
+README
+requirements.txt
 ```
 
 ## Installation
