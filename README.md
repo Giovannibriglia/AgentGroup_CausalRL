@@ -25,7 +25,7 @@ scripts
    |__models.py
 |__env
    |__env_game.py
-|__launch_experimens
+|__launch_experiments
    |__launch_comparison123.py
    |__launch_comparison4.py
    |__launch_tradeoff_causality.py
