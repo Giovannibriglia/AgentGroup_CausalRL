@@ -34,14 +34,15 @@ slime_environments
 ### Installation
 1. Create a new python virtual environment with 'python 3.10'
 2. Install 'requirements'
-   
+   ```
    pip install requirements
-   
+   ```
 3. Try running example
+   ```
+   develop something here
+   ```
 
-   develop here
-
-### Codnfiguration
+### Configuration
 
 
 
