@@ -1,19 +1,16 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import env_game
+from scripts.env import env_game
 import os
-import models
-from scipy.ndimage import gaussian_filter1d
-import plots
+from scripts.algorithms import models
 import time
 import random
 
-seed_values = np.load('seed_values.npy')
+seed_values = np.load('../utils/seed_values.npy')
 
 
 def get_batch_episodes(n_enemies, rows):
-    table = pd.read_pickle('TradeOff_causality_batch_episodes_enemies/results_tradeoff_online_causality.pkl')
+    table = pd.read_pickle('../../TradeOff_causality_batch_episodes_enemies/results_tradeoff_online_causality.pkl')
 
     condition = (table['Grid Size'] == rows) & (table['Enemies'] == n_enemies) & (table['Suitable'] == 'yes')
     result_column = table.loc[condition, 'Episodes'].to_list()
@@ -151,11 +148,11 @@ for path_game in paths_with_pattern:
     n_goals = 1
 
     env = env_game.CustomEnv(rows=rows, cols=cols, n_agents=n_agents, n_act_agents=n_act_agents,
-                                 n_enemies=n_enemies, n_act_enemies=n_act_enemies, n_goals=n_goals,
-                                 if_maze=True if if_maze == 'Grid' else False,
-                                 if_same_enemies_actions=True if if_same_enemy_actions == 'SameEnAct' else False,
-                                 dir_saving=path_game, game_n=game_n,
-                                 seed_value=seed_value, predefined_env=predefined_env)
+                             n_enemies=n_enemies, n_act_enemies=n_act_enemies, n_goals=n_goals,
+                             if_maze=True if if_maze == 'Grid' else False,
+                             if_same_enemies_actions=True if if_same_enemy_actions == 'SameEnAct' else False,
+                             dir_saving=path_game, game_n=game_n,
+                             seed_value=seed_value, predefined_env=predefined_env)
 
     np.save(f"{path_game}/env_game{game_n}.npy", env.grid_for_game)
     np.save(f"{directory_env}/env_game{game_n}.npy", env.grid_for_game)

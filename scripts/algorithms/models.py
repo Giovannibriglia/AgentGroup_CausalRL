@@ -31,6 +31,7 @@ EXPLORATION_GAME_PERCENT = 0.6
 BATCH_SIZE = 64
 TAU = 0.005
 HIDDEN_LAYERS = 128
+REPLAY_MEMORY_CAPACITY = 10000
 
 TIMEOUT_IN_HOURS = 4
 
@@ -43,7 +44,7 @@ col_reward = 'Reward_Agent0'
 col_nearby_enemy = 'Enemy0_Nearby_Agent0'
 col_nearby_goal = 'Goal0_Nearby_Agent0'
 
-causal_table_offline = pd.read_pickle('offline_heuristic_table.pkl')
+causal_table_offline = pd.read_pickle('../launch_experiments/offline_heuristic_table.pkl')
 
 
 def get_possible_actions(n_act_agents, enemies_nearby_all_agents, goals_nearby_all_agents, if_online):
@@ -299,7 +300,7 @@ class SoftmaxAnnealingQAgent:
             self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
             self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
-            self.memory = ReplayMemory(10000)
+            self.memory = ReplayMemory(REPLAY_MEMORY_CAPACITY)
         else:
             if predefined_q_table is not None:
                 self.q_table = predefined_q_table
@@ -458,7 +459,7 @@ class BoltzmannQAgent:
             self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
             self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
-            self.memory = ReplayMemory(10000)
+            self.memory = ReplayMemory(REPLAY_MEMORY_CAPACITY)
         else:
             if predefined_q_table is not None:
                 self.q_table = predefined_q_table
@@ -619,7 +620,7 @@ class ThompsonSamplingQAgent:
             self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
             self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
-            self.memory = ReplayMemory(10000)
+            self.memory = ReplayMemory(REPLAY_MEMORY_CAPACITY)
         else:
             if predefined_alpha_beta is None:
                 self.alpha = np.maximum(np.zeros((self.rows, self.cols, self.action_space_size)) * alpha, 1)
@@ -761,7 +762,7 @@ class EpsilonGreedyQAgent:
             self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
             self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
-            self.memory = ReplayMemory(10000)
+            self.memory = ReplayMemory(REPLAY_MEMORY_CAPACITY)
         else:
             if predefined_q_table is not None:
                 self.q_table = predefined_q_table

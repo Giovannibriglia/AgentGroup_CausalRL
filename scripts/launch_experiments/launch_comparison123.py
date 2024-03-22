@@ -1,16 +1,16 @@
 import numpy as np
 import pandas as pd
-import env_game
+from scripts.env import env_game
 import os
-import models
+from scripts.algorithms import models
 import time
 import random
 
-seed_values = np.load('seed_values.npy')
+seed_values = np.load('../utils/seed_values.npy')
 
 
 def get_batch_episodes(n_enemies, rows):
-    table = pd.read_pickle('TradeOff_causality_batch_episodes_enemies/results_tradeoff_online_causality.pkl')
+    table = pd.read_pickle('../../TradeOff_causality_batch_episodes_enemies/results_tradeoff_online_causality.pkl')
 
     condition = (table['Grid Size'] == rows) & (table['Enemies'] == n_enemies) & (table['Suitable'] == 'yes')
     result_column = table.loc[condition, 'Episodes'].to_list()

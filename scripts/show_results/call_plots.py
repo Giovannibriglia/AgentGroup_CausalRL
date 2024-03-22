@@ -36,9 +36,9 @@ vect_n_enemies = [10, 5, 2]
 n_episodes = 3000
 vect_if_maze = [False]
 vect_if_same_enemies_actions = [False]
-dir_start = f'Results/Results_Comparison123'
-dir_saving_plots = f'Plots/Plots_Comparison123'
-dir_saving_resume_metrics = f'Resume_Metrics/Metrics_Comparison123'
+dir_start = f'../../Results/Results_Comparison123'
+dir_saving_plots = f'../../Plots/Plots_Comparison123'
+dir_saving_resume_metrics = f'../../Resume_Metrics/Metrics_Comparison123'
 
 for comb_algorithms in [combs_algorithms_by_strategy, combs_algorithms_by_kind]:
 
