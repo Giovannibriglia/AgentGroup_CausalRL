@@ -408,8 +408,6 @@ class Causality:
         return table
 
 
-
-
 def process_df(df_start):
     start_columns = df_start.columns.to_list()
     n_enemies_columns = [s for s in start_columns if 'Enemy' in s]
@@ -532,4 +530,3 @@ new_cols = [s for s in sorted_causal_table.columns.to_list() if s not in col_df]
 causal_table = sorted_causal_table.drop(columns=new_cols)
 # causal_table.to_pickle('offline_heuristic_table.pkl')
 # causal_table.to_excel('offline_heuristic_table.xlsx')"""
-

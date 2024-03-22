@@ -1,10 +1,12 @@
+import os
+import random
+import time
+
 import numpy as np
 import pandas as pd
-from scripts.env import env_game
-import os
+
 from scripts.algorithms import models
-import time
-import random
+from scripts.env import env_game
 
 seed_values = np.load('../utils/seed_values.npy')
 
@@ -106,15 +108,16 @@ algorithms = ['QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_online',
 
 n_episodes = 3000
 vect_if_maze = [False]
-dir_start = f'Env_Comparison123'
+dir_start = f'Results/Results_Comparison123'
 pattern_env_game = 'env_game'
-dir_results = f'Results_Comparison4'
+dir_results = f'Results/mario'
 who_moves_first = 'Enemy'  # 'Enemy' or 'Agent'
 n_games = 5
 
 episodes_to_visualize = [0, int(n_episodes * 0.33), int(n_episodes * 0.66), n_episodes - 1]
 
 paths_with_pattern = extract_paths_with_pattern(dir_start, pattern_env_game)
+print(paths_with_pattern)
 
 for path_game in paths_with_pattern:
     dict_vars = extract_variables_from_path(path_game, dir_start)
@@ -205,19 +208,19 @@ for path_game in paths_with_pattern:
         else:
             computation_time = 'timeout'
 
-        np.save(f"{path_game}/{alg}_rewards_game{game_n}.npy", rewards)
-        np.save(f"{path_game}/{alg}_steps_game{game_n}.npy", steps)
-        np.save(f'{path_game}/{alg}_computation_time_game{game_n}.npy', computation_time)
+        np.save(f"{path_game}/{alg}_TF_rewards_game{game_n}.npy", rewards)
+        np.save(f"{path_game}/{alg}_TF_steps_game{game_n}.npy", steps)
+        np.save(f'{path_game}/{alg}_TF_computation_time_game{game_n}.npy', computation_time)
 
         if 'TS' in alg:
             alpha, beta = q_table[0], q_table[1]
-            np.save(f'{path_game}/{alg}_alpha_game{game_n}.npy', alpha)
-            np.save(f'{path_game}/{alg}_beta_game{game_n}.npy', beta)
-            np.save(f'{directory_env}/{alg}_alpha_game{game_n}.npy', alpha)
-            np.save(f'{directory_env}/{alg}_beta_game{game_n}.npy', beta)
+            np.save(f'{path_game}/{alg}_TF_alpha_game{game_n}.npy', alpha)
+            np.save(f'{path_game}/{alg}_TF_beta_game{game_n}.npy', beta)
+            np.save(f'{directory_env}/{alg}_TF_alpha_game{game_n}.npy', alpha)
+            np.save(f'{directory_env}/{alg}_TF_beta_game{game_n}.npy', beta)
         else:
-            np.save(f'{path_game}/{alg}_q_table_game{game_n}.npy', q_table)
-            np.save(f'{directory_env}/{alg}_q_table_game{game_n}.npy', q_table)
+            np.save(f'{path_game}/{alg}_TF_q_table_game{game_n}.npy', q_table)
+            np.save(f'{directory_env}/{alg}_TF_q_table_game{game_n}.npy', q_table)
 
     # plots.plot_av_rew_steps(directory, algorithms, n_games, n_episodes, rows, cols, n_enemies)
     # plots.plot_av_computation_time(directory, algorithms, n_games, rows, cols, n_enemies)

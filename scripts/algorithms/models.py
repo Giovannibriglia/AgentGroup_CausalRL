@@ -1,41 +1,19 @@
-import random
-from itertools import product
-from collections import namedtuple, deque
 import os
+import random
 import re
+import time
+import warnings
+from itertools import product
 import networkx as nx
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
-from tqdm.auto import tqdm
-import warnings
-import time
-from scipy.stats import beta
 from causalnex.inference import InferenceEngine
 from causalnex.network import BayesianNetwork
 from causalnex.structure.notears import from_pandas
+from tqdm.auto import tqdm
+from scripts.algorithms import exploration_strategies
 
 warnings.filterwarnings("ignore")
-
-GAMMA = 0.99
-LEARNING_RATE = 0.0001
-
-START_EXPLORATION_PROBA = 1
-MIN_EXPLORATION_PROBA = 0.01
-EXPLORATION_GAME_PERCENT = 0.6
-
-BATCH_SIZE = 64
-TAU = 0.005
-HIDDEN_LAYERS = 128
-REPLAY_MEMORY_CAPACITY = 10000
-
-TIMEOUT_IN_HOURS = 4
-
-TH_CONSECUTIVE_CHECKS_CAUSAL_TABLE = 3
 
 col_action = 'Action_Agent0'
 col_deltaX = 'DeltaX_Agent0'
@@ -271,679 +249,34 @@ class Causality:
                 # self.check_structureModel = 0
 
 
-class SoftmaxAnnealingQAgent:
-    def __init__(self, rows, cols, action_space_size, n_episodes, alg, initial_temperature=1.0,
-                 predefined_q_table=None):
-        self.rows = rows
-        self.cols = cols
-        self.action_space_size = action_space_size
-        self.temperature = initial_temperature
-        self.n_episodes = n_episodes
-
-        self.lr = LEARNING_RATE
-        self.gamma = GAMMA
-
-        self.exp_proba = START_EXPLORATION_PROBA
-        self.MIN_EXPLORATION_PROBA = MIN_EXPLORATION_PROBA
-        self.EXPLORATION_DECREASING_DECAY = -np.log(self.MIN_EXPLORATION_PROBA) / (
-                EXPLORATION_GAME_PERCENT * self.n_episodes)
-
-        self.if_deep = True if 'DQN' in alg else False
-
-        if self.if_deep:
-            self.batch_size = BATCH_SIZE
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self.policy_net: ClassDQN = ClassDQN(self.cols * self.rows, self.action_space_size).to(self.device)
-            self.target_net = ClassDQN(self.cols * self.rows, self.action_space_size).to(self.device)
-            self.target_net.load_state_dict(self.policy_net.state_dict())
-
-            self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
-
-            self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
-            self.memory = ReplayMemory(REPLAY_MEMORY_CAPACITY)
-        else:
-            if predefined_q_table is not None:
-                self.q_table = predefined_q_table
-            else:
-                self.q_table = np.zeros((self.rows, self.cols, self.action_space_size))
-
-    def softmax(self, values):
-        if self.if_deep:
-            softmax_dict = {}
-            for key, tensor in values.items():
-                logits = tensor / self.temperature
-                exp_logits = torch.exp(logits)
-                probabilities = exp_logits / torch.sum(exp_logits)
-                softmax_dict[key] = probabilities
-            return softmax_dict
-        else:
-            exp_values = np.exp(values / self.temperature)
-            probabilities = exp_values / np.sum(exp_values)
-            return probabilities
-
-    def choose_action(self, state, possible_actions=None):
-        if self.if_deep:
-            with torch.no_grad():
-                state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-                values_tensor = self.policy_net(state).squeeze()
-                dict_act = {i: values_tensor[i] for i in range(self.action_space_size)}
-
-                if possible_actions is not None and len(possible_actions) > 0:
-                    dict_act = {key: dict_act[key] for key in possible_actions}
-
-                action_probabilities = self.softmax(dict_act)
-
-                prob_tensor = torch.stack(list(action_probabilities.values()))
-                prob_tensor[torch.isnan(prob_tensor)] = 0  # Set NaN values to 0
-                prob_tensor[prob_tensor < 0] = 0  # Set negative values to 0
-                prob_tensor[prob_tensor == float('inf')] = 0  # Set inf values to 0
-                prob_tensor = torch.clamp(prob_tensor, min=0)  # Ensure non-negative probabilities
-                prob_sum = torch.sum(prob_tensor)
-                if prob_sum <= 0:
-                    # Handle the case when probabilities sum up to zero or less
-                    # You might want to handle this case based on your specific scenario
-                    # For example, you could assign equal probabilities to all actions
-                    prob_tensor.fill_(1.0 / len(prob_tensor))
-                chosen_index = torch.multinomial(prob_tensor, 1, replacement=True).to(torch.int64)
-                chosen_action = list(action_probabilities.keys())[chosen_index]
-
-                return chosen_action
-
-        else:
-            stateX = int(state[0])
-            stateY = int(state[1])
-
-            if possible_actions is not None and len(possible_actions) > 0:
-                action_values = self.q_table[stateX, stateY, possible_actions]
-                action_probabilities = self.softmax(action_values)
-                chosen_action = np.random.choice(possible_actions, p=action_probabilities)
-            else:
-                action_values = self.q_table[stateX, stateY, :]
-                action_probabilities = self.softmax(action_values)
-                chosen_action = np.random.choice(self.action_space_size, p=action_probabilities)
-
-            return chosen_action
-
-    def update_Q_or_memory(self, state, action, reward, next_state):
-        if self.if_deep:
-            state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-            next_state = torch.tensor(next_state, dtype=torch.float32, device=self.device).unsqueeze(0)
-            reward = torch.tensor([reward], device=self.device)
-            action = torch.tensor([action], device=self.device)
-            self.memory.push(state, action, next_state, reward, Transition=self.Transition)
-        else:
-            stateX = int(state[0])
-            stateY = int(state[1])
-            next_stateX = int(next_state[0])
-            next_stateY = int(next_state[1])
-            current_q_value = self.q_table[stateX, stateY, action]
-            max_next_q_value = np.max(self.q_table[next_stateX, next_stateY, :])
-
-            new_q_value = current_q_value + self.lr * (reward + self.gamma * max_next_q_value - current_q_value)
-            self.q_table[stateX, stateY, action] = new_q_value
-
-    def update_exp_fact(self, episode):  # update exploration probability
-        self.temperature = max(MIN_EXPLORATION_PROBA, np.exp(-self.EXPLORATION_DECREASING_DECAY * episode))
-
-    def optimize_model(self):
-        if len(self.memory) < self.batch_size:
-            return
-        transitions = self.memory.sample(BATCH_SIZE)
-        batch = self.Transition(*zip(*transitions))
-
-        # Compute a mask of non-final states and concatenate the batch elements
-        # (a final state would've been the one after which simulation ended)
-        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
-                                                batch.next_state)), device=self.device, dtype=torch.bool)
-
-        non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
-        state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action)
-        reward_batch = torch.cat(batch.reward)
-
-        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the columns of actions taken.
-        # These are the actions which would've been taken for each batch state according to policy_net
-        action_batch = action_batch.view(-1)
-        action_batch = action_batch.unsqueeze(1).to(torch.int64)
-        state_action_values = self.policy_net(state_batch).gather(1, action_batch)
-
-        # Compute V(s_{t+1}) for all next states.
-        # Expected values of actions for non_final_next_states are computed based on the "older" target_net;
-        # selecting their best reward with max(1).values
-        # This is merged based on the mask, such that we'll have either the expected state value or 0 in
-        # case the state was final.
-        next_state_values = torch.zeros(self.batch_size, device=self.device)
-        with torch.no_grad():
-            next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1).values
-        # Compute the expected Q values
-        expected_state_action_values = (next_state_values * self.gamma) + reward_batch
-
-        # Compute Huber loss
-        criterion = nn.SmoothL1Loss()
-        loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
-
-        # Optimize the model
-        self.optimizer.zero_grad()
-        loss.backward()
-        # In-place gradient clipping
-        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
-        self.optimizer.step()
-
-    def update_target_net(self):
-        target_net_state_dict = self.target_net.state_dict()
-        policy_net_state_dict = self.policy_net.state_dict()
-        for key in policy_net_state_dict:
-            target_net_state_dict[key] = policy_net_state_dict[key] * TAU + target_net_state_dict[key] * (1 - TAU)
-        self.target_net.load_state_dict(target_net_state_dict)
-
-
-class BoltzmannQAgent:
-    def __init__(self, rows, cols, action_space_size, alg, temperature=1.0, predefined_q_table=None):
-        self.rows = rows
-        self.cols = cols
-        self.action_space_size = action_space_size
-        self.temperature = temperature
-
-        self.lr = LEARNING_RATE
-        self.gamma = GAMMA
-
-        self.if_deep = True if 'DQN' in alg else False
-
-        if self.if_deep:
-            self.batch_size = BATCH_SIZE
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self.policy_net: ClassDQN = ClassDQN(self.cols * self.rows, self.action_space_size).to(self.device)
-            self.target_net = ClassDQN(self.cols * self.rows, self.action_space_size).to(self.device)
-            self.target_net.load_state_dict(self.policy_net.state_dict())
-
-            self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
-
-            self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
-            self.memory = ReplayMemory(REPLAY_MEMORY_CAPACITY)
-        else:
-            if predefined_q_table is not None:
-                self.q_table = predefined_q_table
-            else:
-                self.q_table = np.zeros((self.rows, self.cols, self.action_space_size))
-
-    def softmax(self, values):
-        if self.if_deep:
-            softmax_dict = {}
-            for key, tensor in values.items():
-                logits = tensor / self.temperature
-                exp_logits = torch.exp(logits)
-                probabilities = exp_logits / torch.sum(exp_logits)
-                softmax_dict[key] = probabilities
-            return softmax_dict
-        else:
-            exp_values = np.exp(values / self.temperature)
-            probabilities = exp_values / np.sum(exp_values)
-            return probabilities
-
-    def choose_action(self, state, possible_actions=None):
-        if self.if_deep:
-            with torch.no_grad():
-                state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-                values_tensor = self.policy_net(state).squeeze()
-                dict_act = {i: values_tensor[i] for i in range(self.action_space_size)}
-
-                if possible_actions is not None and len(possible_actions) > 0:
-                    dict_act = {key: dict_act[key] for key in possible_actions}
-
-                action_probabilities = self.softmax(dict_act)
-
-                prob_tensor = torch.stack(list(action_probabilities.values()))
-                prob_tensor[torch.isnan(prob_tensor)] = 0  # Set NaN values to 0
-                prob_tensor[prob_tensor < 0] = 0  # Set negative values to 0
-                prob_tensor[prob_tensor == float('inf')] = 0  # Set inf values to 0
-                prob_tensor = torch.clamp(prob_tensor, min=0)  # Ensure non-negative probabilities
-                prob_sum = torch.sum(prob_tensor)
-                if prob_sum <= 0:
-                    # Handle the case when probabilities sum up to zero or less
-                    # You might want to handle this case based on your specific scenario
-                    # For example, you could assign equal probabilities to all actions
-                    prob_tensor.fill_(1.0 / len(prob_tensor))
-
-                # Apply Boltzmann exploration
-                chosen_index = torch.multinomial(prob_tensor, 1, replacement=True).to(torch.int64)
-                chosen_action = list(action_probabilities.keys())[chosen_index]
-
-                return chosen_action
-
-        else:
-            stateX = int(state[0])
-            stateY = int(state[1])
-
-            if possible_actions is not None and len(possible_actions) > 0:
-                action_values = self.q_table[stateX, stateY, possible_actions]
-                action_probabilities = self.softmax(action_values)
-                chosen_action = np.random.choice(possible_actions, p=action_probabilities)
-            else:
-                action_values = self.q_table[stateX, stateY, :]
-                action_probabilities = self.softmax(action_values)
-                chosen_action = np.random.choice(self.action_space_size, p=action_probabilities)
-
-            return chosen_action
-
-    def update_Q_or_memory(self, state, action, reward, next_state):
-        if self.if_deep:
-            state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-            next_state = torch.tensor(next_state, dtype=torch.float32, device=self.device).unsqueeze(0)
-            reward = torch.tensor([reward], device=self.device)
-            action = torch.tensor([action], device=self.device)
-            self.memory.push(state, action, next_state, reward, Transition=self.Transition)
-        else:
-            stateX = int(state[0])
-            stateY = int(state[1])
-            next_stateX = int(next_state[0])
-            next_stateY = int(next_state[1])
-            current_q_value = self.q_table[stateX, stateY, action]
-            max_next_q_value = np.max(self.q_table[next_stateX, next_stateY, :])
-
-            new_q_value = current_q_value + self.lr * (reward + self.gamma * max_next_q_value - current_q_value)
-            self.q_table[stateX, stateY, action] = new_q_value
-
-    def optimize_model(self):
-        if len(self.memory) < self.batch_size:
-            return
-        transitions = self.memory.sample(BATCH_SIZE)
-        batch = self.Transition(*zip(*transitions))
-
-        # Compute a mask of non-final states and concatenate the batch elements
-        # (a final state would've been the one after which simulation ended)
-        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
-                                                batch.next_state)), device=self.device, dtype=torch.bool)
-
-        non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
-        state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action)
-        reward_batch = torch.cat(batch.reward)
-
-        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the columns of actions taken.
-        # These are the actions which would've been taken for each batch state according to policy_net
-        action_batch = action_batch.view(-1)
-        action_batch = action_batch.unsqueeze(1).to(torch.int64)
-        state_action_values = self.policy_net(state_batch).gather(1, action_batch)
-
-        # Compute V(s_{t+1}) for all next states.
-        # Expected values of actions for non_final_next_states are computed based on the "older" target_net;
-        # selecting their best reward with max(1).values
-        # This is merged based on the mask, such that we'll have either the expected state value or 0 in
-        # case the state was final.
-        next_state_values = torch.zeros(self.batch_size, device=self.device)
-        with torch.no_grad():
-            next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1).values
-        # Compute the expected Q values
-        expected_state_action_values = (next_state_values * self.gamma) + reward_batch
-
-        # Compute Huber loss
-        criterion = nn.SmoothL1Loss()
-        loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
-
-        # Optimize the model
-        self.optimizer.zero_grad()
-        loss.backward()
-        # In-place gradient clipping
-        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
-        self.optimizer.step()
-
-    def update_target_net(self):
-        target_net_state_dict = self.target_net.state_dict()
-        policy_net_state_dict = self.policy_net.state_dict()
-        for key in policy_net_state_dict:
-            target_net_state_dict[key] = policy_net_state_dict[key] * TAU + target_net_state_dict[key] * (1 - TAU)
-        self.target_net.load_state_dict(target_net_state_dict)
-
-
-class ThompsonSamplingQAgent:
-    def __init__(self, rows, cols, action_space_size, alg, alpha=1, beta=1, predefined_alpha_beta=None):
-        self.rows = rows
-        self.cols = cols
-        self.action_space_size = action_space_size
-
-        self.if_deep = True if 'DQN' in alg else False
-
-        if self.if_deep:
-            self.alpha = torch.maximum(
-                torch.zeros((self.rows, self.cols, self.action_space_size), dtype=torch.float) * alpha,
-                torch.ones((self.rows, self.cols, self.action_space_size), dtype=torch.float))
-            self.beta = torch.maximum(
-                torch.zeros((self.rows, self.cols, self.action_space_size), dtype=torch.float) * beta,
-                torch.ones((self.rows, self.cols, self.action_space_size), dtype=torch.float))
-
-            self.batch_size = BATCH_SIZE
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self.policy_net: ClassDQN = ClassDQN(self.cols * self.rows, self.action_space_size).to(self.device)
-            self.target_net = ClassDQN(self.cols * self.rows, self.action_space_size).to(self.device)
-            self.target_net.load_state_dict(self.policy_net.state_dict())
-
-            self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
-
-            self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
-            self.memory = ReplayMemory(REPLAY_MEMORY_CAPACITY)
-        else:
-            if predefined_alpha_beta is None:
-                self.alpha = np.maximum(np.zeros((self.rows, self.cols, self.action_space_size)) * alpha, 1)
-                self.beta = np.maximum(np.zeros((self.rows, self.cols, self.action_space_size)) * beta, 1)
-            else:
-                self.alpha = predefined_alpha_beta[0]
-                self.beta = predefined_alpha_beta[1]
-
-    def choose_action(self, state, possible_actions=None):
-        if self.if_deep:
-            with torch.no_grad():
-                stateX = int(state[0])
-                stateY = int(state[1])
-
-                # Convert alpha and beta to tensors
-                alpha_tensor = torch.tensor(self.alpha[stateX, stateY, :], dtype=torch.float)
-                beta_tensor = torch.tensor(self.beta[stateX, stateY, :], dtype=torch.float)
-
-                # Sample from Beta distribution using PyTorch
-                beta_dist = torch.distributions.beta.Beta(alpha_tensor, beta_tensor)
-                sampled_values = beta_dist.sample()
-
-                if possible_actions is not None and len(possible_actions) > 0:
-                    all_actions = list(range(self.action_space_size))
-                    dict_all_actions = {}
-                    for act in all_actions:
-                        dict_all_actions[act] = sampled_values[act].item()
-
-                    dict_valid_actions = {act: dict_all_actions[act] for act in possible_actions}
-                    chosen_action, _ = max(dict_valid_actions.items(), key=lambda x: x[1])
-                else:
-                    chosen_action = torch.argmax(sampled_values).item()
-
-                return chosen_action
-        else:
-            # Sample from the Beta distribution for each action
-            stateX = int(state[0])
-            stateY = int(state[1])
-            sampled_values = np.random.beta(self.alpha[stateX, stateY, :], self.beta[stateX, stateY, :])
-
-            if possible_actions is not None and len(possible_actions) > 0:
-                all_actions = list(np.arange(0, self.action_space_size, 1))
-                dict_all_actions = {}
-                for act in all_actions:
-                    dict_all_actions[act] = sampled_values[act]
-
-                dict_valid_actions = {act: dict_all_actions[act] for act in possible_actions}
-                chosen_action, _ = max(dict_valid_actions.items(), key=lambda x: x[1])
-            else:
-                chosen_action = np.argmax(sampled_values)
-
-            return chosen_action
-
-    def update_Q_or_memory(self, state, action, reward, next_state):
-        stateX = int(state[0])
-        stateY = int(state[1])
-        if reward == 1:
-            self.alpha[stateX, stateY, action] += 1
-        elif reward == -1:
-            self.beta[stateX, stateY, action] += 1
-
-    def optimize_model(self):
-        if len(self.memory) < self.batch_size:
-            return
-        transitions = self.memory.sample(BATCH_SIZE)
-        batch = self.Transition(*zip(*transitions))
-
-        # Compute a mask of non-final states and concatenate the batch elements
-        # (a final state would've been the one after which simulation ended)
-        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
-                                                batch.next_state)), device=self.device, dtype=torch.bool)
-
-        non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
-        state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action)
-        reward_batch = torch.cat(batch.reward)
-
-        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the columns of actions taken.
-        # These are the actions which would've been taken for each batch state according to policy_net
-        action_batch = action_batch.view(-1)
-        action_batch = action_batch.unsqueeze(1).to(torch.int64)
-        state_action_values = self.policy_net(state_batch).gather(1, action_batch)
-
-        # Compute V(s_{t+1}) for all next states.
-        # Expected values of actions for non_final_next_states are computed based on the "older" target_net;
-        # selecting their best reward with max(1).values
-        # This is merged based on the mask, such that we'll have either the expected state value or 0 in
-        # case the state was final.
-        next_state_values = torch.zeros(self.batch_size, device=self.device)
-        with torch.no_grad():
-            next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1).values
-        # Compute the expected Q values
-        expected_state_action_values = (next_state_values * self.gamma) + reward_batch
-
-        # Compute Huber loss
-        criterion = nn.SmoothL1Loss()
-        loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
-
-        # Optimize the model
-        self.optimizer.zero_grad()
-        loss.backward()
-        # In-place gradient clipping
-        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
-        self.optimizer.step()
-
-    def update_target_net(self):
-        target_net_state_dict = self.target_net.state_dict()
-        policy_net_state_dict = self.policy_net.state_dict()
-        for key in policy_net_state_dict:
-            target_net_state_dict[key] = policy_net_state_dict[key] * TAU + target_net_state_dict[key] * (1 - TAU)
-        self.target_net.load_state_dict(target_net_state_dict)
-
-
-class EpsilonGreedyQAgent:
-
-    def __init__(self, rows, cols, n_agent_actions, n_episodes, alg, predefined_q_table=None):
-        self.rows = rows
-        self.cols = cols
-        self.n_agent_actions = n_agent_actions
-        self.n_episodes = n_episodes
-
-        self.lr = LEARNING_RATE
-        self.gamma = GAMMA
-
-        self.exp_proba = START_EXPLORATION_PROBA
-        self.MIN_EXPLORATION_PROBA = MIN_EXPLORATION_PROBA
-        self.EXPLORATION_DECREASING_DECAY = -np.log(self.MIN_EXPLORATION_PROBA) / (
-                EXPLORATION_GAME_PERCENT * self.n_episodes)
-
-        self.if_deep = True if 'DQN' in alg else False
-
-        if self.if_deep:
-            self.batch_size = BATCH_SIZE
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self.policy_net: ClassDQN = ClassDQN(self.cols * self.rows, self.n_agent_actions).to(self.device)
-            self.target_net = ClassDQN(self.cols * self.rows, self.n_agent_actions).to(self.device)
-            self.target_net.load_state_dict(self.policy_net.state_dict())
-
-            self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
-
-            self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=LEARNING_RATE, amsgrad=True)
-            self.memory = ReplayMemory(REPLAY_MEMORY_CAPACITY)
-        else:
-            if predefined_q_table is not None:
-                self.q_table = predefined_q_table
-            else:
-                self.q_table = np.zeros((self.rows, self.cols, self.n_agent_actions))
-
-    def choose_action(self, state, possible_actions=None):
-        if self.if_deep:
-            with torch.no_grad():
-                state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-
-                if possible_actions is not None and len(possible_actions) > 0:
-                    if np.random.uniform(0, 1) < self.exp_proba:  # exploration
-                        if len(possible_actions) > 0:
-                            return torch.tensor([[possible_actions[torch.randint(0, len(possible_actions), (1,)).item()]]],
-                                                device=self.device, dtype=torch.long)
-                        else:
-                            return torch.tensor([[np.random.randint(0, self.n_agent_actions, 1)]], device=self.device,
-                                                dtype=torch.long)
-                    else:  # exploitation
-                        actions_to_avoid = [s for s in range(self.n_agent_actions) if s not in possible_actions]
-
-                        actions_values = self.policy_net(state)
-                        for act_to_avoid in actions_to_avoid:
-                            actions_values[:, act_to_avoid] = - 10000
-
-                        return actions_values.max(1).indices.view(1, 1)
-                else:
-                    if np.random.uniform(0, 1) < self.exp_proba:  # exploration
-                        return torch.tensor([[np.random.randint(0, self.n_agent_actions, 1)]], device=self.device,
-                                            dtype=torch.long)
-                    else:
-                        with torch.no_grad():
-                            actions_values = self.policy_net(state)
-                            return actions_values.max(1).indices.view(1, 1)
-        else:
-            if np.random.uniform(0, 1) < self.exp_proba:  # exploration
-                if possible_actions is not None and len(possible_actions) > 0:
-                    action = random.sample(possible_actions, 1)[0]
-                else:
-                    action = np.random.randint(0, self.n_agent_actions, size=1)[0]
-            else:  # exploitation
-                stateX = int(state[0])
-                stateY = int(state[1])
-                if possible_actions is not None and len(possible_actions) > 0:
-                    all_actions = list(np.arange(0, self.n_agent_actions, 1))
-                    dict_all_actions = {}
-                    for act in all_actions:
-                        dict_all_actions[act] = self.q_table[stateX, stateY, act]
-
-                    dict_valid_actions = {act: dict_all_actions[act] for act in possible_actions}
-                    action, _ = max(dict_valid_actions.items(), key=lambda x: x[1])
-                else:
-                    action = np.argmax(self.q_table[stateX, stateY, :])
-
-            return action
-
-    def update_Q_or_memory(self, state, action, reward, next_state):
-        if self.if_deep:
-            state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-            next_state = torch.tensor(next_state, dtype=torch.float32, device=self.device).unsqueeze(0)
-            reward = torch.tensor([reward], device=self.device)
-            action = torch.tensor([action], device=self.device)
-            self.memory.push(state, action, next_state, reward, Transition=self.Transition)
-        else:
-            stateX = int(state[0])
-            stateY = int(state[1])
-            next_stateX = int(next_state[0])
-            next_stateY = int(next_state[1])
-            current_q_value = self.q_table[stateX, stateY, action]
-            max_next_q_value = np.max(self.q_table[next_stateX, next_stateY, :])
-
-            new_q_value = current_q_value + self.lr * (reward + self.gamma * max_next_q_value - current_q_value)
-            self.q_table[stateX, stateY, action] = new_q_value
-
-    def update_exp_fact(self, episode):  # update exploration probability
-        self.exp_proba = max(self.MIN_EXPLORATION_PROBA, np.exp(-self.EXPLORATION_DECREASING_DECAY * episode))
-
-    def optimize_model(self):
-        if len(self.memory) < self.batch_size:
-            return
-        transitions = self.memory.sample(BATCH_SIZE)
-        batch = self.Transition(*zip(*transitions))
-
-        # Compute a mask of non-final states and concatenate the batch elements
-        # (a final state would've been the one after which simulation ended)
-        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
-                                                batch.next_state)), device=self.device, dtype=torch.bool)
-
-        non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
-        state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action)
-        reward_batch = torch.cat(batch.reward)
-
-        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the columns of actions taken.
-        # These are the actions which would've been taken for each batch state according to policy_net
-        action_batch = action_batch.view(-1)
-        action_batch = action_batch.unsqueeze(1).to(torch.int64)
-        state_action_values = self.policy_net(state_batch).gather(1, action_batch)
-
-        # Compute V(s_{t+1}) for all next states.
-        # Expected values of actions for non_final_next_states are computed based on the "older" target_net;
-        # selecting their best reward with max(1).values
-        # This is merged based on the mask, such that we'll have either the expected state value or 0 in
-        # case the state was final.
-        next_state_values = torch.zeros(self.batch_size, device=self.device)
-        with torch.no_grad():
-            next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1).values
-        # Compute the expected Q values
-        expected_state_action_values = (next_state_values * self.gamma) + reward_batch
-
-        # Compute Huber loss
-        criterion = nn.SmoothL1Loss()
-        loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
-
-        # Optimize the model
-        self.optimizer.zero_grad()
-        loss.backward()
-        # In-place gradient clipping
-        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
-        self.optimizer.step()
-
-    def update_target_net(self):
-        target_net_state_dict = self.target_net.state_dict()
-        policy_net_state_dict = self.policy_net.state_dict()
-        for key in policy_net_state_dict:
-            target_net_state_dict[key] = policy_net_state_dict[key] * TAU + target_net_state_dict[key] * (1 - TAU)
-        self.target_net.load_state_dict(target_net_state_dict)
-
-
-class ReplayMemory(object):
-
-    def __init__(self, capacity):
-        self.memory = deque([], maxlen=capacity)
-
-    def push(self, *args, Transition):
-        # Save a transition
-        self.memory.append(Transition(*args))
-
-    def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
-
-    def __len__(self):
-        return len(self.memory)
-
-
-class ClassDQN(nn.Module):
-
-    def __init__(self, n_observations, n_actions):
-        super(ClassDQN, self).__init__()
-
-        self.hidden_layers = HIDDEN_LAYERS
-        self.n_observations = n_observations
-        self.n_actions = n_actions
-
-        self.layer1 = nn.Linear(self.n_observations, self.hidden_layers)
-        self.layer2 = nn.Linear(self.hidden_layers, self.hidden_layers)
-        self.final_layer = nn.Linear(self.hidden_layers, self.n_actions)
-
-    def forward(self, x):
-        x = F.relu(self.layer1(x))
-        x = F.relu(self.layer2(x))
-        return self.final_layer(x)
-
-
-def DQNs(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize, seed_value):
-    np.random.seed(seed_value)
-    random.seed(seed_value)
+def DQNs(env, dict_env_parameters, dict_learning_parameters):
 
     rows = env.rows
     cols = env.cols
+
+    n_act_agents = dict_env_parameters['n_act_agents']
+    n_episodes = dict_env_parameters['n_episodes']
+    alg = dict_env_parameters['alg']
+    who_moves_first = dict_env_parameters['who_moves_first']
+    episodes_to_visualize = dict_env_parameters['episodes_to_visualize']
+    seed_value = dict_env_parameters['seed_value']
+
+    TIMEOUT_IN_HOURS = dict_learning_parameters['TIMEOUT_IN_HOURS']
+
+    np.random.seed(seed_value)
+    random.seed(seed_value)
     action_space_size = n_act_agents
 
+    dict_env_for_expl_strategy = {'rows': rows, 'cols': cols, 'action_space_size': action_space_size, 'n_episodes': n_episodes, 'alg': alg}
+
     if 'SA' in alg:
-        agent = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes, alg)
+        agent = exploration_strategies.SoftmaxAnnealingQAgent(dict_env_for_expl_strategy, dict_learning_parameters)
     elif 'TS' in alg:
-        agent = ThompsonSamplingQAgent(rows, cols, action_space_size, alg)
+        agent = exploration_strategies.ThompsonSamplingQAgent(dict_env_for_expl_strategy, dict_learning_parameters)
     elif 'BM' in alg:
-        agent = BoltzmannQAgent(rows, cols, action_space_size, alg)
+        agent = exploration_strategies.BoltzmannQAgent(dict_env_for_expl_strategy, dict_learning_parameters)
     else:  # 'EG'
-        agent = EpsilonGreedyQAgent(rows, cols, action_space_size, n_episodes, alg)
+        agent = exploration_strategies.EpsilonGreedyQAgent(dict_env_for_expl_strategy, dict_learning_parameters)
 
     average_episodes_rewards = []
     steps_for_episode = []
@@ -1079,23 +412,35 @@ def DQNs(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visual
     return average_episodes_rewards, steps_for_episode, q_table
 
 
-def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize, seed_value,
+def QL_causality_offline(env, dict_env_parameters, dict_learning_parameters,
                          predefined_q_table=None):
-    np.random.seed(seed_value)
-    random.seed(seed_value)
-
     rows = env.rows
     cols = env.cols
+
+    n_act_agents = dict_env_parameters['n_act_agents']
+    n_episodes = dict_env_parameters['n_episodes']
+    alg = dict_env_parameters['alg']
+    who_moves_first = dict_env_parameters['who_moves_first']
+    episodes_to_visualize = dict_env_parameters['episodes_to_visualize']
+    seed_value = dict_env_parameters['seed_value']
+
+    TIMEOUT_IN_HOURS = dict_learning_parameters['TIMEOUT_IN_HOURS']
+
+    np.random.seed(seed_value)
+    random.seed(seed_value)
     action_space_size = n_act_agents
 
+    dict_env_for_expl_strategy = {'rows': rows, 'cols': cols, 'action_space_size': action_space_size,
+                                  'n_episodes': n_episodes, 'alg': alg}
+
     if 'SA' in alg:
-        agent = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes, alg, predefined_q_table=predefined_q_table)
+        agent = exploration_strategies.SoftmaxAnnealingQAgent(dict_env_for_expl_strategy, dict_learning_parameters, predefined_q_table)
     elif 'TS' in alg:
-        agent = ThompsonSamplingQAgent(rows, cols, action_space_size, alg, predefined_alpha_beta=predefined_q_table)
+        agent = exploration_strategies.ThompsonSamplingQAgent(dict_env_for_expl_strategy, dict_learning_parameters, predefined_q_table)
     elif 'BM' in alg:
-        agent = BoltzmannQAgent(rows, cols, action_space_size, alg, predefined_q_table=predefined_q_table)
+        agent = exploration_strategies.BoltzmannQAgent(dict_env_for_expl_strategy, dict_learning_parameters, predefined_q_table)
     else:  # 'EG'
-        agent = EpsilonGreedyQAgent(rows, cols, action_space_size, n_episodes, alg, predefined_q_table=predefined_q_table)
+        agent = exploration_strategies.EpsilonGreedyQAgent(dict_env_for_expl_strategy, dict_learning_parameters, predefined_q_table)
 
     average_episodes_rewards = []
     steps_for_episode = []
@@ -1217,10 +562,8 @@ def QL_causality_offline(env, n_act_agents, n_episodes, alg, who_moves_first, ep
     return average_episodes_rewards, steps_for_episode, q_table
 
 
-def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, episodes_to_visualize, seed_value,
-                        BATCH_EPISODES_UPDATE_BN=500, predefined_q_table=None):
-    np.random.seed(seed_value)
-    random.seed(seed_value)
+def QL_causality_online(env, dict_env_parameters, dict_learning_parameters, BATCH_EPISODES_UPDATE_BN=500,
+                         predefined_q_table=None):
 
     try:
         os.remove('online_heuristic_table.pkl')
@@ -1229,18 +572,37 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
 
     rows = env.rows
     cols = env.cols
+
+    n_act_agents = dict_env_parameters['n_act_agents']
+    n_episodes = dict_env_parameters['n_episodes']
+    alg = dict_env_parameters['alg']
+    who_moves_first = dict_env_parameters['who_moves_first']
+    episodes_to_visualize = dict_env_parameters['episodes_to_visualize']
+    seed_value = dict_env_parameters['seed_value']
+
+    TIMEOUT_IN_HOURS = dict_learning_parameters['TIMEOUT_IN_HOURS']
+    EXPLORATION_GAME_PERCENT = dict_learning_parameters['EXPLORATION_GAME_PERCENT']
+    TH_CONSECUTIVE_CHECKS_CAUSAL_TABLE = dict_learning_parameters['TH_CONSECUTIVE_CHECKS_CAUSAL_TABLE']
+
+    np.random.seed(seed_value)
+    random.seed(seed_value)
     action_space_size = n_act_agents
 
+    dict_env_for_expl_strategy = {'rows': rows, 'cols': cols, 'action_space_size': action_space_size,
+                                  'n_episodes': n_episodes, 'alg': alg}
+
     if 'SA' in alg:
-        agent = SoftmaxAnnealingQAgent(rows, cols, action_space_size, n_episodes, alg,
-                                       predefined_q_table=predefined_q_table)
+        agent = exploration_strategies.SoftmaxAnnealingQAgent(dict_env_for_expl_strategy, dict_learning_parameters,
+                                                              predefined_q_table)
     elif 'TS' in alg:
-        agent = ThompsonSamplingQAgent(rows, cols, action_space_size, alg, predefined_alpha_beta=predefined_q_table)
+        agent = exploration_strategies.ThompsonSamplingQAgent(dict_env_for_expl_strategy, dict_learning_parameters,
+                                                              predefined_q_table)
     elif 'BM' in alg:
-        agent = BoltzmannQAgent(rows, cols, action_space_size, alg, predefined_q_table=predefined_q_table)
+        agent = exploration_strategies.BoltzmannQAgent(dict_env_for_expl_strategy, dict_learning_parameters,
+                                                       predefined_q_table)
     else:  # 'EG'
-        agent = EpsilonGreedyQAgent(rows, cols, action_space_size, n_episodes, alg,
-                                    predefined_q_table=predefined_q_table)
+        agent = exploration_strategies.EpsilonGreedyQAgent(dict_env_for_expl_strategy, dict_learning_parameters,
+                                                           predefined_q_table)
 
     average_episodes_rewards = []
     steps_for_episode = []
@@ -1375,7 +737,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
             agent.update_exp_fact(e)
 
         if e % BATCH_EPISODES_UPDATE_BN == 0 and e < int(
-                EXPLORATION_GAME_PERCENT * n_episodes) and check_causal_table < TH_CONSECUTIVE_CHECKS_CAUSAL_TABLE:
+                 EXPLORATION_GAME_PERCENT * n_episodes) and check_causal_table < TH_CONSECUTIVE_CHECKS_CAUSAL_TABLE:
             pbar.set_postfix_str(
                 f"Average reward: {round(np.mean(average_episodes_rewards), 3)}, Number of defeats: {env.n_times_loser}, do-calculus...")
 
