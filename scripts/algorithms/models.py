@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 GAMMA = 0.99
 LEARNING_RATE = 0.0001
 
-EXPLORATION_PROBA = 1
+START_EXPLORATION_PROBA = 1
 MIN_EXPLORATION_PROBA = 0.01
 EXPLORATION_GAME_PERCENT = 0.6
 
@@ -35,7 +35,7 @@ REPLAY_MEMORY_CAPACITY = 10000
 
 TIMEOUT_IN_HOURS = 4
 
-TH_CHECKS_CAUSAL_TABLE = 3
+TH_CONSECUTIVE_CHECKS_CAUSAL_TABLE = 3
 
 col_action = 'Action_Agent0'
 col_deltaX = 'DeltaX_Agent0'
@@ -283,7 +283,7 @@ class SoftmaxAnnealingQAgent:
         self.lr = LEARNING_RATE
         self.gamma = GAMMA
 
-        self.exp_proba = EXPLORATION_PROBA
+        self.exp_proba = START_EXPLORATION_PROBA
         self.MIN_EXPLORATION_PROBA = MIN_EXPLORATION_PROBA
         self.EXPLORATION_DECREASING_DECAY = -np.log(self.MIN_EXPLORATION_PROBA) / (
                 EXPLORATION_GAME_PERCENT * self.n_episodes)
@@ -745,7 +745,7 @@ class EpsilonGreedyQAgent:
         self.lr = LEARNING_RATE
         self.gamma = GAMMA
 
-        self.exp_proba = EXPLORATION_PROBA
+        self.exp_proba = START_EXPLORATION_PROBA
         self.MIN_EXPLORATION_PROBA = MIN_EXPLORATION_PROBA
         self.EXPLORATION_DECREASING_DECAY = -np.log(self.MIN_EXPLORATION_PROBA) / (
                 EXPLORATION_GAME_PERCENT * self.n_episodes)
@@ -1375,7 +1375,7 @@ def QL_causality_online(env, n_act_agents, n_episodes, alg, who_moves_first, epi
             agent.update_exp_fact(e)
 
         if e % BATCH_EPISODES_UPDATE_BN == 0 and e < int(
-                EXPLORATION_GAME_PERCENT * n_episodes) and check_causal_table < TH_CHECKS_CAUSAL_TABLE:
+                EXPLORATION_GAME_PERCENT * n_episodes) and check_causal_table < TH_CONSECUTIVE_CHECKS_CAUSAL_TABLE:
             pbar.set_postfix_str(
                 f"Average reward: {round(np.mean(average_episodes_rewards), 3)}, Number of defeats: {env.n_times_loser}, do-calculus...")
 
