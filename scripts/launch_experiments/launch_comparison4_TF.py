@@ -11,7 +11,7 @@ seed_values = np.load('../utils/seed_values.npy')
 
 def get_batch_episodes(n_enemies, rows):
     table = pd.read_pickle(
-        '../../results/OfflineCausalInference_tradeoff_batch_episodes_enemies/results_tradeoff_online_causality.pkl')
+        '../../results_tradeoff_online_causality.pkl')
 
     condition = (table['Grid Size'] == rows) & (table['Enemies'] == n_enemies) & (table['Suitable'] == 'yes')
     result_column = table.loc[condition, 'Episodes'].to_list()
