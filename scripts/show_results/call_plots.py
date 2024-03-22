@@ -22,7 +22,7 @@ possible_algorithms = ['QL_TS_basic', 'QL_TS_causal_offline', 'QL_TS_causal_onli
                        'DQN_TS_basic', 'DQN_TS_causal_offline',
                        'DQN_EG_basic', 'DQN_EG_causal_offline',
                        'DQN_SA_basic', 'DQN_SA_causal_offline',
-                       'DQN_BM_basic', 'DQN_BM_causal_offline', ]
+                       'DQN_BM_basic', 'DQN_BM_causal_offline']
 
 group_by_kind = ['basic', 'causal_offline', 'causal_online']
 group_by_strategy = ['TS', 'EG', 'BM', 'SA']

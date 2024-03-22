@@ -443,7 +443,7 @@ def process_df(df_start):
 """ ************************************************************************************************************* """
 " EVALUATION ENVIRONMENT AND NUMBER OF EPISODES NEEDED"
 " Dataframe "
-"""path_save = 'OfflineCausalInference_tradeoff_batch_episodes_enemies'
+"""path_save = 'OfflineCI_tradeoff_episodes_enemies'
 os.makedirs(path_save, exist_ok=True)
 
 
