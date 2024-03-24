@@ -30,17 +30,18 @@ VAlUE_ENTITY_FAR = 50
 
 len_predefined_enemy_actions = 20
 
+DELAY_VISUALIZATION_VIDEO = 5
 FPS_video = 3
-
 
 
 class CustomEnv:
     def __init__(self, env_info: dict, if_save_video: bool):
 
+        self.enemy_positions = None
         self.walls_positions = None
         self.goal_nearby = None
         self.enemies_nearby = None
-        self.agent_positions = None
+        self.agents_positions = None
         self.value_agent_cell = VALUE_AGENT_CELL
         self.value_enemy_cell = VALUE_ENEMY_CELL
         self.value_goal_cell = VALUE_GOAL_CELL
@@ -114,6 +115,8 @@ class CustomEnv:
             else:
                 # TODO: finish maze definition
                 self._define_maze()
+        else:
+            self.n_walls = 0
 
         self._vis_grid_numpy()
 
@@ -125,7 +128,7 @@ class CustomEnv:
         used_positions = []
 
         # Initialize arrays to store x and y coordinates of entities
-        self.agent_positions = np.zeros((self.n_agents, 2), dtype=int)
+        self.agents_positions = np.zeros((self.n_agents, 2), dtype=int)
         self.enemy_positions = np.zeros((self.n_enemies, 2), dtype=int)
         self.goal_positions = np.zeros((self.n_goals, 2), dtype=int)
 
@@ -136,11 +139,11 @@ class CustomEnv:
                 if position not in used_positions:
                     used_positions.append(position)
                     x, y = position // self.cols, position % self.cols
-                    self.agent_positions[i] = [x, y]
+                    self.agents_positions[i] = [x, y]
                     self.grid_for_game[x, y] = self.value_agent_cell
                     break
 
-        self.agent_positions_for_reset = self.agent_positions.copy()
+        self.agent_positions_for_reset = self.agents_positions.copy()
 
         # Insert enemies
         for i in range(self.n_enemies):
@@ -231,62 +234,75 @@ class CustomEnv:
                 self.enemy_positions[n] = self._apply_action(pos_xy_enemy, action)
             self.n_steps_same_enemies_actions += 1
 
-    def step_agent(self, action: int) -> np.ndarray:
+    def step_agents(self, actions: int) -> np.ndarray:
         # TODO: multi-agent settings
-        pos_xy = self.agent_positions[0]
-        self.agent_positions = self._apply_action(pos_xy, action)
+        for agent in range(self.n_agents):
+            pos_xy = self.agents_positions[agent]
+            action = actions[agent]
+            self.agents_positions[agent] = self._apply_action(pos_xy, action)
 
-        return self.agent_positions
+        return self.agents_positions
 
-    def check_winner_gameover_agent(self) -> Tuple[int, bool, bool]:
-        # TODO: multi-agent settings
+    def check_winner_gameover_agents(self) -> Tuple[list, list, list]:
         """
         Check if the game is over and who won.
         Returns: tuple: A tuple containing reward, done flag, and if_lose flag.
         """
-        # Get positions of agent and goal
-        agent_position = self.agent_positions[0]
-        goal_position = self.goal_positions[0]
 
-        # Check if agent has reached the goal
-        if agent_position == goal_position:
-            return self.reward_winner, True, False
+        rewards = []
+        dones = []
+        if_loses = []
 
-        # Check if agent collided with any enemy
-        for enemy_position in self.enemy_positions:
-            if agent_position == enemy_position:
+        for agent in range(self.n_agents):
+            agent_position = self.agents_positions[agent]
+            goal_position = self.goal_positions[0]
+
+            # Check if agent has reached the goal
+            if np.array_equal(agent_position, goal_position):
+                rewards.append(self.reward_winner)
+                dones.append(True)
+                if_loses.append(False)
+            # Check if agent collided with any enemy
+            elif np.any(np.all(agent_position == self.enemy_positions, axis=1)):
                 self.n_times_loser += 1
                 self.n_steps_same_enemies_actions = 0
-                return self.reward_loser, False, True
+                rewards.append(self.reward_loser)
+                dones.append(False)
+                if_loses.append(True)
+            else:
+                rewards.append(self.reward_alive)
+                dones.append(False)
+                if_loses.append(False)
 
-        # If none of the above conditions are met, the agent is still alive
-        return self.reward_alive, False, False
+        return rewards, dones, if_loses
 
     def reset(self, if_reset_n_time_loser) -> np.ndarray:
-        # TODO: multi-agent settings
         if if_reset_n_time_loser:
             self.n_times_loser = 0
 
         self.enemies_nearby = self.reset_enemies_nearby.copy()
-        self.goal_nearby = self.reset_goal_nearby.copy()
+        self.goal_nearby = self.reset_goal_nearby
+        self.agents_positions = self.agent_positions_for_reset.copy()
+        self.enemy_positions = self.enemy_positions_for_reset.copy()
 
-        return self.agent_positions
+        return self.agents_positions
 
     def get_nearby_agent(self) -> Tuple[np.ndarray, int]:
 
         self.enemies_nearby = np.full(self.n_enemies, self.value_entity_far)
         self.goal_nearby = np.full(self.n_goals, self.value_entity_far)
 
-        pos_xy_goal = self.goal_positions[0]
-        pos_xy_agent = self.agent_positions[0]
-        self.goal_nearby = self._get_direction(pos_xy_agent, pos_xy_goal)
+        for agent in range(self.n_agents):
+            pos_xy_agent = self.agents_positions[agent]
+            for m, pos_xy_goal in enumerate(self.goal_positions):
+                self.goal_nearby[m] = self._get_direction(pos_xy_agent, pos_xy_goal)
 
-        for n, pos_xy_enemy in enumerate(self.enemy_positions):
-            self.enemies_nearby[n] = self._get_direction(pos_xy_agent, pos_xy_enemy)
+            for n, pos_xy_enemy in enumerate(self.enemy_positions):
+                self.enemies_nearby[n] = self._get_direction(pos_xy_agent, pos_xy_enemy)
 
         return self.enemies_nearby, self.goal_nearby
 
-    def init_gui(self, algorithm: str, n_episodes: int, path_images: str):
+    def init_gui(self, algorithm: str, exploration_strategy: str, n_episodes: int, path_images: str):
 
         def __create_next_alg_folder(base_dir: str, core_word_path: str) -> str:
             # Ensure base directory exists
@@ -324,8 +340,9 @@ class CustomEnv:
         pygame.font.init()
 
         self.algorithm = algorithm
+        self.exploration_strategy = exploration_strategy
         self.n_episodes = n_episodes
-        self.delay_visualization = 2
+        self.delay_visualization = DELAY_VISUALIZATION_VIDEO
         self.gui_n_defeats_start = self.n_times_loser
         self.font_size = 20
         self.FONT = pygame.font.SysFont('comicsans', self.font_size)
@@ -358,9 +375,12 @@ class CustomEnv:
 
     def movement_gui(self, current_episode: int, step_for_episode: int):
 
-        ag_coord = self.agent_positions.copy()
+        ag_coord = self.agents_positions.copy()
         en_coord = self.enemy_positions.copy()
-        wall_coord = self.walls_positions.copy()
+        if self.n_walls > 0:
+            wall_coord = self.walls_positions.copy()
+        else:
+            wall_coord = []
         goal_coord = self.goal_positions.copy()
 
         self.WINDOW.fill('black')
@@ -386,9 +406,10 @@ class CustomEnv:
                 goal_coord[goal][0] * self.height_im + self.font_size * 2))
 
         time_text = self.FONT.render(
-            f'Episode: {current_episode}/{self.n_episodes} - Algorithm: {self.algorithm} - #Defeats: {self.n_times_loser - self.gui_n_defeats_start} - '
-            f'#Actions: {step_for_episode}',
-            True, 'white')
+            f'Episode: {current_episode}/{self.n_episodes} - Algorithm: {self.algorithm} - '
+            f'Exploration: {self.exploration_strategy} - '
+            f'#Defeats: {self.n_times_loser - self.gui_n_defeats_start} - '
+            f'#Actions: {step_for_episode}', True, 'white')
         self.WINDOW.blit(time_text, (10, 10))
         pygame.display.update()
         pygame.time.delay(self.delay_visualization)
@@ -464,12 +485,17 @@ class CustomEnv:
             raise AssertionError(f'the number of implemented actions is less than expected')
 
     def _apply_action(self, pos: np.ndarray, action: int) -> np.ndarray:
-        row, col = pos + self.dict_possible_actions[action]
-        if 0 <= row < self.rows and 0 <= col < self.cols:
-            new_pos = pos + self.dict_possible_actions[action]
-        else:
-            new_pos = pos.copy()
-        return new_pos
+        new_pos = pos + self.dict_possible_actions[action]
+        if self.__is_valid_position(new_pos) and not self.__is_wall(new_pos):
+            return new_pos
+        return pos.copy()
+
+    def __is_valid_position(self, pos: np.ndarray) -> bool:
+        row, col = pos
+        return 0 <= row < self.rows and 0 <= col < self.cols
+
+    def __is_wall(self, pos: np.ndarray) -> bool:
+        return self.grid_for_game[pos[0], pos[1]] == self.value_wall_cell
 
     def _get_direction(self, pos_xy_agent, pos_xy_other) -> int:
         def __find_key(dict_actions: dict, value: tuple) -> int:
@@ -485,6 +511,8 @@ class CustomEnv:
         named_matrix = np.vectorize(lambda x: self.number_names_grid.get(x, str(x)))(self.grid_for_game)
         # Print the named matrix
         print(named_matrix)
+        print('\n')
+        time.sleep(2)
 
 
 if __name__ == '__main__':
