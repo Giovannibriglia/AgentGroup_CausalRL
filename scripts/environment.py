@@ -16,7 +16,7 @@ from typing import Tuple
 
 import global_variables
 from global_variables import VALUE_AGENT_CELL, VALUE_GOAL_CELL, VALUE_EMPTY_CELL, VALUE_WALL_CELL, VALUE_ENEMY_CELL, \
-    VAlUE_ENTITY_FAR, KEY_SAME_ENEMY_ACTIONS, KEY_RANDOM_ENEMY_ACTIONS, LEN_PREDEFINED_ENEMIES_ACTIONS, \
+    VALUE_ENTITY_FAR, KEY_SAME_ENEMY_ACTIONS, KEY_RANDOM_ENEMY_ACTIONS, LEN_PREDEFINED_ENEMIES_ACTIONS, \
     N_WALLS_COEFFICIENT, DELAY_VISUALIZATION_VIDEO, FPS_video
 
 warnings.filterwarnings("ignore")
@@ -43,7 +43,7 @@ class CustomEnv:
             self.value_wall_cell: 'W'
         }
 
-        self.value_entity_far = VAlUE_ENTITY_FAR
+        self.value_entity_far = VALUE_ENTITY_FAR
         self.key_same_enemy_actions = KEY_SAME_ENEMY_ACTIONS
         self.key_random_enemy_actions = KEY_RANDOM_ENEMY_ACTIONS
 

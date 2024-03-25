@@ -48,7 +48,7 @@ DICT_OTHER_PARAMETERS_PAPER = {'WHO_MOVES_FIRST': 'enemy',
                                'TIMEOUT_IN_HOURS': 4,
                                'KIND_TH_CHECKS_CAUSAL_INFERENCE': 'consecutive',
                                'TH_CHECKS_CAUSAL_INFERENCE': 3,
-                               'N_EPISODES': 3000}
+                               'N_EPISODES': 300}
 
 " ******************************************************************************************************************** "
 
@@ -64,7 +64,7 @@ VALUE_GOAL_CELL = 2
 
 N_WALLS_COEFFICIENT = 2
 
-VAlUE_ENTITY_FAR = 50
+VALUE_ENTITY_FAR = 50
 
 LEN_PREDEFINED_ENEMIES_ACTIONS = 20
 

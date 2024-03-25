@@ -27,6 +27,9 @@ class Training:
         self.key_metric_steps_for_episodes = global_variables.KEY_METRICS_STEPS_EPISODE
         self.key_metric_average_time_for_episodes = global_variables.KEY_METRIC_TIME_EPISODE
 
+        self.n_agents = dict_env_parameters['n_agents']
+        self.n_enemies = dict_env_parameters['n_enemies']
+        self.n_goals = dict_env_parameters['n_goals']
         self.rows = dict_env_parameters['rows']
         self.cols = dict_env_parameters['cols']
         self.n_actions = int(dict_env_parameters['n_actions'])
@@ -55,7 +58,8 @@ class Training:
             # TODO: DQN implementation
             pass
 
-    def start_train(self, env, dir_save_metrics: str = None, name_sav_metrics: str = None, df_track: bool = False,
+    def start_train(self, env, dir_save_metrics: str = None, name_sav_metrics: str = None,
+                    df_track: bool = False, batch_update_df_track: int = None,
                     episodes_to_visualize: list = None, dir_save_video: str = None,
                     name_save_video: str = None):
 
@@ -65,8 +69,12 @@ class Training:
 
         first_visit = True
         initial_time_game = time.time()
+
         if df_track:
-            self.df_track = pd.DataFrame(columns=[])
+            self.cols_df_track = global_variables.define_columns_causal_table(self.n_agents, self.n_enemies,
+                                                                              self.n_goals)
+            self.dict_df_track = {key: [] for key in self.cols_df_track}
+            self.df_track = pd.DataFrame(columns=self.cols_df_track)
 
         pbar = tqdm(range(self.n_episodes))
         for episode in pbar:
@@ -90,6 +98,9 @@ class Training:
             total_episode_reward = 0
             step_for_episode = 0
             done = False
+
+            """if df_track:
+                self."""
 
             initial_time_episode = time.time()
             while not done:
@@ -123,10 +134,8 @@ class Training:
                         actions.append(action)
                         env.step_enemies()
 
-                    current_states = current_states.copy()
-                    # print('Current', current_states)
+                    current_states = current_states.copy()  # needed, pay attention in remove it
                     next_states = env.step_agents(actions)
-                    # print('Next', next_states, 'Current', current_states)
                     if if_visualization:
                         env.movement_gui(episode, step_for_episode)
 
@@ -144,8 +153,8 @@ class Training:
                     step_for_episode += 1
 
                     if df_track:
-                        self._update_df(actions, current_states, next_states, rewards, enemies_nearby_agents,
-                                        goals_nearby_agents)
+                        self._update_dict_track(actions, current_states, next_states, rewards, enemies_nearby_agents,
+                                                goals_nearby_agents)
 
                     if if_lose:
                         current_states = env.reset(if_reset_n_time_loser=False)
@@ -156,6 +165,10 @@ class Training:
                     # TODO: implement here the timeout condition
 
             self.algorithm.update_exp_fact(episode)
+
+            if df_track and len(self.dict_df_track[self.cols_df_track[0]]) > batch_update_df_track:
+                self._define_df_track()
+                self.dict_df_track = {key: [] for key in self.cols_df_track}
 
             if if_visualization and name_save_video is not None:
                 dir_save = f'{global_variables.GLOBAL_PATH_REPO}/Videos/{dir_save_video}'
@@ -173,36 +186,44 @@ class Training:
 
             # TODO: saving metrics
 
-    def _update_df(self, actions, current_states, next_states, rewards, enemies_nearby_agents, goals_nearby_agents):
+        if df_track:
+            self._define_df_track()
+
+    def _update_dict_track(self, actions, current_states, next_states, rewards, enemies_nearby_agents,
+                           goals_nearby_agents):
         n_agents = len(actions)
         n_enemies = len(enemies_nearby_agents[0])
         n_goals = len(goals_nearby_agents[0])
-        keys = global_variables.define_columns_causal_table(n_agents, n_enemies, n_goals)
-        dict_for_df = {key: None for key in keys}
 
         sub = next_states - current_states
-        # print('C_U ', current_states, 'Next U ', next_states, '\n')
         for agent in range(n_agents):
             deltaY = sub[agent][0]
             deltaX = sub[agent][1]
-            dict_for_df[
-                f'{global_variables.LABEL_COL_DELTAX}_{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}'] = deltaX
-            dict_for_df[
-                f'{global_variables.LABEL_COL_DELTAY}_{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}'] = deltaY
-            dict_for_df[f'{global_variables.LABEL_COL_REWARD}_{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}'] = \
-                rewards[agent]
-            dict_for_df[f'{global_variables.LABEL_COL_ACTION}_{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}'] = \
-                actions[agent]
+            self.dict_df_track[
+                f'{global_variables.LABEL_COL_DELTAX}_{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}'].append(
+                deltaX)
+            self.dict_df_track[
+                f'{global_variables.LABEL_COL_DELTAY}_{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}'].append(
+                deltaY)
+            self.dict_df_track[
+                f'{global_variables.LABEL_COL_REWARD}_{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}'].append(
+                rewards[agent])
+            self.dict_df_track[
+                f'{global_variables.LABEL_COL_ACTION}_{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}'].append(
+                actions[agent])
             for enemy in range(n_enemies):
-                dict_for_df[
-                    f'{global_variables.LABEL_ENEMY_CAUSAL_TABLE}{enemy}_Nearby_{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}'] = \
-                    enemies_nearby_agents[agent][enemy]
+                self.dict_df_track[
+                    f'{global_variables.LABEL_ENEMY_CAUSAL_TABLE}{enemy}_Nearby_{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}'].append(
+                    enemies_nearby_agents[agent][enemy])
             for goal in range(n_goals):
-                dict_for_df[
-                    f'{global_variables.LABEL_GOAL_CAUSAL_TABLE}{goal}_Nearby_{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}'] = \
-                    goals_nearby_agents[agent][goal]
+                self.dict_df_track[
+                    f'{global_variables.LABEL_GOAL_CAUSAL_TABLE}{goal}_Nearby_{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}'].append(
+                    goals_nearby_agents[agent][goal])
 
-        self.df_track = self.df_track.append(dict_for_df, ignore_index=True)
+    def _define_df_track(self):
+        new_df_track = pd.DataFrame(self.dict_df_track)
+        new_df_track = new_df_track.applymap(lambda x: global_variables.VALUE_ENTITY_FAR if pd.isna(x) else x)
+        self.df_track = pd.concat([self.df_track, new_df_track], ignore_index=True)
 
     def get_df_track(self):
         return self.df_track
@@ -223,7 +244,6 @@ if __name__ == '__main__':
     # Create an environment
     env = CustomEnv(dict_env_params, False)
 
-    # TODO: implement random agent and "get_table" method
     for label_kind_of_alg in [global_variables.LABEL_RANDOM_AGENT, global_variables.LABEL_Q_LEARNING]:
 
         if label_kind_of_alg == global_variables.LABEL_RANDOM_AGENT:
@@ -232,12 +252,13 @@ if __name__ == '__main__':
                                    f'{label_kind_of_alg}_{global_variables.LABEL_VANILLA}',
                                    f'{label_exploration_strategy}')
             # Train the agent
-            class_train.start_train(env, [], [],
-                                    False, [],
-                                    'Comparison123'
-                                    f'{label_kind_of_alg}_{global_variables.LABEL_VANILLA}_{label_exploration_strategy}')
+            class_train.start_train(env, dir_save_metrics=None, name_sav_metrics=None,
+                                    df_track=False, batch_update_df_track=1000,
+                                    episodes_to_visualize=[], dir_save_video='Comparison123',
+                                    name_save_video=f'{label_kind_of_alg}_{global_variables.LABEL_VANILLA}_{label_exploration_strategy}')
 
-            class_train.get_df_track().to_excel(f'{global_variables.GLOBAL_PATH_REPO}/mario.xlsx')
+            class_train.get_df_track().to_excel(f'{global_variables.GLOBAL_PATH_REPO}/df_track.xlsx')
+
         else:
             for label_exploration_strategy in [global_variables.LABEL_SOFTMAX_ANNEALING,
                                                global_variables.LABEL_THOMPSON_SAMPLING,
@@ -247,6 +268,6 @@ if __name__ == '__main__':
                                        f'{label_exploration_strategy}')
                 # Train the agent
                 class_train.start_train(env, [], [],
-                                        True, [],
+                                        True, None, [],
                                         'Comparison123'
                                         f'{label_kind_of_alg}_{global_variables.LABEL_VANILLA}_{label_exploration_strategy}')

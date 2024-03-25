@@ -43,13 +43,13 @@ class CausalInference:
                 single_row = df_only_nearbies.loc[episode].tolist()
 
                 if df_start.loc[episode, global_variables.COL_REWARD] == global_variables.VALUE_REWARD_LOSER_PAPER:
-                    enemy_nearbies_true = [s for s in single_row if s != global_variables.VAlUE_ENTITY_FAR]
+                    enemy_nearbies_true = [s for s in single_row if s != global_variables.VALUE_ENTITY_FAR]
                     action_agent = df_start.loc[episode, global_variables.COL_ACTION]
 
                     if action_agent in enemy_nearbies_true:
                         new_column.append(action_agent)
                     else:
-                        new_column.append(global_variables.VAlUE_ENTITY_FAR)
+                        new_column.append(global_variables.VALUE_ENTITY_FAR)
                 else:
                     new_column.append(random.choice(single_row))
 
