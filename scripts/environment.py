@@ -11,27 +11,15 @@ from collections import deque
 from gymnasium.spaces import Discrete
 import pygame.camera
 import os
+import shutil
 from typing import Tuple
 
+import global_variables
+from global_variables import VALUE_AGENT_CELL, VALUE_GOAL_CELL, VALUE_EMPTY_CELL, VALUE_WALL_CELL, VALUE_ENEMY_CELL, \
+    VAlUE_ENTITY_FAR, KEY_SAME_ENEMY_ACTIONS, KEY_RANDOM_ENEMY_ACTIONS, LEN_PREDEFINED_ENEMIES_ACTIONS, \
+    N_WALLS_COEFFICIENT, DELAY_VISUALIZATION_VIDEO, FPS_video
+
 warnings.filterwarnings("ignore")
-
-KEY_SAME_ENEMY_ACTIONS = 'same_sequence'
-KEY_RANDOM_ENEMY_ACTIONS = 'random'
-
-VALUE_WALL_CELL = -2
-VALUE_ENEMY_CELL = -1
-VALUE_EMPTY_CELL = 0
-VALUE_AGENT_CELL = 1
-VALUE_GOAL_CELL = 2
-
-N_WALLS_COEFFICIENT = 2
-
-VAlUE_ENTITY_FAR = 50
-
-len_predefined_enemy_actions = 20
-
-DELAY_VISUALIZATION_VIDEO = 5
-FPS_video = 3
 
 
 class CustomEnv:
@@ -39,7 +27,7 @@ class CustomEnv:
 
         self.enemy_positions = None
         self.walls_positions = None
-        self.goal_nearby = None
+        self.goals_nearby = None
         self.enemies_nearby = None
         self.agents_positions = None
         self.value_agent_cell = VALUE_AGENT_CELL
@@ -84,7 +72,7 @@ class CustomEnv:
         else:
             self.enemies_actions = env_info['enemies_actions']
             if self.enemies_actions == self.key_same_enemy_actions:
-                self.len_predefined_enemy_actions = len_predefined_enemy_actions
+                self.len_predefined_enemy_actions = LEN_PREDEFINED_ENEMIES_ACTIONS
                 self.n_steps_same_enemies_actions = 0
                 self.predefined_enemy_actions = np.zeros((self.n_enemies, self.len_predefined_enemy_actions))
                 for enemy in range(self.n_enemies):
@@ -234,11 +222,12 @@ class CustomEnv:
                 self.enemy_positions[n] = self._apply_action(pos_xy_enemy, action)
             self.n_steps_same_enemies_actions += 1
 
-    def step_agents(self, actions: int) -> np.ndarray:
-        # TODO: multi-agent settings
+    def step_agents(self, actions: list) -> np.ndarray:
+        pos_agents = self.agents_positions.copy()
         for agent in range(self.n_agents):
-            pos_xy = self.agents_positions[agent]
+            pos_xy = pos_agents[agent]
             action = actions[agent]
+
             self.agents_positions[agent] = self._apply_action(pos_xy, action)
 
         return self.agents_positions
@@ -281,26 +270,32 @@ class CustomEnv:
             self.n_times_loser = 0
 
         self.enemies_nearby = self.reset_enemies_nearby.copy()
-        self.goal_nearby = self.reset_goal_nearby
+        self.goals_nearby = self.reset_goal_nearby.copy()
         self.agents_positions = self.agent_positions_for_reset.copy()
         self.enemy_positions = self.enemy_positions_for_reset.copy()
 
         return self.agents_positions
 
-    def get_nearby_agent(self) -> Tuple[np.ndarray, int]:
+    def get_nearby_agent(self) -> Tuple[np.ndarray, np.ndarray]:
 
-        self.enemies_nearby = np.full(self.n_enemies, self.value_entity_far)
-        self.goal_nearby = np.full(self.n_goals, self.value_entity_far)
+        def _remove_value(arr, value):
+            arr = np.array(arr)
+            return np.where(arr == value, np.nan, arr)
+
+        self.enemies_nearby = np.full((self.n_agents, self.n_enemies), self.value_entity_far)
+        self.goals_nearby = np.full((self.n_agents, self.n_goals), self.value_entity_far)
 
         for agent in range(self.n_agents):
             pos_xy_agent = self.agents_positions[agent]
             for m, pos_xy_goal in enumerate(self.goal_positions):
-                self.goal_nearby[m] = self._get_direction(pos_xy_agent, pos_xy_goal)
+                self.goals_nearby[agent][m] = self._get_direction(pos_xy_agent, pos_xy_goal)
 
             for n, pos_xy_enemy in enumerate(self.enemy_positions):
-                self.enemies_nearby[n] = self._get_direction(pos_xy_agent, pos_xy_enemy)
+                self.enemies_nearby[agent][n] = self._get_direction(pos_xy_agent, pos_xy_enemy)
 
-        return self.enemies_nearby, self.goal_nearby
+        self.enemies_nearby = _remove_value(self.enemies_nearby, self.value_entity_far)
+        self.goals_nearby = _remove_value(self.goals_nearby, self.value_entity_far)
+        return self.enemies_nearby, self.goals_nearby
 
     def init_gui(self, algorithm: str, exploration_strategy: str, n_episodes: int, path_images: str):
 
@@ -326,7 +321,6 @@ class CustomEnv:
                 new_folder_path = os.path.join(base_dir, new_folder_name)
                 try:
                     os.makedirs(new_folder_path)
-                    print(f"Created folder: {new_folder_path}")
                     return new_folder_path
                 except FileExistsError:
                     next_number += 1
@@ -473,14 +467,11 @@ class CustomEnv:
         # Release the VideoWriter object
         out.release()
 
-        # print(f"Video created and saved to: {os.path.abspath(output_path)}")
+        # Delete folder with temp images for video
+        shutil.rmtree(self.dir_temp_saving_images)
 
     def _init_actions(self):
-        self.dict_possible_actions = {0: np.array([0, 0]),  # stop
-                                      1: np.array([1, 0]),  # up
-                                      2: np.array([-1, 0]),  # down
-                                      3: np.array([0, 1]),  # right
-                                      4: np.array([0, -1])}  # left
+        self.dict_possible_actions = global_variables.DICT_IMPLEMENTED_ACTIONS
         if len(self.dict_possible_actions.keys()) < self.n_actions:
             raise AssertionError(f'the number of implemented actions is less than expected')
 
