@@ -3,6 +3,9 @@ import os
 import numpy as np
 import pandas as pd
 
+# TODO: RIORDINARE COME DIO COMANDA
+
+
 GLOBAL_PATH_REPO = os.path.dirname(os.path.abspath(__file__))
 seed_values = np.load(f'{GLOBAL_PATH_REPO}/seed_values.npy')
 N_ACTIONS_PAPER = 5
@@ -48,7 +51,7 @@ DICT_OTHER_PARAMETERS_PAPER = {'WHO_MOVES_FIRST': 'enemy',
                                'TIMEOUT_IN_HOURS': 4,
                                'KIND_TH_CHECKS_CAUSAL_INFERENCE': 'consecutive',
                                'TH_CHECKS_CAUSAL_INFERENCE': 3,
-                               'N_EPISODES': 300}
+                               'N_EPISODES': 30}
 
 " ******************************************************************************************************************** "
 
@@ -105,4 +108,4 @@ VALUE_REWARD_LOSER_PAPER = -1
 VALUE_REWARD_ALIVE_PAPER = 0
 VALUE_REWARD_WINNER_PAPER = 1
 
-CAUSAL_TABLE_OFFLINE = pd.read_pickle(f'{GLOBAL_PATH_REPO}/scripts/ground_truth_causal_table.pkl')
+PATH_CAUSAL_TABLE_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/ground_truth_causal_table.pkl'

@@ -1,10 +1,7 @@
 import numpy as np
-import pandas as pd
 from gymnasium.spaces import Discrete
 import random
 import global_variables
-from scripts.algorithms import exploration_strategies
-from scripts.environment import CustomEnv
 
 
 # TODO: the problem for the causality is on the deltaX and deltaY of the actions, check this aspect in the causal table

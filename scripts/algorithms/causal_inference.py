@@ -215,6 +215,8 @@ class CausalInference:
         return table
 
     def return_causal_table(self):
+        self.table.dropna(inplace=True)
+        self.table.reset_index(drop=True, inplace=True)
         return self.table
 
     """

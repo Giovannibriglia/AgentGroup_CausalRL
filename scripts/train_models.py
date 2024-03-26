@@ -6,7 +6,8 @@ from gymnasium.spaces import Discrete
 import random
 from tqdm.auto import tqdm
 import global_variables
-from scripts.algorithms.q_learning import QLearning
+from scripts.algorithms.dqn_agent import DQNAgent
+from scripts.algorithms.q_learning_agent import QLearningAgent
 from scripts.algorithms.random_agent import RandomAgent
 from scripts.environment import CustomEnv
 
@@ -48,15 +49,17 @@ class Training:
         self.th_CI = dict_other_params['TH_CHECKS_CAUSAL_INFERENCE']
         self.n_episodes = dict_other_params['N_EPISODES']
 
-        if global_variables.LABEL_Q_LEARNING in kind_of_alg:
-            self.algorithm = QLearning(dict_env_parameters, dict_learning_parameters, dict_other_params, kind_of_alg,
-                                       exploration_strategy)
-        elif global_variables.LABEL_RANDOM_AGENT in kind_of_alg:
+        if global_variables.LABEL_Q_LEARNING in self.kind_of_alg:
+            self.algorithm = QLearningAgent(dict_env_parameters, dict_learning_parameters, dict_other_params, kind_of_alg,
+                                            exploration_strategy)
+        elif global_variables.LABEL_RANDOM_AGENT in self.kind_of_alg:
             self.algorithm = RandomAgent(dict_env_parameters, dict_learning_parameters, dict_other_params, kind_of_alg,
                                          exploration_strategy)
-        elif global_variables.LABEL_DQN in kind_of_alg:
-            # TODO: DQN implementation
-            pass
+        elif global_variables.LABEL_DQN in self.kind_of_alg:
+            self.algorithm = DQNAgent(dict_env_parameters, dict_learning_parameters, dict_other_params, kind_of_alg,
+                                         exploration_strategy)
+        else:
+            raise AssertionError(f'{self.kind_of_alg} chosen not implemented')
 
     def start_train(self, env, dir_save_metrics: str = None, name_sav_metrics: str = None,
                     df_track: bool = False, batch_update_df_track: int = 1000,
@@ -112,13 +115,27 @@ class Training:
                         env.step_enemies()
                         if df_track:
                             enemies_nearby_agents, goals_nearby_agents = env.get_nearby_agent()
+
                         if global_variables.LABEL_CAUSAL in self.kind_of_alg:
                             enemies_nearby_agents, goals_nearby_agents = env.get_nearby_agent()
-                            action = self.algorithm.select_action(current_states[agent_n],
+                            if global_variables.LABEL_DQN in self.kind_of_alg:
+                                general_state = np.zeros(self.rows * self.cols)
+                                general_state[current_states[agent_n][0] * self.rows + current_states[agent_n][1]] = 1
+                                action = self.algorithm.select_action(general_state,
                                                                   enemies_nearby_agents[agent_n],
                                                                   goals_nearby_agents[agent_n])
+                            else:
+                                action = self.algorithm.select_action(current_states[agent_n],
+                                                                  enemies_nearby_agents[agent_n],
+                                                                  goals_nearby_agents[agent_n])
+
                         else:
-                            action = self.algorithm.select_action(current_states[agent_n])
+                            if global_variables.LABEL_DQN in self.kind_of_alg:
+                                general_state = np.zeros(self.rows * self.cols)
+                                general_state[current_states[agent_n][0] * self.rows + current_states[agent_n][1]] = 1
+                                action = self.algorithm.select_action(general_state)
+                            else:
+                                action = self.algorithm.select_action(current_states[agent_n])
                         actions.append(action)
 
                     elif self.who_moves_first == 'agent':
@@ -126,11 +143,23 @@ class Training:
                             enemies_nearby_agents, goals_nearby_agents = env.get_nearby_agent()
                         if global_variables.LABEL_CAUSAL in self.kind_of_alg:
                             enemies_nearby_agents, goals_nearby_agents = env.get_nearby_agent()
-                            action = self.algorithm.select_action(current_states[agent_n],
-                                                                  enemies_nearby_agents[agent_n],
-                                                                  goals_nearby_agents[agent_n])
+                            if global_variables.LABEL_DQN in self.kind_of_alg:
+                                general_state = np.zeros(self.rows * self.cols)
+                                general_state[current_states[agent_n][0] * self.rows + current_states[agent_n][1]] = 1
+                                action = self.algorithm.select_action(general_state,
+                                                                      enemies_nearby_agents[agent_n],
+                                                                      goals_nearby_agents[agent_n])
+                            else:
+                                action = self.algorithm.select_action(current_states[agent_n],
+                                                                      enemies_nearby_agents[agent_n],
+                                                                      goals_nearby_agents[agent_n])
                         else:
-                            action = self.algorithm.select_action(current_states[agent_n])
+                            if global_variables.LABEL_DQN in self.kind_of_alg:
+                                general_state = np.zeros(self.rows * self.cols)
+                                general_state[current_states[agent_n][0] * self.rows + current_states[agent_n][1]] = 1
+                                action = self.algorithm.select_action(general_state)
+                            else:
+                                action = self.algorithm.select_action(current_states[agent_n])
                         actions.append(action)
                         env.step_enemies()
 
@@ -142,12 +171,14 @@ class Training:
                     rewards, dones, if_loses = env.check_winner_gameover_agents()
                     if_lose = if_loses[agent_n]
                     done = dones[agent_n]
-                    self.algorithm.update_Q_or_memory(current_states[agent_n], actions[agent_n], rewards[agent_n],
-                                                      next_states[agent_n])
-                    # TODO: add these for DQN
-                    """
-                    agent.optimize_model()
-                    agent.update_target_net()"""
+                    if global_variables.LABEL_DQN in self.kind_of_alg:
+                        general_next_state = np.zeros(self.rows * self.cols)
+                        general_next_state[next_states[agent_n][0] * self.rows + next_states[agent_n][1]] = 1
+                        self.algorithm.update_Q_or_memory(general_state, actions[agent_n], rewards[agent_n],
+                                                          general_next_state)
+                    else:
+                        self.algorithm.update_Q_or_memory(current_states[agent_n], actions[agent_n], rewards[agent_n],
+                                                          next_states[agent_n])
 
                     total_episode_reward += rewards[agent_n]
                     step_for_episode += 1
@@ -230,44 +261,40 @@ class Training:
 
 
 if __name__ == '__main__':
-    dict_env_params = {'rows': 5, 'cols': 5, 'n_agents': 1, 'n_enemies': 2, 'n_goals': 1,
-                       'n_actions': global_variables.N_ACTIONS_PAPER,
-                       'if_maze': False,
-                       'value_reward_alive': global_variables.VALUE_REWARD_ALIVE_PAPER,
-                       'value_reward_winner': global_variables.VALUE_REWARD_WINNER_PAPER,
-                       'value_reward_loser': global_variables.VALUE_REWARD_LOSER_PAPER,
-                       'seed_value': 4, 'enemies_actions': 'random', 'env_type': 'numpy',
-                       'predefined_env': None}
-    dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
-    dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
+    for x in range(5):
+        seed_value = global_variables.seed_values[x]
+        dict_env_params = {'rows': 5, 'cols': 5, 'n_agents': 1, 'n_enemies': 2, 'n_goals': 1,
+                           'n_actions': global_variables.N_ACTIONS_PAPER,
+                           'if_maze': False,
+                           'value_reward_alive': global_variables.VALUE_REWARD_ALIVE_PAPER,
+                           'value_reward_winner': global_variables.VALUE_REWARD_WINNER_PAPER,
+                           'value_reward_loser': global_variables.VALUE_REWARD_LOSER_PAPER,
+                           'seed_value': seed_value, 'enemies_actions': 'random', 'env_type': 'numpy',
+                           'predefined_env': None}
+        dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
+        dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
 
-    # Create an environment
-    environment = CustomEnv(dict_env_params, False)
+        # Create an environment
+        environment = CustomEnv(dict_env_params, False)
 
-    for label_kind_of_alg in [global_variables.LABEL_RANDOM_AGENT, global_variables.LABEL_Q_LEARNING]:
+        for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
 
-        if label_kind_of_alg == global_variables.LABEL_RANDOM_AGENT:
-            label_exploration_strategy = 'random'
-            class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
-                                   f'{label_kind_of_alg}_{global_variables.LABEL_VANILLA}',
-                                   f'{label_exploration_strategy}')
-            # Train the agent
-            class_train.start_train(environment, dir_save_metrics=None, name_sav_metrics=None,
-                                    df_track=False, batch_update_df_track=1000,
-                                    episodes_to_visualize=[], dir_save_video='Comparison123',
-                                    name_save_video=f'{label_kind_of_alg}_{global_variables.LABEL_VANILLA}_{label_exploration_strategy}')
+            for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_VANILLA]:
 
-            class_train.get_df_track().to_excel(f'{global_variables.GLOBAL_PATH_REPO}/df_track.xlsx')
+                for label_exploration_strategy in [global_variables.LABEL_SOFTMAX_ANNEALING,
+                                                   global_variables.LABEL_THOMPSON_SAMPLING,
+                                                   global_variables.LABEL_BOLTZMANN_MACHINE,
+                                                   global_variables.LABEL_EPSILON_GREEDY]:
 
-        else:
-            for label_exploration_strategy in [global_variables.LABEL_SOFTMAX_ANNEALING,
-                                               global_variables.LABEL_THOMPSON_SAMPLING,
-                                               global_variables.LABEL_EPSILON_GREEDY]:
-                class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
-                                       f'{label_kind_of_alg}_{global_variables.LABEL_VANILLA}',
-                                       f'{label_exploration_strategy}')
-                # Train the agent
-                class_train.start_train(environment, [], [],
-                                        True, None, [],
-                                        'Comparison123'
-                                        f'{label_kind_of_alg}_{global_variables.LABEL_VANILLA}_{label_exploration_strategy}')
+                    class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
+                                           f'{label_kind_of_alg}_{label_kind_of_alg2}',
+                                           f'{label_exploration_strategy}')
+                    # Train the agent
+                    class_train.start_train(environment, df_track=False, episodes_to_visualize=[0, 500])
+
+            """
+            class_train.start_train(environment, [], [],
+                                    False, None, [0, 500],
+                                    'Comparison123',
+                                    f'{label_kind_of_alg}_{global_variables.LABEL_VANILLA}_{label_exploration_strategy}')
+            """

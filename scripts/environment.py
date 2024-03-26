@@ -341,8 +341,8 @@ class CustomEnv:
         self.font_size = 20
         self.FONT = pygame.font.SysFont('comicsans', self.font_size)
 
-        fix_size_width = 900
-        fix_size_height = 750
+        fix_size_width = 1080
+        fix_size_height = 720
         WIDTH, HEIGHT = fix_size_width - self.font_size * 2, fix_size_height - self.font_size * 2
         self.WINDOW = pygame.display.set_mode((fix_size_width, fix_size_height))
         pygame.display.set_caption('Game')
@@ -501,8 +501,7 @@ class CustomEnv:
         # Replace the numbers in the matrix with their names
         named_matrix = np.vectorize(lambda x: self.number_names_grid.get(x, str(x)))(self.grid_for_game)
         # Print the named matrix
-        print(named_matrix)
-        print('\n')
+        print(named_matrix, '\n')
         time.sleep(2)
 
 

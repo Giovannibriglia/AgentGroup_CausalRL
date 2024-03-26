@@ -11,10 +11,8 @@ The objective of this simulation is to address the inherent tradeoff within the 
 inference. Specifically, our aim is to determine the optimal number of episodes needed to reliably generate the 
 correct causal table for varying numbers of enemies and grid sizes. 
  
-The simulation will yield two distinct outcomes:
-  1) A recommended set of 'batch' episodes for utilization in algorithms incorporating online causal inference.
+The simulation will yield a recommended set of 'batch' episodes for utilization in algorithms incorporating online causal inference.
    This quantity will vary depending on factors such as grid size and the count of adversaries within the environment.
-  2) The causal table utilized within algorithms featuring offline causal inference, which has already been generated.
 """
 
 
@@ -34,7 +32,7 @@ def prepare_df_for_comparison(df1: pd.DataFrame) -> pd.DataFrame:
     return check_df1
 
 
-GROUND_TRUTH_CAUSAL_TABLE = prepare_df_for_comparison(global_variables.CAUSAL_TABLE_OFFLINE)
+GROUND_TRUTH_CAUSAL_TABLE = prepare_df_for_comparison(pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}'))
 
 N_SIMULATIONS_CONSIDERED = 6
 N_ENEMIES_CONSIDERED = [2, 5, 10]
