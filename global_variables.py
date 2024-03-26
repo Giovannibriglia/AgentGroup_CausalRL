@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 GLOBAL_PATH_REPO = os.path.dirname(os.path.abspath(__file__))
-
+seed_values = np.load(f'{GLOBAL_PATH_REPO}/seed_values.npy')
 N_ACTIONS_PAPER = 5
 DICT_IMPLEMENTED_ACTIONS = {0: np.array([0, 0]),  # stop
                             1: np.array([1, 0]),  # down
@@ -77,6 +77,7 @@ FPS_video = 3
 LABEL_ENEMY_CAUSAL_TABLE = 'Enemy'
 LABEL_AGENT_CAUSAL_TABLE = 'Agent'
 LABEL_GOAL_CAUSAL_TABLE = 'Goal'
+LABEL_NEARBY_CAUSAL_TABLE = 'Nearby'
 LABEL_COL_REWARD = 'Reward'
 LABEL_COL_ACTION = 'Action'
 LABEL_COL_DELTAX = 'DeltaX'
@@ -94,9 +95,9 @@ def define_columns_causal_table(n_agents: int, n_enemies: int, n_goals: int) -> 
         cols.append(f'{LABEL_COL_REWARD}_{LABEL_AGENT_CAUSAL_TABLE}{agent}')
         cols.append(f'{LABEL_COL_ACTION}_{LABEL_AGENT_CAUSAL_TABLE}{agent}')
         for enemy in range(n_enemies):
-            cols.append(f'{LABEL_ENEMY_CAUSAL_TABLE}{enemy}_Nearby_{LABEL_AGENT_CAUSAL_TABLE}{agent}')
+            cols.append(f'{LABEL_ENEMY_CAUSAL_TABLE}{enemy}_{LABEL_NEARBY_CAUSAL_TABLE}_{LABEL_AGENT_CAUSAL_TABLE}{agent}')
         for goal in range(n_goals):
-            cols.append(f'{LABEL_GOAL_CAUSAL_TABLE}{goal}_Nearby_{LABEL_AGENT_CAUSAL_TABLE}{agent}')
+            cols.append(f'{LABEL_GOAL_CAUSAL_TABLE}{goal}_{LABEL_NEARBY_CAUSAL_TABLE}_{LABEL_AGENT_CAUSAL_TABLE}{agent}')
     return cols
 
 

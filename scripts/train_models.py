@@ -59,9 +59,18 @@ class Training:
             pass
 
     def start_train(self, env, dir_save_metrics: str = None, name_sav_metrics: str = None,
-                    df_track: bool = False, batch_update_df_track: int = None,
+                    df_track: bool = False, batch_update_df_track: int = 1000,
                     episodes_to_visualize: list = None, dir_save_video: str = None,
                     name_save_video: str = None):
+
+        if episodes_to_visualize is None:
+            episodes_to_visualize = []
+
+        if df_track:
+            self.cols_df_track = global_variables.define_columns_causal_table(self.n_agents, self.n_enemies,
+                                                                              self.n_goals)
+            self.dict_df_track = {key: [] for key in self.cols_df_track}
+            self.df_track = pd.DataFrame(columns=self.cols_df_track)
 
         dict_metrics = {f'{self.key_metric_rewards_for_episodes}': [],
                         f'{self.key_metric_steps_for_episodes}': [],
@@ -69,12 +78,6 @@ class Training:
 
         first_visit = True
         initial_time_game = time.time()
-
-        if df_track:
-            self.cols_df_track = global_variables.define_columns_causal_table(self.n_agents, self.n_enemies,
-                                                                              self.n_goals)
-            self.dict_df_track = {key: [] for key in self.cols_df_track}
-            self.df_track = pd.DataFrame(columns=self.cols_df_track)
 
         pbar = tqdm(range(self.n_episodes))
         for episode in pbar:
@@ -98,9 +101,6 @@ class Training:
             total_episode_reward = 0
             step_for_episode = 0
             done = False
-
-            """if df_track:
-                self."""
 
             initial_time_episode = time.time()
             while not done:
@@ -222,7 +222,7 @@ class Training:
 
     def _define_df_track(self):
         new_df_track = pd.DataFrame(self.dict_df_track)
-        new_df_track = new_df_track.applymap(lambda x: global_variables.VALUE_ENTITY_FAR if pd.isna(x) else x)
+        new_df_track = new_df_track.applymap(lambda x: int(global_variables.VALUE_ENTITY_FAR) if pd.isna(x) else x)
         self.df_track = pd.concat([self.df_track, new_df_track], ignore_index=True)
 
     def get_df_track(self):
