@@ -121,7 +121,7 @@ class CausalInference:
         return df_start
 
     def _training(self):
-        print(f'structuring model... {len(self.df)} actions')
+        print(f'structuring model through NOTEARS... {len(self.df)} actions')
         self.structureModel = from_pandas(self.df)
         self.structureModel.remove_edges_below_threshold(0.2)
 

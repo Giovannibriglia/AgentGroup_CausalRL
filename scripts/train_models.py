@@ -242,7 +242,7 @@ if __name__ == '__main__':
     dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
 
     # Create an environment
-    env = CustomEnv(dict_env_params, False)
+    environment = CustomEnv(dict_env_params, False)
 
     for label_kind_of_alg in [global_variables.LABEL_RANDOM_AGENT, global_variables.LABEL_Q_LEARNING]:
 
@@ -252,7 +252,7 @@ if __name__ == '__main__':
                                    f'{label_kind_of_alg}_{global_variables.LABEL_VANILLA}',
                                    f'{label_exploration_strategy}')
             # Train the agent
-            class_train.start_train(env, dir_save_metrics=None, name_sav_metrics=None,
+            class_train.start_train(environment, dir_save_metrics=None, name_sav_metrics=None,
                                     df_track=False, batch_update_df_track=1000,
                                     episodes_to_visualize=[], dir_save_video='Comparison123',
                                     name_save_video=f'{label_kind_of_alg}_{global_variables.LABEL_VANILLA}_{label_exploration_strategy}')
@@ -267,7 +267,7 @@ if __name__ == '__main__':
                                        f'{label_kind_of_alg}_{global_variables.LABEL_VANILLA}',
                                        f'{label_exploration_strategy}')
                 # Train the agent
-                class_train.start_train(env, [], [],
+                class_train.start_train(environment, [], [],
                                         True, None, [],
                                         'Comparison123'
                                         f'{label_kind_of_alg}_{global_variables.LABEL_VANILLA}_{label_exploration_strategy}')

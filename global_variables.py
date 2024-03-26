@@ -105,4 +105,4 @@ VALUE_REWARD_LOSER_PAPER = -1
 VALUE_REWARD_ALIVE_PAPER = 0
 VALUE_REWARD_WINNER_PAPER = 1
 
-CAUSAL_TABLE_OFFLINE = pd.read_pickle(f'{GLOBAL_PATH_REPO}/scripts/algorithms/offline_heuristic_table.pkl')
+CAUSAL_TABLE_OFFLINE = pd.read_pickle(f'{GLOBAL_PATH_REPO}/scripts/ground_truth_causal_table.pkl')
