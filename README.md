@@ -1,6 +1,6 @@
 # Generalisable Improvement to Q-Learning Exploration with Causal Models of Core Environment Mechanics
 
-This repository provides the Framework detailed in [Generalisable Improvement to Q-Learning Exploration with Causal Models of Core Environment Mechanics](https://www.ecai2024.eu/calls/main-track) that enables to integrate causal knowledge within the Q-Learning algorithm.
+This repository provides the Framework detailed in [Generalisable Improvement to Q-Learning Exploration with Causal Models of Core Environment Mechanics](https://www.ecai2024.eu/calls/main-track) that enables to integrate causal knowledge within the RL algorithms; in this paper we show how this can be done in Q-Learning and in DQN.
 
 ![abstract](abstract.png)
 
