@@ -9,38 +9,21 @@ This repository provides the Framework detailed in [Generalisable Improvement to
 
 **Maintainer**: [Giovanni Briglia](https://github.com/Giovannibriglia)  
 **Affiliation**: [Distributed and Pervasive Intelligence Group](https://dipi-unimore.netlify.app/) at [University of Modena and Reggio Emilia](https://www.unimore.it/)  
-**Contact**: [gbriglia@unimore.it](mailto:gbriglia@unimore.it)
+**Contact**: [stefano.mariani@unimore.it](mailto:stefano.mariani@unimore.it) and [giovanni.briglia@unimore.it](mailto:giovanni.briglia@unimore.it) 
 
 ## Project Structure
 
 ```
+*** TO COMPLETE ***
 results
-|__OfflineCI_tradeoff_episodes_enemies
-|__Results_Comparison123
-|__Results_Comparison4
-resume_metrics
-|__Metrics_Comparison123
-|__Metrics_Comparison4
+
 scripts
-|__algorithms
-   |__models.py
-|__env
-   |__env_game.py
-|__launch_experiments
-   |__launch_comparison123.py
-   |__launch_comparison4.py
-   |__launch_tradeoff_causality.py
-   |__offline_heuristic_table.pkl
-|__show_results
-   |__view_plots.py
-   |__plots.py
-|__utils
-   |__seed_values.npy
-   |__images_for_gui
-      |__bowser.png
-      |__goal.png
-      |__supermario.png
-      |__wall.png
+   |__algorithms
+      |__
+   |__launchers
+   
+   |__utils
+
 abstract.png
 LICENSE
 README
