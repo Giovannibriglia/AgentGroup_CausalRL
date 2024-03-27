@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-import pandas as pd
 
 # TODO: RIORDINARE COME DIO COMANDA
 
@@ -15,8 +14,8 @@ DICT_IMPLEMENTED_ACTIONS = {0: np.array([0, 0]),  # stop
                             3: np.array([0, 1]),  # right
                             4: np.array([0, -1])}  # left
 
-N_TRAINING_EPISODES = 10
-N_SIMULATIONS_PAPER = 3
+N_TRAINING_EPISODES = 3000
+N_SIMULATIONS_PAPER = 10
 GRID_SIZES_CONSIDERED_PAPER = [(5, 5), (10, 10)]
 N_ENEMIES_CONSIDERED_PAPER = [2, 5, 10]
 EPISODES_TO_VISUALIZE_PAPER = [0,
@@ -50,6 +49,7 @@ LIST_IMPLEMENTED_EXPLORATION_STRATEGIES = [f'{LABEL_EPSILON_GREEDY}', f'{LABEL_T
 KEY_METRIC_REWARDS_EPISODE = 'rewards_for_episodes'
 KEY_METRICS_STEPS_EPISODE = 'steps_for_episode'
 KEY_METRIC_TIME_EPISODE = 'time_for_episode'
+KEY_METRIC_TIMEOUT_CONDITION = 'if_timeout_occurred'
 KEY_METRIC_Q_TABLE = 'q_table'
 
 PATH_IMAGES_FOR_RENDER = f'{GLOBAL_PATH_REPO}/images_for_render'
@@ -57,8 +57,8 @@ PATH_IMAGES_FOR_RENDER = f'{GLOBAL_PATH_REPO}/images_for_render'
 DICT_LEARNING_PARAMETERS_PAPER = {'GAMMA': 0.99, 'LEARNING_RATE': 0.0001,
                                   'START_EXPLORATION_PROBABILITY': 1, 'MIN_EXPLORATION_PROBABILITY': 0.01,
                                   'EXPLORATION_GAME_PERCENT': 0.6,
-                                  'BATCH_SIZE': 64, 'TAU': 0.005, 'HIDDEN_LAYERS': 128, 'REPLAY_MEMORY_CAPACITY': 10000
-                                  }
+                                  'BATCH_SIZE': 64, 'TAU': 0.005, 'HIDDEN_LAYERS': 128, 'REPLAY_MEMORY_CAPACITY': 10000,
+                                  'KNOWLEDGE_TRANSFERRED': None}
 
 DICT_OTHER_PARAMETERS_PAPER = {'WHO_MOVES_FIRST': 'enemy',
                                'TIMEOUT_IN_HOURS': 4,

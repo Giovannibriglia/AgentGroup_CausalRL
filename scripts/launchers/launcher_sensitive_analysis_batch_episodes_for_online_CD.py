@@ -1,6 +1,8 @@
 import random
+
 import numpy as np
 import pandas as pd
+
 import global_variables
 from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.utils.environment import CustomEnv
@@ -79,7 +81,7 @@ for n_enemies in N_ENEMIES_CONSIDERED:
             dict_other_params['N_EPISODES'] = n_episodes
 
             # Create an environment
-            env = CustomEnv(dict_env_params, False)
+            env = CustomEnv(dict_env_params)
 
             class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                    f'{label_kind_of_alg}',

@@ -1,12 +1,10 @@
-import numpy as np
-import random
 import global_variables
 from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.utils.environment import CustomEnv
 from scripts.utils.train_models import Training
 
 """
-The aim of this function is to produce the 'ground truth' for the causal table. Given its significance, we opted for
+The aim of this script is to produce the 'ground truth' for the causal table. Given its significance, we opted for
  a substantial number of episodes to ensure its adequacy. Additionally, for the environment under consideration,
  we selected a 3x3 grid with one enemy and one goal. Lastly, the agent navigates using a random policy.
 
@@ -19,15 +17,15 @@ The result of this simulation is the causal table used in algorithms incorporati
 N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
-GRID_SIZE = (3, 3)
+GRID_SIZE = (5, 5)
 N_EPISODES = 10000
 
 label_kind_of_alg = global_variables.LABEL_RANDOM_AGENT
 label_exploration_strategy = 'random'
 
 seed_value = global_variables.seed_values[0]
-np.random.seed(seed_value)
-random.seed(seed_value)
+"""np.random.seed(seed_value)
+random.seed(seed_value)"""
 
 dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
 dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
@@ -44,15 +42,15 @@ dict_env_params = {'rows': rows, 'cols': cols, 'n_agents': N_AGENTS, 'n_enemies'
 dict_other_params['N_EPISODES'] = N_EPISODES
 
 # Create an environment
-env = CustomEnv(dict_env_params, False)
+env = CustomEnv(dict_env_params)
 
 class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                        f'{label_kind_of_alg}',
                        f'{label_exploration_strategy}')
 
-class_train.start_train(env, df_track=True)
+class_train.start_train(env, batch_update_df_track=1000)
 df_track = class_train.get_df_track()
 out_causal_table = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS).return_causal_table()
 
 out_causal_table.to_excel(f'{global_variables.GLOBAL_PATH_REPO}/mario.xlsx')
-out_causal_table.to_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
+# out_causal_table.to_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')

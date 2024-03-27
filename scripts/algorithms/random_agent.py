@@ -1,6 +1,8 @@
+import random
+
 import numpy as np
 from gymnasium.spaces import Discrete
-import random
+
 import global_variables
 
 

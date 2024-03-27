@@ -2,6 +2,15 @@ import global_variables
 from scripts.utils.environment import CustomEnv
 from scripts.utils.train_models import Training
 
+"""The objective of this script is to conduct comparative analyses across various environments, algorithms (
+Q-Learning and DQN), exploration strategies (Epsilon-Greedy, Thompson Sampling, Boltzmann Machine, and Softmax 
+Annealing), and algorithm types (vanilla, with offline-extracted causal knowledge, with online-extracted causal 
+knowledge).
+
+The simulation results include metrics such as rewards for each episode, computation time for each episode, 
+final q-table (if available), the number of steps taken to complete each episode and number of timeout occurred, 
+along with accompanying videos."""
+
 
 def get_batch_episodes():
     # TODO: get batch of episodes from sensitive analysis
@@ -30,11 +39,11 @@ for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
             dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
 
             # Create an environment
-            environment = CustomEnv(dict_env_params, False)
+            environment = CustomEnv(dict_env_params)
 
             for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
 
-                for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE, ]:
+                for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_CAUSAL_ONLINE]:
 
                     for label_exploration_strategy in [global_variables.LABEL_SOFTMAX_ANNEALING,
                                                        global_variables.LABEL_THOMPSON_SAMPLING,
@@ -46,7 +55,7 @@ for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
 
                         add_name_dir_save = 'Maze' if if_maze else 'Grid' + f'{rows}x{cols}_{n_enemies}' + 'enemies' if n_enemies > 1 else 'enemy'
 
-                        dir_save_final = dir_save + add_name_dir_save
+                        dir_save_final = f'{dir_save}/{add_name_dir_save}'
                         name_save = f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_game{simulation_n}'
 
                         cond_online = label_kind_of_alg2 == global_variables.LABEL_CAUSAL_ONLINE

@@ -1,18 +1,16 @@
+import os
 import random
-import sys
 import re
+import shutil
 import time
 import warnings
+from typing import Tuple
+
 import cv2
 import numpy as np
 import pygame
-from queue import PriorityQueue
-from collections import deque
-from gymnasium.spaces import Discrete
 import pygame.camera
-import os
-import shutil
-from typing import Tuple
+from gymnasium.spaces import Discrete
 
 import global_variables
 from global_variables import VALUE_AGENT_CELL, VALUE_GOAL_CELL, VALUE_EMPTY_CELL, VALUE_WALL_CELL, VALUE_ENEMY_CELL, \
@@ -23,7 +21,7 @@ warnings.filterwarnings("ignore")
 
 
 class CustomEnv:
-    def __init__(self, env_info: dict, if_save_video: bool):
+    def __init__(self, env_info: dict):
 
         self.enemy_positions = None
         self.walls_positions = None
@@ -62,7 +60,6 @@ class CustomEnv:
         self.seed_value = env_info['seed_value']
         np.random.seed(self.seed_value)
         random.seed(self.seed_value)
-        self.if_save_video = if_save_video
 
         self._init_actions()
 
@@ -190,22 +187,22 @@ class CustomEnv:
             return path
 
         def __place_random_walls(path):
-            # Find empty positions where walls can be placed
-            empty_positions = np.argwhere(self.grid_for_game == 0)
 
-            # Remove positions occupied by enemies, goals, agents, and the path
-            for position in path:
-                empty_positions = empty_positions[np.logical_not(np.all(empty_positions == position, axis=1))]
+            cells_with_entity = np.transpose(np.where(self.grid_for_game == global_variables.VALUE_EMPTY_CELL))
+            empty_positions = np.concatenate((cells_with_entity, path))
 
-            # Shuffle the empty positions
-            np.random.shuffle(empty_positions)
+            if len(empty_positions) < self.n_walls:
+                print("Error: Insufficient empty cells.")
 
-            self.walls_positions = np.zeros((min(self.n_walls, len(empty_positions)), 2), dtype=int)
-            # Place walls randomly in the remaining empty positions
-            for i in range(min(self.n_walls, len(empty_positions))):
-                x, y = empty_positions[i]
-                self.walls_positions[i] = [x, y]
-                self.grid_for_game[x, y] = self.value_wall_cell
+            self.walls_positions = np.empty((self.n_walls, 2))
+
+            selected_positions = np.random.choice(len(empty_positions), self.n_walls, replace=False)
+
+            for n, idx in enumerate(selected_positions):
+                i, j = empty_positions[idx]
+                self.walls_positions[n] = [i, j]
+                self.grid_for_game[i, j] = global_variables.VALUE_WALL_CELL
+
 
         random_path = __generate_random_path()
         __place_random_walls(random_path)
@@ -297,8 +294,9 @@ class CustomEnv:
         self.goals_nearby = _remove_value(self.goals_nearby, self.value_entity_far)
         return self.enemies_nearby, self.goals_nearby
 
-    def init_gui(self, algorithm: str, exploration_strategy: str, n_episodes: int, path_images: str):
+    def init_gui(self, algorithm: str, exploration_strategy: str, n_episodes: int, path_images: str, save_video: bool):
 
+        self.save_video = save_video
         def __create_next_alg_folder(base_dir: str, core_word_path: str) -> str:
             # Ensure base directory exists
             if not os.path.exists(base_dir):
@@ -364,8 +362,9 @@ class CustomEnv:
         for _ in range(self.n_goals):
             self.pics_goals.append(pygame.transform.scale(pygame.image.load(goal_png), self.new_sizes))
 
-        self.dir_temp_saving_images = __create_next_alg_folder('../temp', f'{self.algorithm}')
-        self.count_img = 0
+        if self.save_video:
+            self.dir_temp_saving_images = __create_next_alg_folder('../temp', f'{self.algorithm}')
+            self.count_img = 0
 
     def movement_gui(self, current_episode: int, step_for_episode: int):
 
@@ -401,7 +400,7 @@ class CustomEnv:
 
         time_text = self.FONT.render(
             f'Episode: {current_episode}/{self.n_episodes} - Algorithm: {self.algorithm} - '
-            f'Exploration: {self.exploration_strategy} - '
+            # f'Exploration: {self.exploration_strategy} - '
             f'#Defeats: {self.n_times_loser - self.gui_n_defeats_start} - '
             f'#Actions: {step_for_episode}', True, 'white')
         self.WINDOW.blit(time_text, (10, 10))
@@ -412,14 +411,14 @@ class CustomEnv:
         pygame_image = cv2.cvtColor(pygame.surfarray.array3d(pygame.display.get_surface()), cv2.COLOR_RGB2BGR)
         pygame_image = cv2.rotate(pygame_image, cv2.ROTATE_90_CLOCKWISE)
         pygame_image = cv2.flip(pygame_image, 1)
+        if self.save_video:
+            cv2.imwrite(
+                f'{self.dir_temp_saving_images}/im{self.count_img}_{self.algorithm}_{current_episode}episode.jpeg',
+                pygame_image)
 
-        cv2.imwrite(
-            f'{self.dir_temp_saving_images}/im{self.count_img}_{self.algorithm}_{current_episode}episode.jpeg',
-            pygame_image)
+            self.count_img += 1
 
-        self.count_img += 1
-
-    def save_video(self, link_saving: str):
+    def video_saving(self, link_saving: str):
 
         def sort_key(filename):
             # Extract the numeric part from the filename using regular expression
@@ -477,6 +476,13 @@ class CustomEnv:
 
     def _apply_action(self, pos: np.ndarray, action: int) -> np.ndarray:
         new_pos = pos + self.dict_possible_actions[action]
+
+        if abs((new_pos[1] - pos[1]) - (new_pos[0] - pos[0])) > 1:
+            print('Start position: ', pos)
+            print('Action: ', action)
+            print('Final position: ', new_pos)
+            raise AssertionError('Actions has moved entity wrong')
+
         if self.__is_valid_position(new_pos) and not self.__is_wall(new_pos):
             return new_pos
         return pos.copy()
@@ -505,15 +511,3 @@ class CustomEnv:
         time.sleep(2)
 
 
-if __name__ == '__main__':
-    info = {'rows': 5, 'cols': 5, 'n_agents': 1, 'n_enemies': 5, 'n_goals': 1, 'n_actions': 5, 'if_maze': True,
-            'value_reward_alive': 0, 'value_reward_winner': 1, 'value_reward_loser': -1, 'seed_value': 4,
-            'enemies_actions': 'same_sequence', 'env_type': 'numpy', 'predefined_env': None}
-
-    env = CustomEnv(info, False)
-
-    env.step_enemies()
-
-    env.init_gui('QL', 3000, 'C:\\Users\giova\Documents\Research\CausalRL\images_for_render')
-
-    env.movement_gui(10, 4)

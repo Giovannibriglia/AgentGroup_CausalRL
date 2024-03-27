@@ -1,19 +1,12 @@
 import random
 import re
-import time
 import warnings
 from itertools import product
-from typing import Tuple
 
-import matplotlib.pyplot as plt
-import networkx as nx
-import numpy as np
 import pandas as pd
 from causalnex.inference import InferenceEngine
 from causalnex.network import BayesianNetwork
 from causalnex.structure.notears import from_pandas
-from tqdm import tqdm
-import os
 
 import global_variables
 
@@ -45,6 +38,8 @@ class CausalDiscovery:
         self.independents_var = None
         self.dependents_var = None
         self.table = None
+
+        # self._modify_action_values()
 
         self._training()
 
@@ -118,7 +113,7 @@ class CausalDiscovery:
         return df_start
 
     def _training(self):
-        print(f'structuring model through NOTEARS... {len(self.df)} actions')
+        print(f'structuring model through NOTEARS... {len(self.df)} timesteps')
         self.structureModel = from_pandas(self.df)
         self.structureModel.remove_edges_below_threshold(0.2)
 
@@ -138,7 +133,7 @@ class CausalDiscovery:
 
         print('do-calculus-2...')
         # resume results in a table
-        self.table = self.__apply_causal_discovery()
+        self.table = self.__perform_interventions()
 
     def __identify_ind_dep_variables(self):
         self.dependents_var = []
@@ -157,8 +152,21 @@ class CausalDiscovery:
                         best_key_before, max_value_before = max(before[feat].items(), key=lambda x: x[1])
                         best_key_after, max_value_after = max(after[feat].items(), key=lambda x: x[1])
 
-                        if best_key_after != best_key_before and round(max_value_after, 4) != round(
-                                1 / len(after[feat]), 4):
+                        uniform_probability_value = round(1 / len(after[feat]), 4)
+
+                        if best_key_after != best_key_before and round(max_value_after, 4) != uniform_probability_value:
+                        # if max_value_after > uniform_probability_value*1.01 and best_key_after != best_key_before:
+
+                            if var == 'Action_Agent0':
+                                print(f'\n{var} is classified as dependent because a consistent probability '
+                                      f'distribution occurred when do({feat} = {value})')
+                                print(feat, ' before intervention: ', before[feat])
+                                print(feat, ' after intervention: ', after[feat])
+                                print('Uniform probability value: ', round(1 / len(after[feat]), 4))
+                                print(
+                                    f'Best key before: {best_key_before}, max value before: {round(max_value_before, 4)}')
+                                print(f'Best key after: {best_key_after}, max value after: {round(max_value_after, 4)}\n')
+
                             count_var_value += 1
                     self.ie.reset_do(var)
 
@@ -167,16 +175,16 @@ class CausalDiscovery:
                     pass
 
             if count_var > 0:
-                # print(f'{var} --> {count_var} changes, internally caused ')
+                print(f'*{var} --> {count_var} changes, internally caused -> dependent')
                 self.dependents_var.append(var)
             else:
-                # print(f'{var} --> externally caused')
+                print(f'*{var} --> externally caused -> independent')
                 self.independents_var.append(var)
 
         print(f'**Independents vars: {self.independents_var}')
         print(f'**Dependents vars: {self.dependents_var}')
 
-    def __apply_causal_discovery(self) -> pd.DataFrame:
+    def __perform_interventions(self) -> pd.DataFrame:
         table = pd.DataFrame(columns=self.features_names)
 
         arrays = []
@@ -215,6 +223,23 @@ class CausalDiscovery:
         self.table.dropna(inplace=True)
         self.table.reset_index(drop=True, inplace=True)
         return self.table
+
+    def _modify_action_values(self):
+
+        columns_deltaX = [s for s in self.features_names if global_variables.LABEL_COL_DELTAX in s]
+        columns_deltaY = [s for s in self.features_names if global_variables.LABEL_COL_DELTAY in s]
+        columns_actions = [s for s in self.features_names if global_variables.LABEL_COL_ACTION in s]
+
+        for agent in range(self.n_agents):
+
+            col_deltaX = [s for s in columns_deltaX if f'{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}' in s][0]
+            col_deltaY = [s for s in columns_deltaY if f'{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}' in s][0]
+            col_action = [s for s in columns_actions if f'{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}' in s][0]
+
+            condition = (self.df[f'{col_deltaX}'] == 0) & (
+                        self.df[f'{col_deltaY}'] == 0) & (self.df[f'{col_action}'] != 0)
+
+            self.df.loc[condition, f'{col_action}'] = 0
 
     """
     def binarize_dataframe(self):

@@ -1,17 +1,18 @@
 import random
 from collections import namedtuple
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from gymnasium.spaces import Discrete
+
 from scripts.utils.dqn_class_and_memory import ClassDQN, ReplayMemory
 
 
 class EpsilonGreedyQAgent:
 
-    def __init__(self, dict_env_parameters, dict_learning_parameters, n_episodes, if_deep=False,
-                 predefined_q_table=None):
+    def __init__(self, dict_env_parameters, dict_learning_parameters, n_episodes, if_deep=False):
         self.rows = dict_env_parameters['rows']
         self.cols = dict_env_parameters['cols']
         self.n_actions = int(dict_env_parameters['n_actions'])
@@ -48,6 +49,7 @@ class EpsilonGreedyQAgent:
             self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=self.lr, amsgrad=True)
             self.memory = ReplayMemory(self.replay_memory_capacity)
         else:
+            predefined_q_table = dict_learning_parameters['KNOWLEDGE_TRANSFERRED']
             if predefined_q_table is not None:
                 self.q_table = predefined_q_table
             else:

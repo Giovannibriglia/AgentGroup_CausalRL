@@ -1,16 +1,19 @@
-import os
 import json
+import os
+import random
 import time
+
 import numpy as np
 import pandas as pd
 from gymnasium.spaces import Discrete
-import random
 from tqdm.auto import tqdm
+
 import global_variables
 from scripts.algorithms.dqn_agent import DQNAgent
 from scripts.algorithms.q_learning_agent import QLearningAgent
 from scripts.algorithms.random_agent import RandomAgent
 from scripts.utils.environment import CustomEnv
+from scripts.utils.numpy_encoder_json import NumpyEncoder
 
 
 class Training:
@@ -28,6 +31,7 @@ class Training:
         self.key_metric_rewards_for_episodes = global_variables.KEY_METRIC_REWARDS_EPISODE
         self.key_metric_steps_for_episodes = global_variables.KEY_METRICS_STEPS_EPISODE
         self.key_metric_average_time_for_episodes = global_variables.KEY_METRIC_TIME_EPISODE
+        self.key_metric_timeout_condition = global_variables.KEY_METRIC_TIMEOUT_CONDITION
         self.key_metric_q_table = global_variables.KEY_METRIC_Q_TABLE
 
         self.n_agents = dict_env_parameters['n_agents']
@@ -83,6 +87,7 @@ class Training:
         dict_metrics = {f'{self.key_metric_rewards_for_episodes}': [],
                         f'{self.key_metric_steps_for_episodes}': [],
                         f'{self.key_metric_average_time_for_episodes}': [],
+                        f'{self.key_metric_timeout_condition}': False,
                         f'{self.key_metric_q_table}': None}
 
         first_visit = True
@@ -104,8 +109,9 @@ class Training:
 
             if episode in episodes_to_visualize:
                 if_visualization = True
+                save_video = True if (name_save_videos is not None and dir_save_videos is not None) else False
                 env.init_gui(f'{self.kind_of_alg}_{self.exploration_strategy}', self.exploration_strategy,
-                             self.n_episodes, global_variables.PATH_IMAGES_FOR_RENDER)
+                             self.n_episodes, global_variables.PATH_IMAGES_FOR_RENDER, save_video)
             else:
                 if_visualization = False
 
@@ -182,7 +188,7 @@ class Training:
                         current_states = next_states
                 else:
                     print('***timeout condition***')
-                    # TODO: implement here the timeout condition
+                    dict_metrics[f'{self.key_metric_timeout_condition}'] = True
 
             self.algorithm.update_exp_fact(episode)
 
@@ -194,7 +200,7 @@ class Training:
             if if_visualization and name_save_videos is not None and dir_save_videos is not None:
                 dir_save = f'{global_variables.GLOBAL_PATH_REPO}/Videos/{dir_save_videos}'
                 os.makedirs(dir_save, exist_ok=True)
-                env.save_video(f'{dir_save}/{name_save_videos}_episode{episode}.mp4')
+                env.video_saving(f'{dir_save}/{name_save_videos}_episode{episode}.mp4')
 
             dict_metrics[f'{self.key_metric_rewards_for_episodes}'].append(total_episode_reward)
             dict_metrics[f'{self.key_metric_steps_for_episodes}'].append(step_for_episode)
@@ -208,13 +214,16 @@ class Training:
         # saving q_table if the agent is not DQN
         if global_variables.LABEL_Q_LEARNING in self.kind_of_alg:
             dict_metrics[f'{self.key_metric_q_table}'] = self.algorithm.return_q_table()
+        else:
+            dict_metrics[f'{self.key_metric_q_table}'] = None
 
         if name_save_metrics is not None and dir_save_metrics is not None:
             # os.makedirs(f'{global_variables.GLOBAL_PATH_REPO}/Results', exist_ok=True)
             dir_save = f'{global_variables.GLOBAL_PATH_REPO}/Results/{dir_save_metrics}'
             os.makedirs(dir_save, exist_ok=True)
-            with open(f'{dir_save}/{name_save_metrics}.json', 'w') as json_file:
-                json.dump(dict_metrics, json_file)
+
+            with open(f'{dir_save}/{name_save_metrics}.json', 'w') as f:
+                json.dump(dict_metrics, f, cls=NumpyEncoder)
 
         if batch_update_df_track is not None:
             self._define_df_track()
@@ -324,8 +333,8 @@ if __name__ == '__main__':
                     add_name_dir_save = 'Maze' if if_maze else 'Grid' + f'{rows}x{cols}_{n_enemies}' + 'enemies' if n_enemies > 1 else 'enemy'
 
                     class_train.start_train(environment,
-                                            #dir_save_metrics=f'Comparison/{add_name_dir_save}',
-                                            #name_save_metrics=f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_game{x}',
+                                            dir_save_metrics=f'Comparison/{add_name_dir_save}',
+                                            name_save_metrics=f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_game{x}',
                                             episodes_to_visualize=[0,
                                                                    int(global_variables.N_TRAINING_EPISODES / 3),
                                                                    int(global_variables.N_TRAINING_EPISODES * 0.66),

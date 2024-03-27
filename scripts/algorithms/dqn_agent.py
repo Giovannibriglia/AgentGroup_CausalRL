@@ -1,8 +1,10 @@
 import random
+
 import numpy as np
 import pandas as pd
 import torch
 from gymnasium.spaces import Discrete
+
 import global_variables
 from scripts.utils import exploration_strategies
 
