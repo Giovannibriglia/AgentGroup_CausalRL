@@ -15,6 +15,17 @@ DICT_IMPLEMENTED_ACTIONS = {0: np.array([0, 0]),  # stop
                             3: np.array([0, 1]),  # right
                             4: np.array([0, -1])}  # left
 
+N_TRAINING_EPISODES = 10
+N_SIMULATIONS_PAPER = 3
+GRID_SIZES_CONSIDERED_PAPER = [(5, 5), (10, 10)]
+N_ENEMIES_CONSIDERED_PAPER = [2, 5, 10]
+EPISODES_TO_VISUALIZE_PAPER = [0,
+                               int(N_TRAINING_EPISODES / 3),
+                               int(N_TRAINING_EPISODES * 0.66),
+                               N_TRAINING_EPISODES - 1]
+
+N_EPISODES_CONSIDERED_FOR_ANALYSIS_PAPER = [100, 250, 500, 1000]
+
 LABEL_RANDOM_AGENT = 'random'
 LABEL_Q_LEARNING = 'QL'
 LABEL_DQN = 'DQN'
@@ -39,6 +50,8 @@ LIST_IMPLEMENTED_EXPLORATION_STRATEGIES = [f'{LABEL_EPSILON_GREEDY}', f'{LABEL_T
 KEY_METRIC_REWARDS_EPISODE = 'rewards_for_episodes'
 KEY_METRICS_STEPS_EPISODE = 'steps_for_episode'
 KEY_METRIC_TIME_EPISODE = 'time_for_episode'
+KEY_METRIC_Q_TABLE = 'q_table'
+
 PATH_IMAGES_FOR_RENDER = f'{GLOBAL_PATH_REPO}/images_for_render'
 
 DICT_LEARNING_PARAMETERS_PAPER = {'GAMMA': 0.99, 'LEARNING_RATE': 0.0001,
@@ -51,7 +64,7 @@ DICT_OTHER_PARAMETERS_PAPER = {'WHO_MOVES_FIRST': 'enemy',
                                'TIMEOUT_IN_HOURS': 4,
                                'KIND_TH_CHECKS_CAUSAL_INFERENCE': 'consecutive',
                                'TH_CHECKS_CAUSAL_INFERENCE': 3,
-                               'N_EPISODES': 30}
+                               'N_EPISODES': N_TRAINING_EPISODES}
 
 " ******************************************************************************************************************** "
 
@@ -98,9 +111,11 @@ def define_columns_causal_table(n_agents: int, n_enemies: int, n_goals: int) -> 
         cols.append(f'{LABEL_COL_REWARD}_{LABEL_AGENT_CAUSAL_TABLE}{agent}')
         cols.append(f'{LABEL_COL_ACTION}_{LABEL_AGENT_CAUSAL_TABLE}{agent}')
         for enemy in range(n_enemies):
-            cols.append(f'{LABEL_ENEMY_CAUSAL_TABLE}{enemy}_{LABEL_NEARBY_CAUSAL_TABLE}_{LABEL_AGENT_CAUSAL_TABLE}{agent}')
+            cols.append(
+                f'{LABEL_ENEMY_CAUSAL_TABLE}{enemy}_{LABEL_NEARBY_CAUSAL_TABLE}_{LABEL_AGENT_CAUSAL_TABLE}{agent}')
         for goal in range(n_goals):
-            cols.append(f'{LABEL_GOAL_CAUSAL_TABLE}{goal}_{LABEL_NEARBY_CAUSAL_TABLE}_{LABEL_AGENT_CAUSAL_TABLE}{agent}')
+            cols.append(
+                f'{LABEL_GOAL_CAUSAL_TABLE}{goal}_{LABEL_NEARBY_CAUSAL_TABLE}_{LABEL_AGENT_CAUSAL_TABLE}{agent}')
     return cols
 
 

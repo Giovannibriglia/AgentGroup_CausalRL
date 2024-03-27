@@ -118,3 +118,9 @@ class QLearningAgent:
             possible_actions = selected_actions_goals
 
         return possible_actions
+
+    def return_q_table(self):
+        if self.exploration_strategy != global_variables.LABEL_THOMPSON_SAMPLING:
+            return self.agent.q_table
+        else:
+            return [self.agent.alpha, self.agent.beta]

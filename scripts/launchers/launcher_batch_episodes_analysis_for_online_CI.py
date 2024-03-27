@@ -2,7 +2,7 @@ import random
 import numpy as np
 import pandas as pd
 import global_variables
-from scripts.algorithms.causal_inference import CausalInference
+from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.environment import CustomEnv
 from scripts.train_models import Training
 
@@ -34,10 +34,10 @@ def prepare_df_for_comparison(df1: pd.DataFrame) -> pd.DataFrame:
 
 GROUND_TRUTH_CAUSAL_TABLE = prepare_df_for_comparison(pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}'))
 
-N_SIMULATIONS_CONSIDERED = 6
-N_ENEMIES_CONSIDERED = [2, 5, 10]
-N_EPISODES_CONSIDERED = [100]  # , 250, 500, 1000
-GRID_SIZES_CONSIDERED = [(5, 5)]  # , (10, 10)
+N_SIMULATIONS_CONSIDERED = 6      # global_variables.N_SIMULATIONS_PAPER
+N_ENEMIES_CONSIDERED = [1, 2]     # global_variables.N_ENEMIES_CONSIDERED_PAPER
+N_EPISODES_CONSIDERED = [100]     # global_variables.N_EPISODES_CONSIDERED_FOR_ANALYSIS_PAPER
+GRID_SIZES_CONSIDERED = [(5, 5)]  # global_variables.GRID_SIZES_CONSIDERED_PAPER
 n_agents = 1
 n_goals = 1
 
@@ -54,6 +54,9 @@ dict_storing_data = {'grid_size': generate_empty_list(n_tries, tuple),
                      'n_episodes': generate_empty_list(n_tries, int),
                      'df': generate_empty_list(n_tries, pd.DataFrame),
                      'causal_table_generated': generate_empty_list(n_tries, pd.DataFrame)}
+
+# TODO: FINISH HERE ONCE WE HAVE THE OFFLINE CAUSAL TABLE
+
 
 try_n = 0
 for n_enemies in N_ENEMIES_CONSIDERED:
@@ -91,7 +94,7 @@ for n_enemies in N_ENEMIES_CONSIDERED:
                 dict_storing_data['n_enemies'][try_n] = n_enemies
                 dict_storing_data['n_episodes'][try_n] = n_episodes
                 dict_storing_data['df'][try_n] = df_track
-                out_causal_table = CausalInference(df_track, n_agents, n_enemies, n_goals).return_causal_table()
+                out_causal_table = CausalDiscovery(df_track, n_agents, n_enemies, n_goals).return_causal_table()
                 dict_storing_data['causal_table_generated'][try_n] = out_causal_table
 
                 try_n += 1

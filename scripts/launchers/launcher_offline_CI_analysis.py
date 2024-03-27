@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import global_variables
-from scripts.algorithms.causal_inference import CausalInference
+from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.environment import CustomEnv
 from scripts.train_models import Training
 
@@ -52,7 +52,7 @@ class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
 
 class_train.start_train(env, df_track=True)
 df_track = class_train.get_df_track()
-out_causal_table = CausalInference(df_track, N_AGENTS, N_ENEMIES, N_GOALS).return_causal_table()
+out_causal_table = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS).return_causal_table()
 
 out_causal_table.to_excel(f'{global_variables.GLOBAL_PATH_REPO}/mario.xlsx')
 out_causal_table.to_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')

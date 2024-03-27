@@ -20,12 +20,9 @@ import global_variables
 warnings.filterwarnings("ignore")
 
 
-# TODO: multi-agent and multi-goal settings
+class CausalDiscovery:
 
-
-class CausalInference:
-
-    def __init__(self, df: pd.DataFrame, n_agents: int, n_enemies: int, n_goals: int) -> pd.DataFrame:
+    def __init__(self, df: pd.DataFrame, n_agents: int, n_enemies: int, n_goals: int):
 
         self.n_agents = n_agents
         self.n_enemies = n_enemies
@@ -141,7 +138,7 @@ class CausalInference:
 
         print('do-calculus-2...')
         # resume results in a table
-        self.table = self.__apply_causal_inference()
+        self.table = self.__apply_causal_discovery()
 
     def __identify_ind_dep_variables(self):
         self.dependents_var = []
@@ -179,7 +176,7 @@ class CausalInference:
         print(f'**Independents vars: {self.independents_var}')
         print(f'**Dependents vars: {self.dependents_var}')
 
-    def __apply_causal_inference(self) -> pd.DataFrame:
+    def __apply_causal_discovery(self) -> pd.DataFrame:
         table = pd.DataFrame(columns=self.features_names)
 
         arrays = []
