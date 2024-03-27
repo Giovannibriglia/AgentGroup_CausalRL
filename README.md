@@ -15,16 +15,37 @@ This repository provides the Framework detailed in [Generalisable Improvement to
 
 ```
 *** TO COMPLETE ***
-results
-
+images_for_render
+   |__bowser.png
+   |__goal.png
+   |__supermario.png
+   |__wall.png
+Results
+   |__Comparison123
+   |__Comparison4
 scripts
    |__algorithms
-      |__
+      |__causal_discovery.py
+      |__dqn_agent.py
+      |__q_learning_agent.py
+      |__random_agent.py
    |__launchers
-   
+      |__launcher_comparison4_paper.py
+      |__launcher_comparison123_paper.py
+      |__launcher_offline_CD_analysis.py
+      |__launcher_sensitive_analysis_batch_episodes_for_online_CD.py
    |__utils
-
+      |__dqn_class_and_memory.py
+      |__environment.py
+      |__exploration_strategies.py
+      |__ground_truth_causal_table.pkl
+      |__seed_values.npy
+      |__train_models.py
+Videos
+   |__Comparison123
+   |__Comparison4
 abstract.png
+global_variables.py
 LICENSE
 README
 requirements.txt
