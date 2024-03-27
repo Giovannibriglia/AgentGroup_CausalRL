@@ -2,15 +2,15 @@ import numpy as np
 import random
 import global_variables
 from scripts.algorithms.causal_discovery import CausalDiscovery
-from scripts.environment import CustomEnv
-from scripts.train_models import Training
+from scripts.utils.environment import CustomEnv
+from scripts.utils.train_models import Training
 
 """
 The aim of this function is to produce the 'ground truth' for the causal table. Given its significance, we opted for
  a substantial number of episodes to ensure its adequacy. Additionally, for the environment under consideration,
  we selected a 3x3 grid with one enemy and one goal. Lastly, the agent navigates using a random policy.
 
-The result of this simulation is the causal table used in algorithms incorporating offline causal inference.
+The result of this simulation is the causal table used in algorithms incorporating offline causal discovery.
 """
 # TODO: Extracting causal dependencies encounters a challenge: when the agent encounters a wall, it executes an action
 #  (nonzero) despite resulting in deltaX and deltaY being 0. This discrepancy arises because the action isn't 0.

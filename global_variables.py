@@ -7,7 +7,7 @@ import pandas as pd
 
 
 GLOBAL_PATH_REPO = os.path.dirname(os.path.abspath(__file__))
-seed_values = np.load(f'{GLOBAL_PATH_REPO}/seed_values.npy')
+seed_values = np.load(f'{GLOBAL_PATH_REPO}/scripts/utils/seed_values.npy')
 N_ACTIONS_PAPER = 5
 DICT_IMPLEMENTED_ACTIONS = {0: np.array([0, 0]),  # stop
                             1: np.array([1, 0]),  # down
@@ -123,4 +123,4 @@ VALUE_REWARD_LOSER_PAPER = -1
 VALUE_REWARD_ALIVE_PAPER = 0
 VALUE_REWARD_WINNER_PAPER = 1
 
-PATH_CAUSAL_TABLE_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/ground_truth_causal_table.pkl'
+PATH_CAUSAL_TABLE_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/utils/ground_truth_causal_table.pkl'

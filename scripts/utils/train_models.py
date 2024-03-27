@@ -10,7 +10,7 @@ import global_variables
 from scripts.algorithms.dqn_agent import DQNAgent
 from scripts.algorithms.q_learning_agent import QLearningAgent
 from scripts.algorithms.random_agent import RandomAgent
-from scripts.environment import CustomEnv
+from scripts.utils.environment import CustomEnv
 
 
 class Training:

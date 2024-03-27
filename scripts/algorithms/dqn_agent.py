@@ -1,11 +1,10 @@
-import math
 import random
 import numpy as np
 import pandas as pd
 import torch
 from gymnasium.spaces import Discrete
 import global_variables
-from scripts import exploration_strategies
+from scripts.utils import exploration_strategies
 
 OFFLINE_CAUSAL_TABLE = pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
 

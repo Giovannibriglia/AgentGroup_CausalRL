@@ -1,10 +1,10 @@
 import global_variables
-from scripts.environment import CustomEnv
-from scripts.train_models import Training
+from scripts.utils.environment import CustomEnv
+from scripts.utils.train_models import Training
 
 
-# TODO: get batch of episodes from sensitive analysis
 def get_batch_episodes():
+    # TODO: get batch of episodes from sensitive analysis
     return 1000
 
 

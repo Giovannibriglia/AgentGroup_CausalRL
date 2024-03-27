@@ -364,7 +364,7 @@ class CustomEnv:
         for _ in range(self.n_goals):
             self.pics_goals.append(pygame.transform.scale(pygame.image.load(goal_png), self.new_sizes))
 
-        self.dir_temp_saving_images = __create_next_alg_folder('temp', f'{self.algorithm}')
+        self.dir_temp_saving_images = __create_next_alg_folder('../temp', f'{self.algorithm}')
         self.count_img = 0
 
     def movement_gui(self, current_episode: int, step_for_episode: int):

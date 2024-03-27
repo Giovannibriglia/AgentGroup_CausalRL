@@ -3,17 +3,17 @@ import numpy as np
 import pandas as pd
 import global_variables
 from scripts.algorithms.causal_discovery import CausalDiscovery
-from scripts.environment import CustomEnv
-from scripts.train_models import Training
+from scripts.utils.environment import CustomEnv
+from scripts.utils.train_models import Training
 
 """ 
 The objective of this simulation is to address the inherent tradeoff within the algorithm involving online causal
 inference. Specifically, our aim is to determine the optimal number of episodes needed to reliably generate the 
 correct causal table for varying numbers of enemies and grid sizes. 
  
-The simulation will yield a recommended set of 'batch' episodes for utilization in algorithms incorporating online causal inference.
-   This quantity will vary depending on factors such as grid size and the count of adversaries within the environment.
-"""
+The simulation will yield a recommended set of 'batch' episodes for utilization in algorithms incorporating online 
+causal discovery. This quantity will vary depending on factors such as grid size and the count of adversaries within 
+the environment."""
 
 
 def generate_empty_list(X: int, data_type) -> list:
