@@ -2,20 +2,26 @@ import random
 import re
 import warnings
 from itertools import product
-
+import networkx as nx
 import pandas as pd
 from causalnex.inference import InferenceEngine
 from causalnex.network import BayesianNetwork
 from causalnex.structure.notears import from_pandas
+from matplotlib import pyplot as plt
 
 import global_variables
 
 warnings.filterwarnings("ignore")
 
+FONT_SIZE_NODE_GRAPH = 7.5
+ARROWS_SIZE_NODE_GRAPH = 30
+NODE_SIZE_GRAPH = 1000
+
 
 class CausalDiscovery:
 
-    def __init__(self, df: pd.DataFrame, n_agents: int, n_enemies: int, n_goals: int):
+    def __init__(self, df: pd.DataFrame, n_agents: int, n_enemies: int, n_goals: int, dir_saving_graphs: str = None,
+                 name_saving_graphs: str = None):
 
         self.n_agents = n_agents
         self.n_enemies = n_enemies
@@ -38,6 +44,9 @@ class CausalDiscovery:
         self.independents_var = None
         self.dependents_var = None
         self.table = None
+
+        self.dir_saving = dir_saving_graphs
+        self.name_save = name_saving_graphs
 
         # self._modify_action_values()
 
@@ -117,6 +126,17 @@ class CausalDiscovery:
         self.structureModel = from_pandas(self.df)
         self.structureModel.remove_edges_below_threshold(0.2)
 
+        if self.dir_saving is not None and self.name_save is not None:
+            fig = plt.figure(dpi=1000)
+            plt.title(f'NOTEARS graph', fontsize=16)
+            nx.draw(self.structureModel, with_labels=True, font_size=FONT_SIZE_NODE_GRAPH,
+                    arrowsize=ARROWS_SIZE_NODE_GRAPH, arrows=False,
+                    edge_color='orange', node_size=NODE_SIZE_GRAPH, font_weight='bold',
+                    pos=nx.circular_layout(self.structureModel))
+            # plt.show()
+            plt.savefig(f'{self.dir_saving}/{self.name_save}_notears_graph.png')
+            plt.close(fig)
+
         print(f'training bayesian network...')
         self.bn = BayesianNetwork(self.structureModel)
         self.bn = self.bn.fit_node_states_and_cpds(self.df)
@@ -155,7 +175,7 @@ class CausalDiscovery:
                         uniform_probability_value = round(1 / len(after[feat]), 4)
 
                         if best_key_after != best_key_before and round(max_value_after, 4) != uniform_probability_value:
-                        # if max_value_after > uniform_probability_value*1.01 and best_key_after != best_key_before:
+                            # if max_value_after > uniform_probability_value*1.01 and best_key_after != best_key_before:
 
                             if var == 'Action_Agent0':
                                 print(f'\n{var} is classified as dependent because a consistent probability '
@@ -165,7 +185,8 @@ class CausalDiscovery:
                                 print('Uniform probability value: ', round(1 / len(after[feat]), 4))
                                 print(
                                     f'Best key before: {best_key_before}, max value before: {round(max_value_before, 4)}')
-                                print(f'Best key after: {best_key_after}, max value after: {round(max_value_after, 4)}\n')
+                                print(
+                                    f'Best key after: {best_key_after}, max value after: {round(max_value_after, 4)}\n')
 
                             count_var_value += 1
                     self.ie.reset_do(var)
@@ -231,13 +252,12 @@ class CausalDiscovery:
         columns_actions = [s for s in self.features_names if global_variables.LABEL_COL_ACTION in s]
 
         for agent in range(self.n_agents):
-
             col_deltaX = [s for s in columns_deltaX if f'{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}' in s][0]
             col_deltaY = [s for s in columns_deltaY if f'{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}' in s][0]
             col_action = [s for s in columns_actions if f'{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}' in s][0]
 
             condition = (self.df[f'{col_deltaX}'] == 0) & (
-                        self.df[f'{col_deltaY}'] == 0) & (self.df[f'{col_action}'] != 0)
+                    self.df[f'{col_deltaY}'] == 0) & (self.df[f'{col_action}'] != 0)
 
             self.df.loc[condition, f'{col_action}'] = 0
 

@@ -17,11 +17,11 @@ The result of this simulation is the causal table used in algorithms incorporati
 N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
-GRID_SIZE = (5, 5)
-N_EPISODES = 10000
+GRID_SIZE = (8, 8)
+N_EPISODES = 1000
 
 label_kind_of_alg = global_variables.LABEL_RANDOM_AGENT
-label_exploration_strategy = 'random'
+label_exploration_strategy = global_variables.LABEL_RANDOM_AGENT
 
 seed_value = global_variables.seed_values[0]
 """np.random.seed(seed_value)
@@ -41,7 +41,6 @@ dict_env_params = {'rows': rows, 'cols': cols, 'n_agents': N_AGENTS, 'n_enemies'
 
 dict_other_params['N_EPISODES'] = N_EPISODES
 
-# Create an environment
 env = CustomEnv(dict_env_params)
 
 class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
