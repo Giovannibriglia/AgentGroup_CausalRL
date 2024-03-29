@@ -1,3 +1,4 @@
+import numpy as np
 import global_variables
 import os
 import json
@@ -28,7 +29,7 @@ For clarity, consider the following example:
     - grid 4x4 --> 4 central cells, 12 boundary cells 
     - grid 8x8 --> 36 central cells, 28 boundary cells
 """
-# TODO: saving the causal graph in Causal Discovery class
+
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 NAME_DIR_RESULTS = 'Results_Test1'
 
@@ -47,6 +48,11 @@ DIR_SAVE_RESULTS = f'{SCRIPT_DIR}/{NAME_DIR_RESULTS}'
 
 for simulation_n in range(N_SIMULATIONS):
     for rows, cols in GRID_SIZES:
+
+        dir_save = f'{DIR_SAVE_RESULTS}/Grid{rows}x{cols}'
+        os.makedirs(dir_save, exist_ok=True)
+        name_save = f'{rows}x{cols}_game{simulation_n}'
+
         seed_value = global_variables.seed_values[simulation_n]
 
         dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
@@ -61,8 +67,12 @@ for simulation_n in range(N_SIMULATIONS):
                            'predefined_env': None}
 
         dict_other_params['N_EPISODES'] = N_TRAINING_EPISODE
+
         env = CustomEnv(dict_env_params)
-        env_to_save = env.grid_for_game
+
+        env_to_save = np.vectorize(lambda x: env.number_names_grid.get(x, str(x)))(env.grid_for_game)
+        with open(f'{dir_save}/env_{name_save}.json', 'w') as json_file:
+            json.dump(env_to_save.tolist(), json_file)
 
         class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                f'{label_kind_of_alg}',
@@ -70,13 +80,8 @@ for simulation_n in range(N_SIMULATIONS):
         class_train.start_train(env, batch_update_df_track=1000)
         df_track = class_train.get_df_track()
 
-        name_save = f'{rows}x{cols}_game{simulation_n}'
-
-        with open(f'{DIR_SAVE_RESULTS}/env_{name_save}.json', 'w') as json_file:
-            json.dump(env_to_save.tolist(), json_file)
-
-        out_causal_table = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS, DIR_SAVE_RESULTS,
+        out_causal_table = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS, dir_save,
                                            f'graph_{name_save}').return_causal_table()
 
-        out_causal_table.to_excel(f'{DIR_SAVE_RESULTS}/causal_table_{name_save}.xlsx')
-        out_causal_table.to_pickle(f'{DIR_SAVE_RESULTS}/causal_table_{name_save}.pkl')
+        out_causal_table.to_excel(f'{dir_save}/causal_table_{name_save}.xlsx')
+        out_causal_table.to_pickle(f'{dir_save}/causal_table_{name_save}.pkl')

@@ -8,7 +8,7 @@ from causalnex.inference import InferenceEngine
 from causalnex.network import BayesianNetwork
 from causalnex.structure.notears import from_pandas
 from matplotlib import pyplot as plt
-
+from causalnex.structure import StructureModel
 import global_variables
 
 warnings.filterwarnings("ignore")
@@ -127,15 +127,7 @@ class CausalDiscovery:
         self.structureModel.remove_edges_below_threshold(0.2)
 
         if self.dir_saving is not None and self.name_save is not None:
-            fig = plt.figure(dpi=1000)
-            plt.title(f'NOTEARS graph', fontsize=16)
-            nx.draw(self.structureModel, with_labels=True, font_size=FONT_SIZE_NODE_GRAPH,
-                    arrowsize=ARROWS_SIZE_NODE_GRAPH, arrows=False,
-                    edge_color='orange', node_size=NODE_SIZE_GRAPH, font_weight='bold',
-                    pos=nx.circular_layout(self.structureModel))
-            # plt.show()
-            plt.savefig(f'{self.dir_saving}/{self.name_save}_notears_graph.png')
-            plt.close(fig)
+            self._plot_causal_graph(self.structureModel, False)
 
         print(f'training bayesian network...')
         self.bn = BayesianNetwork(self.structureModel)
@@ -151,6 +143,12 @@ class CausalDiscovery:
         # understand who influences whom
         self.__identify_ind_dep_variables()
 
+        if self.dir_saving is not None and self.name_save is not None:
+            sm = StructureModel()
+            edges = self.causal_relationships
+            sm.add_edges_from(edges)
+            self._plot_causal_graph(sm, True)
+
         print('do-calculus-2...')
         # resume results in a table
         self.table = self.__perform_interventions()
@@ -158,6 +156,7 @@ class CausalDiscovery:
     def __identify_ind_dep_variables(self):
         self.dependents_var = []
         self.independents_var = []
+        self.causal_relationships = []
 
         before = self.ie.query()
         for var in self.features_names:
@@ -173,11 +172,11 @@ class CausalDiscovery:
                         best_key_after, max_value_after = max(after[feat].items(), key=lambda x: x[1])
 
                         uniform_probability_value = round(1 / len(after[feat]), 4)
+                        if max_value_after > uniform_probability_value * 1.01 and best_key_after != best_key_before:
+                            # print(f'{var} depends on {feat}')
+                            self.causal_relationships.append((feat, var))
 
-                        if best_key_after != best_key_before and round(max_value_after, 4) != uniform_probability_value:
-                            # if max_value_after > uniform_probability_value*1.01 and best_key_after != best_key_before:
-
-                            if var == 'Action_Agent0':
+                            """if var == 'Action_Agent0':
                                 print(f'\n{var} is classified as dependent because a consistent probability '
                                       f'distribution occurred when do({feat} = {value})')
                                 print(feat, ' before intervention: ', before[feat])
@@ -186,7 +185,7 @@ class CausalDiscovery:
                                 print(
                                     f'Best key before: {best_key_before}, max value before: {round(max_value_before, 4)}')
                                 print(
-                                    f'Best key after: {best_key_after}, max value after: {round(max_value_after, 4)}\n')
+                                    f'Best key after: {best_key_after}, max value after: {round(max_value_after, 4)}\n')"""
 
                             count_var_value += 1
                     self.ie.reset_do(var)
@@ -196,10 +195,10 @@ class CausalDiscovery:
                     pass
 
             if count_var > 0:
-                print(f'*{var} --> {count_var} changes, internally caused -> dependent')
+                # print(f'*{var} --> {count_var} changes, internally caused -> dependent')
                 self.dependents_var.append(var)
             else:
-                print(f'*{var} --> externally caused -> independent')
+                # print(f'*{var} --> externally caused -> independent')
                 self.independents_var.append(var)
 
         print(f'**Independents vars: {self.independents_var}')
@@ -286,3 +285,21 @@ class CausalDiscovery:
                 new_df = pd.concat([new_df, binary_df], axis=1)
 
         return new_df"""
+
+    def _plot_causal_graph(self, sm: StructureModel, if_causal: bool):
+
+        fig = plt.figure(dpi=1000)
+        if if_causal:
+            plt.title(f'Causal graph', fontsize=16)
+        else:
+            plt.title(f'NOTEARS graph', fontsize=16)
+        nx.draw(sm, with_labels=True, font_size=FONT_SIZE_NODE_GRAPH,
+                arrowsize=ARROWS_SIZE_NODE_GRAPH, arrows=if_causal,
+                edge_color='orange', node_size=NODE_SIZE_GRAPH, font_weight='bold',
+                pos=nx.circular_layout(sm))
+        # plt.show()
+        if if_causal:
+            plt.savefig(f'{self.dir_saving}/{self.name_save}_causal_graph.png')
+        else:
+            plt.savefig(f'{self.dir_saving}/{self.name_save}_notears_graph.png')
+        plt.close(fig)

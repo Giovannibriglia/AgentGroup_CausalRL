@@ -3,6 +3,7 @@ pygame
 causalnex
 matplotlib
 openpyxl
+numpy
 scipy
 networkx
 opencv-python
