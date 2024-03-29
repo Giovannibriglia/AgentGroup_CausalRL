@@ -82,26 +82,24 @@ class CustomEnv:
         else:
             self.kind = env_info['env_type']
 
+        self.grid_for_game = np.full((self.rows, self.cols), self.value_empty_cell)
         if env_info['predefined_env'] is not None:
             print('to implement already predefined')
             # TODO: to implement already predefined environment
-
-        self.grid_for_game = np.full((self.rows, self.cols), self.value_empty_cell)
-        # insert agents, enemies, goals
-        self._insert_entities()
-
-        self.reset_enemies_nearby, self.reset_goal_nearby = self.get_nearby_agent()
-
-        if self.if_maze:
-            # TODO: develop maze suitable for multi-agent systems, the main problem regards the path for each agent
-            self.n_walls = int(max(self.rows, self.cols) * N_WALLS_COEFFICIENT)
-            if int(self.rows * self.cols) < self.n_walls + self.n_agents + self.n_goals + self.n_enemies:
-                raise AssertionError(f'too many entities for defining a maze: {self.n_walls} walls')
-            else:
-                # TODO: finish maze definition
-                self._define_maze()
         else:
-            self.n_walls = 0
+            # insert agents, enemies, goals
+            self._insert_entities()
+
+            self.reset_enemies_nearby, self.reset_goal_nearby = self.get_nearby_agent()
+
+            if self.if_maze:
+                self.n_walls = int(max(self.rows, self.cols) * N_WALLS_COEFFICIENT)
+                if int(self.rows * self.cols) < self.n_walls + self.n_agents + self.n_goals + self.n_enemies:
+                    raise AssertionError(f'too many entities for defining a maze: {self.n_walls} walls')
+                else:
+                    self._define_maze()
+            else:
+                self.n_walls = 0
 
         self._vis_grid_numpy()
 
