@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 class CustomEnv:
     def __init__(self, env_info: dict):
 
-        self.enemy_positions = None
+        self.enemies_positions = None
         self.walls_positions = None
         self.goals_nearby = None
         self.enemies_nearby = None
@@ -84,13 +84,34 @@ class CustomEnv:
 
         self.grid_for_game = np.full((self.rows, self.cols), self.value_empty_cell)
         if env_info['predefined_env'] is not None:
-            print('to implement already predefined')
-            # TODO: to implement already predefined environment
+            predefined_env = env_info['predefined_env']
+
+            self.agents_positions = np.array(predefined_env['agents_positions'])
+            self.enemies_positions = np.array(predefined_env['enemies_positions'])
+            self.goals_positions = np.array(predefined_env['goals_positions'])
+            self.walls_positions = np.array(predefined_env['walls_positions'])
+
+            if len(self.walls_positions) > 0:
+                self.n_walls = len(self.walls_positions)
+                for wall in range(self.n_walls):
+                    x, y = self.walls_positions[x, y] = self.value_wall_cell
+            else:
+                self.n_walls = 0
+
+            for agent in range(len(self.agents_positions)):
+                x, y = self.agents_positions[agent]
+                self.grid_for_game[x, y] = self.value_agent_cell
+
+            for enemy in range(len(self.enemies_positions)):
+                x, y = self.enemies_positions[enemy]
+                self.grid_for_game[x, y] = self.value_enemy_cell
+
+            for goal in range(len(self.goals_positions)):
+                x, y = self.goals_positions[goal]
+                self.grid_for_game[x, y] = self.value_goal_cell
         else:
             # insert agents, enemies, goals
             self._insert_entities()
-
-            self.reset_enemies_nearby, self.reset_goal_nearby = self.get_nearby_agent()
 
             if self.if_maze:
                 self.n_walls = int(max(self.rows, self.cols) * N_WALLS_COEFFICIENT)
@@ -101,19 +122,25 @@ class CustomEnv:
             else:
                 self.n_walls = 0
 
+        self.agent_positions_for_reset = self.agents_positions.copy()
+        self.enemy_positions_for_reset = self.enemies_positions.copy()
+        self.goal_positions_for_reset = self.goals_positions.copy()
+
+        self.reset_enemies_nearby, self.reset_goal_nearby = self.get_nearby_agent()
+
         self._vis_grid_numpy()
 
     def _insert_entities(self):
         # Get matrix dimensions
         total_cells = self.rows * self.cols
 
-        # Initialize list to track used positions
+        # Initialize a list to track used positions
         used_positions = []
 
         # Initialize arrays to store x and y coordinates of entities
         self.agents_positions = np.zeros((self.n_agents, 2), dtype=int)
-        self.enemy_positions = np.zeros((self.n_enemies, 2), dtype=int)
-        self.goal_positions = np.zeros((self.n_goals, 2), dtype=int)
+        self.enemies_positions = np.zeros((self.n_enemies, 2), dtype=int)
+        self.goals_positions = np.zeros((self.n_goals, 2), dtype=int)
 
         # Insert agents
         for i in range(self.n_agents):
@@ -126,8 +153,6 @@ class CustomEnv:
                     self.grid_for_game[x, y] = self.value_agent_cell
                     break
 
-        self.agent_positions_for_reset = self.agents_positions.copy()
-
         # Insert enemies
         for i in range(self.n_enemies):
             while True:
@@ -135,11 +160,9 @@ class CustomEnv:
                 if position not in used_positions:
                     used_positions.append(position)
                     x, y = position // self.cols, position % self.cols
-                    self.enemy_positions[i] = [x, y]
+                    self.enemies_positions[i] = [x, y]
                     self.grid_for_game[x, y] = self.value_enemy_cell
                     break
-
-        self.enemy_positions_for_reset = self.enemy_positions.copy()
 
         # Insert goals
         for i in range(self.n_goals):
@@ -148,11 +171,9 @@ class CustomEnv:
                 if position not in used_positions:
                     used_positions.append(position)
                     x, y = position // self.cols, position % self.cols
-                    self.goal_positions[i] = [x, y]
+                    self.goals_positions[i] = [x, y]
                     self.grid_for_game[x, y] = self.value_goal_cell
                     break
-
-        self.goal_positions_for_reset = self.goal_positions.copy()
 
     def _define_maze(self):
 
@@ -208,13 +229,13 @@ class CustomEnv:
     def step_enemies(self):
         # Move enemies based on the enemies movement policy
         if self.enemies_actions == self.key_random_enemy_actions:
-            for n, pos_xy_enemy in enumerate(self.enemy_positions):
+            for n, pos_xy_enemy in enumerate(self.enemies_positions):
                 action = np.random.randint(0, self.n_actions)
-                self.enemy_positions[n] = self._apply_action(pos_xy_enemy, action)
+                self.enemies_positions[n] = self._apply_action(pos_xy_enemy, action)
         elif self.enemies_actions == self.key_same_enemy_actions:
-            for n, pos_xy_enemy in enumerate(self.enemy_positions):
+            for n, pos_xy_enemy in enumerate(self.enemies_positions):
                 action = self.predefined_enemy_actions[self.n_steps_same_enemies_actions][n]
-                self.enemy_positions[n] = self._apply_action(pos_xy_enemy, action)
+                self.enemies_positions[n] = self._apply_action(pos_xy_enemy, action)
             self.n_steps_same_enemies_actions += 1
 
     def step_agents(self, actions: list) -> np.ndarray:
@@ -239,7 +260,7 @@ class CustomEnv:
 
         for agent in range(self.n_agents):
             agent_position = self.agents_positions[agent]
-            goal_position = self.goal_positions[0]
+            goal_position = self.goals_positions[0]
 
             # Check if agent has reached the goal
             if np.array_equal(agent_position, goal_position):
@@ -247,7 +268,7 @@ class CustomEnv:
                 dones.append(True)
                 if_loses.append(False)
             # Check if agent collided with any enemy
-            elif np.any(np.all(agent_position == self.enemy_positions, axis=1)):
+            elif np.any(np.all(agent_position == self.enemies_positions, axis=1)):
                 self.n_times_loser += 1
                 self.n_steps_same_enemies_actions = 0
                 rewards.append(self.reward_loser)
@@ -267,7 +288,7 @@ class CustomEnv:
         self.enemies_nearby = self.reset_enemies_nearby.copy()
         self.goals_nearby = self.reset_goal_nearby.copy()
         self.agents_positions = self.agent_positions_for_reset.copy()
-        self.enemy_positions = self.enemy_positions_for_reset.copy()
+        self.enemies_positions = self.enemy_positions_for_reset.copy()
 
         return self.agents_positions
 
@@ -282,10 +303,10 @@ class CustomEnv:
 
         for agent in range(self.n_agents):
             pos_xy_agent = self.agents_positions[agent]
-            for m, pos_xy_goal in enumerate(self.goal_positions):
+            for m, pos_xy_goal in enumerate(self.goals_positions):
                 self.goals_nearby[agent][m] = self._get_direction(pos_xy_agent, pos_xy_goal)
 
-            for n, pos_xy_enemy in enumerate(self.enemy_positions):
+            for n, pos_xy_enemy in enumerate(self.enemies_positions):
                 self.enemies_nearby[agent][n] = self._get_direction(pos_xy_agent, pos_xy_enemy)
 
         self.enemies_nearby = _remove_value(self.enemies_nearby, self.value_entity_far)
@@ -367,12 +388,12 @@ class CustomEnv:
     def movement_gui(self, current_episode: int, step_for_episode: int):
 
         ag_coord = self.agents_positions.copy()
-        en_coord = self.enemy_positions.copy()
+        en_coord = self.enemies_positions.copy()
         if self.n_walls > 0:
             wall_coord = self.walls_positions.copy()
         else:
             wall_coord = []
-        goal_coord = self.goal_positions.copy()
+        goal_coord = self.goals_positions.copy()
 
         self.WINDOW.fill('black')
 
@@ -415,6 +436,7 @@ class CustomEnv:
                 pygame_image)
 
             self.count_img += 1
+
 
     def video_saving(self, link_saving: str):
 
