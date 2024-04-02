@@ -32,26 +32,25 @@ For clarity, consider the following example:
 
 NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Results_Test1'
 
-N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
+N_SIMULATIONS = 3  # global_variables.N_SIMULATIONS_PAPER
 N_TRAINING_EPISODE = 5000
 N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
-GRID_SIZES = [(3, 3), (4, 4), (6, 6), (8, 8), (10, 10)]
+GRID_SIZES = [(3, 3), (4, 4)]  # , (6, 6), (8, 8), (10, 10)]
 
 label_kind_of_alg = global_variables.LABEL_RANDOM_AGENT
 label_exploration_strategy = global_variables.LABEL_RANDOM_AGENT
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+# SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 os.makedirs(NAME_DIR_RESULTS, exist_ok=True)
-DIR_SAVE_RESULTS = f'{SCRIPT_DIR}/{NAME_DIR_RESULTS}'
+DIR_SAVE_RESULTS = f'{NAME_DIR_RESULTS}'
 
 for rows, cols in GRID_SIZES:
     dir_save = f'{DIR_SAVE_RESULTS}/Grid{rows}x{cols}'
     os.makedirs(dir_save, exist_ok=True)
 
     for simulation_n in range(N_SIMULATIONS):
-
         name_save = f'{rows}x{cols}_game{simulation_n}'
 
         seed_value = global_variables.seed_values[simulation_n]

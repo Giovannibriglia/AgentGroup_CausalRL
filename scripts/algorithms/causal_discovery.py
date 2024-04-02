@@ -10,6 +10,7 @@ from causalnex.structure.notears import from_pandas
 from matplotlib import pyplot as plt
 from causalnex.structure import StructureModel
 import global_variables
+import json
 
 warnings.filterwarnings("ignore")
 
@@ -127,7 +128,7 @@ class CausalDiscovery:
         self.structureModel.remove_edges_below_threshold(0.2)
 
         if self.dir_saving is not None and self.name_save is not None:
-            self._plot_causal_graph(self.structureModel, False)
+            self._plot_and_save_causal_graph(self.structureModel, False)
 
         print(f'training bayesian network...')
         self.bn = BayesianNetwork(self.structureModel)
@@ -147,7 +148,7 @@ class CausalDiscovery:
             sm = StructureModel()
             edges = self.causal_relationships
             sm.add_edges_from(edges)
-            self._plot_causal_graph(sm, True)
+            self._plot_and_save_causal_graph(sm, True)
 
         print('do-calculus-2...')
         # resume results in a table
@@ -286,7 +287,7 @@ class CausalDiscovery:
 
         return new_df"""
 
-    def _plot_causal_graph(self, sm: StructureModel, if_causal: bool):
+    def _plot_and_save_causal_graph(self, sm: StructureModel, if_causal: bool):
 
         fig = plt.figure(dpi=1000)
         if if_causal:
@@ -298,8 +299,17 @@ class CausalDiscovery:
                 edge_color='orange', node_size=NODE_SIZE_GRAPH, font_weight='bold',
                 pos=nx.circular_layout(sm))
         # plt.show()
+        structure_to_save = [x for x in sm.edges]
+
         if if_causal:
             plt.savefig(f'{self.dir_saving}/{self.name_save}_causal_graph.png')
+
+            with open(f'{self.dir_saving}/{self.name_save}_notears_structure.json', 'w') as json_file:
+                json.dump(structure_to_save, json_file)
         else:
             plt.savefig(f'{self.dir_saving}/{self.name_save}_notears_graph.png')
+
+            with open(f'{self.dir_saving}/{self.name_save}_causal_structure.json', 'w') as json_file:
+                json.dump(structure_to_save, json_file)
+
         plt.close(fig)
