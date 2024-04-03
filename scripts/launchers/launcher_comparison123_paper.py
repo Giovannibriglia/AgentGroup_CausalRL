@@ -1,5 +1,8 @@
+import pandas as pd
+
 import global_variables
 from scripts.utils.environment import CustomEnv
+from scripts.utils.others import get_batch_episodes
 from scripts.utils.train_models import Training
 
 """The objective of this script is to conduct comparative analyses across various environments, algorithms (
@@ -10,11 +13,6 @@ knowledge).
 The simulation results include metrics such as rewards for each episode, computation time for each episode, 
 final q-table (if available), the number of steps taken to complete each episode and number of timeout occurred, 
 along with accompanying videos."""
-
-
-def get_batch_episodes():
-    # TODO: get batch of episodes from sensitive analysis
-    return 1000
 
 
 dir_save = 'Comparison123'
@@ -43,7 +41,8 @@ for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
 
             for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
 
-                for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_CAUSAL_ONLINE]:
+                for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE,
+                                           global_variables.LABEL_CAUSAL_ONLINE]:
 
                     for label_exploration_strategy in [global_variables.LABEL_SOFTMAX_ANNEALING,
                                                        global_variables.LABEL_THOMPSON_SAMPLING,
@@ -63,7 +62,7 @@ for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
                         class_train.start_train(environment,
                                                 dir_save_metrics=dir_save_final,
                                                 name_save_metrics=name_save,
-                                                batch_update_df_track=get_batch_episodes() if cond_online else None,
+                                                batch_update_df_track=get_batch_episodes(n_enemies, rows, cols) if cond_online else None,
                                                 episodes_to_visualize=global_variables.EPISODES_TO_VISUALIZE_PAPER,
                                                 dir_save_videos=dir_save_final,
                                                 name_save_videos=name_save)

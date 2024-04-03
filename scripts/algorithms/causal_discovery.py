@@ -127,34 +127,38 @@ class CausalDiscovery:
         self.structureModel = from_pandas(self.df)
         self.structureModel.remove_edges_below_threshold(0.2)
 
-        if self.dir_saving is not None and self.name_save is not None:
-            self._plot_and_save_causal_graph(self.structureModel, False)
+        if nx.number_weakly_connected_components(self.structureModel) == 1 and nx.is_directed_acyclic_graph(self.structureModel):
+            if self.dir_saving is not None and self.name_save is not None:
+                self._plot_and_save_causal_graph(self.structureModel, False)
 
-        print(f'training bayesian network...')
-        self.bn = BayesianNetwork(self.structureModel)
-        self.bn = self.bn.fit_node_states_and_cpds(self.df)
+            print(f'training bayesian network...')
+            self.bn = BayesianNetwork(self.structureModel)
+            self.bn = self.bn.fit_node_states_and_cpds(self.df)
 
-        bad_nodes = [node for node in self.bn.nodes if not re.match("^[0-9a-zA-Z_]+$", node)]
-        if bad_nodes:
-            print('Bad nodes: ', bad_nodes)
+            bad_nodes = [node for node in self.bn.nodes if not re.match("^[0-9a-zA-Z_]+$", node)]
+            if bad_nodes:
+                print('Bad nodes: ', bad_nodes)
 
-        self.ie = InferenceEngine(self.bn)
+            self.ie = InferenceEngine(self.bn)
 
-        print('do-calculus-1...')
-        # understand who influences whom
-        self.__identify_ind_dep_variables()
+            print('do-calculus-1...')
+            # understand who influences whom
+            self.__identify_ind_dep_variables()
 
-        sm = StructureModel()
-        edges = self.causal_relationships
-        sm.add_edges_from(edges)
-        self.causal_graph = sm
+            sm = StructureModel()
+            edges = self.causal_relationships
+            sm.add_edges_from(edges)
+            self.causal_graph = sm
 
-        if self.dir_saving is not None and self.name_save is not None:
-            self._plot_and_save_causal_graph(sm, True)
+            if self.dir_saving is not None and self.name_save is not None:
+                self._plot_and_save_causal_graph(sm, True)
 
-        print('do-calculus-2...')
-        # resume results in a table
-        self.table = self.__perform_interventions()
+            print('do-calculus-2...')
+            # resume results in a table
+            self.table = self.__perform_interventions()
+        else:
+            self.causal_graph = None
+            self.table = None
 
     def __identify_ind_dep_variables(self):
         self.dependents_var = []
@@ -277,13 +281,18 @@ class CausalDiscovery:
         return table
 
     def return_causal_table(self):
-        self.table.dropna(inplace=True)
-        self.table.reset_index(drop=True, inplace=True)
-        return self.table
+        if self.table is not None:
+            self.table.dropna(inplace=True)
+            self.table.reset_index(drop=True, inplace=True)
+            return self.table
+        return None
 
     def return_causal_graph(self):
-        structure_to_return = [(x[0], x[1]) for x in self.causal_graph.edges]
-        return structure_to_return
+        if self.causal_graph is not None:
+            structure_to_return = [(x[0], x[1]) for x in self.causal_graph.edges]
+            return structure_to_return
+        else:
+            return None
 
     def _plot_and_save_causal_graph(self, sm: StructureModel, if_causal: bool):
 

@@ -24,7 +24,8 @@ OFFLINE_CAUSAL_TABLE = pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFL
 class Training:
     def __init__(self, dict_env_parameters: dict, dict_learning_parameters: dict, dict_other_params: dict,
                  kind_of_alg: str,
-                 exploration_strategy: str):
+                 exploration_strategy: str,
+                 predefined_causal_table: pd.DataFrame = None):
 
         self.dict_learning_parameters = dict_learning_parameters
         self.dict_env_parameters = dict_env_parameters
@@ -75,6 +76,11 @@ class Training:
         else:
             raise AssertionError(f'{self.kind_of_alg} chosen not implemented')
 
+        if predefined_causal_table is not None:
+            self.offline_causal_table = predefined_causal_table
+        else:
+            self.offline_causal_table = OFFLINE_CAUSAL_TABLE
+
     def start_train(self, env, dir_save_metrics: str = None, name_save_metrics: str = None,
                     batch_update_df_track: int = None,
                     episodes_to_visualize: list = None, dir_save_videos: str = None,
@@ -90,7 +96,7 @@ class Training:
             self.df_track = pd.DataFrame(columns=self.cols_df_track)
 
             if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg:
-                self.CAUSAL_TABLE_ONLINE = None
+                self.online_causal_table = None
                 self.n_checks_causal_table_online = 0
 
         dict_metrics = {f'{self.key_metric_rewards_for_episodes}': [],
@@ -241,7 +247,7 @@ class Training:
                 if self.n_checks_causal_table_online < self.th_CI:
                     cd = CausalDiscovery(self.df_track, self.n_agents, self.n_enemies, self.n_goals)
 
-                    self.CAUSAL_TABLE_ONLINE = cd.return_causal_table()
+                    self.online_causal_table = cd.return_causal_table()
 
                     out_causal_graph = cd.return_causal_graph()
 
@@ -302,12 +308,12 @@ class Training:
                     action = self.algorithm.select_action(general_state,
                                                           enemies_nearby_agents[agent_n],
                                                           goals_nearby_agents[agent_n],
-                                                          self.CAUSAL_TABLE_ONLINE if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg else OFFLINE_CAUSAL_TABLE)
+                                                          self.online_causal_table if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg else self.offline_causal_table)
                 else:
                     action = self.algorithm.select_action(current_states[agent_n],
                                                           enemies_nearby_agents[agent_n],
                                                           goals_nearby_agents[agent_n],
-                                                          self.CAUSAL_TABLE_ONLINE if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg else OFFLINE_CAUSAL_TABLE)
+                                                          self.online_causal_table if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg else self.offline_causal_table)
 
             else:
                 if global_variables.LABEL_DQN in self.kind_of_alg:

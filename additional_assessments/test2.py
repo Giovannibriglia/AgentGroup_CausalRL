@@ -4,6 +4,7 @@ import os
 import json
 from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.utils.environment import CustomEnv
+from scripts.utils.others import get_batch_episodes
 from scripts.utils.train_models import Training
 
 """
@@ -32,12 +33,12 @@ two enemies:
     3) The third environment featured the goal positioned in one of the central cells.
 
 """
-# TODO: get_batch_online_causal_table
+
 # TODO: @Stefano help me, change key names in envs_causality and envs_test dicts
 dir_save = f'Results_Test2'
 
 
-def offline_cd(env_params, other_params):
+def fake_offline_cd(env_params, other_params):
     label_kind_of_alg = global_variables.LABEL_RANDOM_AGENT
     label_exploration_strategy = global_variables.LABEL_RANDOM_AGENT
 
@@ -58,7 +59,7 @@ COLUMNS_GRID = 4
 N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
-N_EPISODES_CD = 5000
+N_EPISODES_CD = global_variables.N_TRAINING_EPISODES
 N_TRAINING_EPISODES = global_variables.N_TRAINING_EPISODES
 
 env_causality1 = {'agents_positions': [(0, 3)],
@@ -107,7 +108,7 @@ for label_env_causality in envs_causality.keys():
     dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
     dict_other_params['N_EPISODES'] = N_EPISODES_CD
 
-    offline_causal_table = offline_cd(dict_env_params, dict_other_params)
+    offline_causal_table = fake_offline_cd(dict_env_params, dict_other_params)
 
     for label_env_test in envs_test:
         env_test = envs_test[label_env_test]
@@ -132,7 +133,8 @@ for label_env_causality in envs_causality.keys():
 
                 class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                        f'{label_kind_of_alg}_{label_kind_of_alg2}',
-                                       f'{label_exploration_strategy}')
+                                       f'{label_exploration_strategy}',
+                                       offline_causal_table)
 
                 add_name_dir_save = 'Grid' + f'{ROWS_GRID}x{COLUMNS_GRID}_{N_ENEMIES}' + 'enemies' if N_ENEMIES > 1 else 'enemy'
 
@@ -144,7 +146,7 @@ for label_env_causality in envs_causality.keys():
                 class_train.start_train(environment,
                                         dir_save_metrics=dir_save_final,
                                         name_save_metrics=name_save,
-                                        batch_update_df_track=get_batch_episodes() if cond_online else None,
+                                        batch_update_df_track=get_batch_episodes(N_ENEMIES, ROWS_GRID, COLUMNS_GRID) if cond_online else None,
                                         episodes_to_visualize=global_variables.EPISODES_TO_VISUALIZE_PAPER,
                                         dir_save_videos=dir_save_final,
                                         name_save_videos=name_save)

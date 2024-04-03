@@ -1,6 +1,9 @@
 import os
 import json
 import numpy as np
+import pandas as pd
+
+import global_variables
 
 
 def create_next_alg_folder(base_dir: str, core_word_path: str) -> str:
@@ -49,3 +52,20 @@ def compare_causal_graphs(cg1: list, cg2: list) -> bool:
     sorted_list2.sort()
 
     return sorted_list1 == sorted_list2
+
+
+def get_batch_episodes(n_enemies: int, n_rows: int, n_cols: int) -> int:
+    df_batch_episodes_online_CD = pd.read_pickle(f'{global_variables.PATH_RESULTS_BATCH_EPISODES_ONLINE_CD}')
+
+    condition = ((df_batch_episodes_online_CD['n_enemies'] == n_enemies) &
+                 (df_batch_episodes_online_CD['grid_size'] == (n_rows, n_cols)) &
+                 (df_batch_episodes_online_CD['suitable'] == True))
+
+    filtered_df = df_batch_episodes_online_CD[condition]
+
+    if filtered_df:
+        print('DEBUGGAREEEEE ', filtered_df['n_episodes'].min())
+        return filtered_df['n_episodes'].min()
+    else:
+        print('DEBUGGARE')
+        return 1000

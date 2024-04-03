@@ -21,7 +21,7 @@ N_TRAINING_EPISODE = global_variables.N_TRAINING_EPISODES
 N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
-GRID_SIZES = [(3, 3), (4, 4), (6, 6), (8, 8), (10, 10)]
+GRID_SIZES = [(3, 3), (4, 4),(6, 6), (8, 8), (10, 10)]
 
 label_kind_of_alg = global_variables.LABEL_RANDOM_AGENT
 label_exploration_strategy = global_variables.LABEL_RANDOM_AGENT
