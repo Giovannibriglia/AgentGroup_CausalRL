@@ -14,7 +14,7 @@ import json
 
 warnings.filterwarnings("ignore")
 
-FONT_SIZE_NODE_GRAPH = 7.5
+FONT_SIZE_NODE_GRAPH = 7
 ARROWS_SIZE_NODE_GRAPH = 30
 NODE_SIZE_GRAPH = 1000
 
@@ -144,10 +144,12 @@ class CausalDiscovery:
         # understand who influences whom
         self.__identify_ind_dep_variables()
 
+        sm = StructureModel()
+        edges = self.causal_relationships
+        sm.add_edges_from(edges)
+        self.causal_graph = sm
+
         if self.dir_saving is not None and self.name_save is not None:
-            sm = StructureModel()
-            edges = self.causal_relationships
-            sm.add_edges_from(edges)
             self._plot_and_save_causal_graph(sm, True)
 
         print('do-calculus-2...')
@@ -208,9 +210,11 @@ class CausalDiscovery:
     def __perform_interventions(self) -> pd.DataFrame:
         table = pd.DataFrame(columns=self.features_names)
 
+        """do_on_ind = True
+        if do_on_ind:  # ok"""
         arrays = []
-        for feat_ind in self.dependents_var:
-            arrays.append(self.df[feat_ind].unique())
+        for feat_dep in self.dependents_var:
+            arrays.append(self.df[feat_dep].unique())
         var_combinations = list(product(*arrays))
 
         for n, comb_n in enumerate(var_combinations):
@@ -221,22 +225,54 @@ class CausalDiscovery:
                     # print(f'{self.dependents_var[var_dep]} = {int(comb_n[var_dep])}')
                     table.at[n, f'{self.dependents_var[var_dep]}'] = int(comb_n[var_dep])
                 except:
-                    # print(f'no {self.dependents_var[var_dep]} = {int(comb_n[var_dep])}')
+                    # print(f'Do-operation not possible for {self.dependents_var[var_dep]} = {int(comb_n[var_dep])}')
                     table.at[n, f'{self.dependents_var[var_dep]}'] = pd.NA
 
             after = self.ie.query()
             for var_ind in self.independents_var:
-                # print(f'{var_ind}) {after[var_ind]}')
+                # print(f'Distribution of {var_ind}: {after[var_ind]}')
                 max_key, max_value = max(after[var_ind].items(), key=lambda x: x[1])
-                if round(max_value, 4) != round(1 / len(after[var_ind]), 4):
+                if round(max_value, 4) > round(1 / len(after[var_ind]), 4):
                     table.at[n, f'{var_ind}'] = int(max_key)
-                    # print(f'{var_ind}) -> {max_key}: {max_value}')
+                    # print(f'{var_ind} -> {int(max_key)}: {round(max_value, 2)}')
                 else:
                     table.at[n, f'{var_ind}'] = pd.NA
                     # print(f'{var_ind}) -> unknown')
 
             for var_dep in range(len(self.dependents_var)):
                 self.ie.reset_do(self.dependents_var[var_dep])
+
+        """else:
+            arrays = []
+            for feat_ind in self.independents_var:
+                arrays.append(self.df[feat_ind].unique())
+            var_combinations = list(product(*arrays))
+
+            for n, comb_n in enumerate(var_combinations):
+                print('\n')
+
+                for var_ind in range(len(self.independents_var)):
+                    try:
+                        self.ie.do_intervention(self.independents_var[var_ind], int(comb_n[var_ind]))
+                        print(f'{self.independents_var[var_ind]} = {int(comb_n[var_ind])}')
+                        table.at[n, f'{self.independents_var[var_ind]}'] = int(comb_n[var_ind])
+                    except:
+                        # print(f'Do-operation not possible for {self.independents_var[var_ind]} = {int(comb_n[var_ind])}')
+                        table.at[n, f'{self.independents_var[var_ind]}'] = pd.NA
+
+                after = self.ie.query()
+                for var_dep in self.dependents_var:
+                    print(f'Distribution of {var_dep}): {after[var_dep]}')
+                    max_key, max_value = max(after[var_dep].items(), key=lambda x: x[1])
+                    if round(max_value, 4) > round(1 / len(after[var_dep]), 4):
+                        table.at[n, f'{var_dep}'] = int(max_key)
+                        print(f'{var_dep} -> {int(max_key)}: {round(max_value, 2)}')
+                    else:
+                        table.at[n, f'{var_dep}'] = pd.NA
+                        # print(f'{var_dep}) -> unknown')
+
+                for var_ind in range(len(self.independents_var)):
+                    self.ie.reset_do(self.independents_var[var_ind])"""
 
         return table
 
@@ -245,47 +281,9 @@ class CausalDiscovery:
         self.table.reset_index(drop=True, inplace=True)
         return self.table
 
-    def _modify_action_values(self):
-
-        columns_deltaX = [s for s in self.features_names if global_variables.LABEL_COL_DELTAX in s]
-        columns_deltaY = [s for s in self.features_names if global_variables.LABEL_COL_DELTAY in s]
-        columns_actions = [s for s in self.features_names if global_variables.LABEL_COL_ACTION in s]
-
-        for agent in range(self.n_agents):
-            col_deltaX = [s for s in columns_deltaX if f'{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}' in s][0]
-            col_deltaY = [s for s in columns_deltaY if f'{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}' in s][0]
-            col_action = [s for s in columns_actions if f'{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}' in s][0]
-
-            condition = (self.df[f'{col_deltaX}'] == 0) & (
-                    self.df[f'{col_deltaY}'] == 0) & (self.df[f'{col_action}'] != 0)
-
-            self.df.loc[condition, f'{col_action}'] = 0
-
-    """
-    def binarize_dataframe(self):
-
-        new_df = pd.DataFrame()
-
-        for col in self.df.columns.to_list():
-            if len(self.df[col].unique()) <= 2:
-                col_ok = self.df[col]
-                new_df.insert(loc=0, column=col_ok.name, value=col_ok)
-            else:
-                bins = self.df[col].unique().tolist()
-                bins = sorted(bins)
-                bins.insert(0, -100000)
-                labels = []
-                for bin in bins[1:]:
-                    if bin >= 0:
-                        labels.append('Value' + str(bin))
-                    else:
-                        labels.append('Value_' + str(abs(bin)))
-
-                binary_df = pd.get_dummies(pd.cut(self.df[col], bins=bins, labels=labels), prefix=f'{col}')
-
-                new_df = pd.concat([new_df, binary_df], axis=1)
-
-        return new_df"""
+    def return_causal_graph(self):
+        structure_to_return = [(x[0], x[1]) for x in self.causal_graph.edges]
+        return structure_to_return
 
     def _plot_and_save_causal_graph(self, sm: StructureModel, if_causal: bool):
 
@@ -298,8 +296,9 @@ class CausalDiscovery:
                 arrowsize=ARROWS_SIZE_NODE_GRAPH, arrows=if_causal,
                 edge_color='orange', node_size=NODE_SIZE_GRAPH, font_weight='bold',
                 pos=nx.circular_layout(sm))
-        # plt.show()
-        structure_to_save = [x for x in sm.edges]
+        #plt.show()
+
+        structure_to_save = [(x[0], x[1]) for x in sm.edges]
 
         if if_causal:
             plt.savefig(f'{self.dir_saving}/{self.name_save}_causal_graph.png')
@@ -313,3 +312,46 @@ class CausalDiscovery:
                 json.dump(structure_to_save, json_file)
 
         plt.close(fig)
+
+    """
+     def _modify_action_values(self):
+
+         columns_deltaX = [s for s in self.features_names if global_variables.LABEL_COL_DELTAX in s]
+         columns_deltaY = [s for s in self.features_names if global_variables.LABEL_COL_DELTAY in s]
+         columns_actions = [s for s in self.features_names if global_variables.LABEL_COL_ACTION in s]
+
+         for agent in range(self.n_agents):
+             col_deltaX = [s for s in columns_deltaX if f'{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}' in s][0]
+             col_deltaY = [s for s in columns_deltaY if f'{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}' in s][0]
+             col_action = [s for s in columns_actions if f'{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}' in s][0]
+
+             condition = (self.df[f'{col_deltaX}'] == 0) & (
+                     self.df[f'{col_deltaY}'] == 0) & (self.df[f'{col_action}'] != 0)
+
+             self.df.loc[condition, f'{col_action}'] = 0
+
+
+     def binarize_dataframe(self):
+
+         new_df = pd.DataFrame()
+
+         for col in self.df.columns.to_list():
+             if len(self.df[col].unique()) <= 2:
+                 col_ok = self.df[col]
+                 new_df.insert(loc=0, column=col_ok.name, value=col_ok)
+             else:
+                 bins = self.df[col].unique().tolist()
+                 bins = sorted(bins)
+                 bins.insert(0, -100000)
+                 labels = []
+                 for bin in bins[1:]:
+                     if bin >= 0:
+                         labels.append('Value' + str(bin))
+                     else:
+                         labels.append('Value_' + str(abs(bin)))
+
+                 binary_df = pd.get_dummies(pd.cut(self.df[col], bins=bins, labels=labels), prefix=f'{col}')
+
+                 new_df = pd.concat([new_df, binary_df], axis=1)
+
+         return new_df"""

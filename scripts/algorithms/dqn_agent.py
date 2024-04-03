@@ -8,8 +8,6 @@ from gymnasium.spaces import Discrete
 import global_variables
 from scripts.utils import exploration_strategies
 
-OFFLINE_CAUSAL_TABLE = pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
-
 
 class DQNAgent:
     def __init__(self, dict_env_parameters: dict, dict_learning_parameters: dict, dict_other_params: dict,
@@ -67,15 +65,9 @@ class DQNAgent:
             self.agent.update_exp_fact(episode)
 
     def select_action(self, current_state: np.ndarray, enemies_nearby_agent: np.ndarray = None,
-                      goals_nearby_agent: np.ndarray = None) -> int:
+                      goals_nearby_agent: np.ndarray = None, causal_table: pd.DataFrame = None) -> int:
         state = current_state.copy()
         if global_variables.LABEL_CAUSAL in self.kind_of_alg:
-            if global_variables.LABEL_CAUSAL_OFFLINE in self.kind_of_alg:
-                causal_table = OFFLINE_CAUSAL_TABLE
-            else:
-                causal_table = None
-                # TODO: implement online casual table
-                pass
 
             possible_actions = self._get_possible_actions(enemies_nearby_agent, goals_nearby_agent, causal_table)
 

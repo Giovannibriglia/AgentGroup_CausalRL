@@ -1,7 +1,11 @@
+import networkx as nx
+from causalnex.structure import StructureModel
+from matplotlib import pyplot as plt
 import global_variables
 from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.utils.environment import CustomEnv
 from scripts.utils.train_models import Training
+import json
 
 """
 The aim of this script is to produce the 'ground truth' for the causal table. Given its significance, we opted for
@@ -18,14 +22,12 @@ N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
 GRID_SIZE = (8, 8)
-N_EPISODES = 1000
+N_EPISODES = 3000
 
 label_kind_of_alg = global_variables.LABEL_RANDOM_AGENT
 label_exploration_strategy = global_variables.LABEL_RANDOM_AGENT
 
 seed_value = global_variables.seed_values[0]
-"""np.random.seed(seed_value)
-random.seed(seed_value)"""
 
 dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
 dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
@@ -49,7 +51,22 @@ class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
 
 class_train.start_train(env, batch_update_df_track=1000)
 df_track = class_train.get_df_track()
-out_causal_table = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS).return_causal_table()
+
+cd = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS)
+out_causal_table = cd.return_causal_table()
+out_causal_graph = cd.return_causal_graph()
 
 out_causal_table.to_excel(f'{global_variables.GLOBAL_PATH_REPO}/mario.xlsx')
-# out_causal_table.to_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
+
+out_causal_table.to_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
+with open(f'{global_variables.PATH_CAUSAL_GRAPH_OFFLINE}', 'w') as json_file:
+    json.dump(out_causal_graph, json_file)
+
+fig = plt.figure(dpi=1000)
+sm = StructureModel()
+sm.add_edges_from(out_causal_graph)
+plt.title(f'Causal graph ground truth', fontsize=16)
+nx.draw(sm, with_labels=True, font_size=7, arrowsize=30, arrows=True,
+        edge_color='orange', node_size=1000, font_weight='bold', pos=nx.circular_layout(sm))
+plt.savefig(f'{global_variables.PATH_IMG_CAUSAL_GRAPH_OFFLINE}')
+plt.show()

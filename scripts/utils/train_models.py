@@ -2,18 +2,23 @@ import json
 import os
 import random
 import time
-
 import numpy as np
 import pandas as pd
 from gymnasium.spaces import Discrete
 from tqdm.auto import tqdm
-
 import global_variables
+from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.algorithms.dqn_agent import DQNAgent
 from scripts.algorithms.q_learning_agent import QLearningAgent
 from scripts.algorithms.random_agent import RandomAgent
 from scripts.utils.environment import CustomEnv
-from scripts.utils.numpy_encoder_json import NumpyEncoder
+from scripts.utils.others import NumpyEncoder, compare_causal_graphs
+
+
+with open(f'{global_variables.PATH_CAUSAL_GRAPH_OFFLINE}', 'r') as file:
+    GROUND_TRUTH_CAUSAL_GRAPH = json.load(file)
+
+OFFLINE_CAUSAL_TABLE = pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
 
 
 class Training:
@@ -83,6 +88,10 @@ class Training:
                                                                               self.n_goals)
             self.dict_df_track = {key: [] for key in self.cols_df_track}
             self.df_track = pd.DataFrame(columns=self.cols_df_track)
+
+            if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg:
+                self.CAUSAL_TABLE_ONLINE = None
+                self.n_checks_causal_table_online = 0
 
         dict_metrics = {f'{self.key_metric_rewards_for_episodes}': [],
                         f'{self.key_metric_steps_for_episodes}': [],
@@ -192,8 +201,7 @@ class Training:
 
             self.algorithm.update_exp_fact(episode)
 
-            if batch_update_df_track is not None and len(
-                    self.dict_df_track[self.cols_df_track[0]]) > batch_update_df_track:
+            if batch_update_df_track is not None and (episode >= batch_update_df_track):
                 self._define_df_track()
                 self.dict_df_track = {key: [] for key in self.cols_df_track}
 
@@ -227,6 +235,20 @@ class Training:
 
         if batch_update_df_track is not None:
             self._define_df_track()
+
+            if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg:
+
+                if self.n_checks_causal_table_online < self.th_CI:
+                    cd = CausalDiscovery(self.df_track, self.n_agents, self.n_enemies, self.n_goals)
+
+                    self.CAUSAL_TABLE_ONLINE = cd.return_causal_table()
+
+                    out_causal_graph = cd.return_causal_graph()
+
+                    if compare_causal_graphs(out_causal_graph, GROUND_TRUTH_CAUSAL_GRAPH):
+                        self.n_checks_causal_table_online += 1
+                    elif self.kind_th_CI == 'consecutive':
+                        self.n_checks_causal_table_online = 0
 
     def _update_dict_track(self, actions, current_states, next_states, rewards, enemies_nearby_agents,
                            goals_nearby_agents):
@@ -269,6 +291,7 @@ class Training:
 
     def _step_agents_inside_train(self, current_states: np.ndarray, enemies_nearby_agents: np.ndarray,
                                   goals_nearby_agents: np.ndarray) -> list:
+
         actions = []
         for agent_n in range(self.n_agents):
             if global_variables.LABEL_CAUSAL in self.kind_of_alg:
@@ -278,11 +301,13 @@ class Training:
 
                     action = self.algorithm.select_action(general_state,
                                                           enemies_nearby_agents[agent_n],
-                                                          goals_nearby_agents[agent_n])
+                                                          goals_nearby_agents[agent_n],
+                                                          self.CAUSAL_TABLE_ONLINE if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg else OFFLINE_CAUSAL_TABLE)
                 else:
                     action = self.algorithm.select_action(current_states[agent_n],
                                                           enemies_nearby_agents[agent_n],
-                                                          goals_nearby_agents[agent_n])
+                                                          goals_nearby_agents[agent_n],
+                                                          self.CAUSAL_TABLE_ONLINE if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg else OFFLINE_CAUSAL_TABLE)
 
             else:
                 if global_variables.LABEL_DQN in self.kind_of_alg:
@@ -316,7 +341,7 @@ if __name__ == '__main__':
         dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
 
         # Create an environment
-        environment = CustomEnv(dict_env_params, False)
+        environment = CustomEnv(dict_env_params)
 
         for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
 
@@ -339,5 +364,5 @@ if __name__ == '__main__':
                                                                    int(global_variables.N_TRAINING_EPISODES / 3),
                                                                    int(global_variables.N_TRAINING_EPISODES * 0.66),
                                                                    global_variables.N_TRAINING_EPISODES - 1])
-                                            #dir_save_videos=f'Comparison/{add_name_dir_save}',
-                                            #name_save_videos=f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_game{x}')
+                    # dir_save_videos=f'Comparison/{add_name_dir_save}',
+                    # name_save_videos=f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_game{x}')

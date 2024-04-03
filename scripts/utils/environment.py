@@ -16,6 +16,7 @@ import global_variables
 from global_variables import VALUE_AGENT_CELL, VALUE_GOAL_CELL, VALUE_EMPTY_CELL, VALUE_WALL_CELL, VALUE_ENEMY_CELL, \
     VALUE_ENTITY_FAR, KEY_SAME_ENEMY_ACTIONS, KEY_RANDOM_ENEMY_ACTIONS, LEN_PREDEFINED_ENEMIES_ACTIONS, \
     N_WALLS_COEFFICIENT, DELAY_VISUALIZATION_VIDEO, FPS_video
+from scripts.utils.others import create_next_alg_folder
 
 warnings.filterwarnings("ignore")
 
@@ -222,7 +223,6 @@ class CustomEnv:
                 self.walls_positions[n] = [i, j]
                 self.grid_for_game[i, j] = global_variables.VALUE_WALL_CELL
 
-
         random_path = __generate_random_path()
         __place_random_walls(random_path)
 
@@ -315,32 +315,7 @@ class CustomEnv:
 
     def init_gui(self, algorithm: str, exploration_strategy: str, n_episodes: int, path_images: str, save_video: bool):
 
-        self.save_video = save_video
-        def __create_next_alg_folder(base_dir: str, core_word_path: str) -> str:
-            # Ensure base directory exists
-            if not os.path.exists(base_dir):
-                os.makedirs(base_dir)
-
-            # Find existing folders with the given core word path
-            alg_folders = [folder for folder in os.listdir(base_dir) if folder.startswith(core_word_path)]
-
-            # Extract numbers from existing folders
-            numbers = [int(folder.replace(core_word_path, "")) for folder in alg_folders if
-                       folder[len(core_word_path):].isdigit()]
-
-            if numbers:
-                next_number = max(numbers) + 1
-            else:
-                next_number = 1
-
-            while True:
-                new_folder_name = f"{core_word_path}{next_number}"
-                new_folder_path = os.path.join(base_dir, new_folder_name)
-                try:
-                    os.makedirs(new_folder_path)
-                    return new_folder_path
-                except FileExistsError:
-                    next_number += 1
+        self.if_save_video = save_video
 
         # GUI must be instantiated once for each simulation
         agent_png = f'{path_images}/supermario.png'
@@ -381,8 +356,8 @@ class CustomEnv:
         for _ in range(self.n_goals):
             self.pics_goals.append(pygame.transform.scale(pygame.image.load(goal_png), self.new_sizes))
 
-        if self.save_video:
-            self.dir_temp_saving_images = __create_next_alg_folder('../temp', f'{self.algorithm}')
+        if self.if_save_video:
+            self.dir_temp_saving_images = create_next_alg_folder('../temp', f'images_{self.algorithm}')
             self.count_img = 0
 
     def movement_gui(self, current_episode: int, step_for_episode: int):
@@ -430,13 +405,12 @@ class CustomEnv:
         pygame_image = cv2.cvtColor(pygame.surfarray.array3d(pygame.display.get_surface()), cv2.COLOR_RGB2BGR)
         pygame_image = cv2.rotate(pygame_image, cv2.ROTATE_90_CLOCKWISE)
         pygame_image = cv2.flip(pygame_image, 1)
-        if self.save_video:
+        if self.if_save_video:
             cv2.imwrite(
                 f'{self.dir_temp_saving_images}/im{self.count_img}_{self.algorithm}_{current_episode}episode.jpeg',
                 pygame_image)
 
             self.count_img += 1
-
 
     def video_saving(self, link_saving: str):
 
@@ -529,5 +503,3 @@ class CustomEnv:
         # Print the named matrix
         print(named_matrix, '\n')
         time.sleep(2)
-
-

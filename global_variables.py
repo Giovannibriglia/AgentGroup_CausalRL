@@ -23,7 +23,7 @@ EPISODES_TO_VISUALIZE_PAPER = [0,
                                int(N_TRAINING_EPISODES * 0.66),
                                N_TRAINING_EPISODES - 1]
 
-N_EPISODES_CONSIDERED_FOR_ANALYSIS_PAPER = [100, 250, 500, 1000]
+N_EPISODES_CONSIDERED_FOR_SENSITIVE_ANALYSIS_PAPER = [100, 250, 500, 1000]
 
 LABEL_RANDOM_AGENT = 'random'
 LABEL_Q_LEARNING = 'QL'
@@ -124,3 +124,5 @@ VALUE_REWARD_ALIVE_PAPER = 0
 VALUE_REWARD_WINNER_PAPER = 1
 
 PATH_CAUSAL_TABLE_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/utils/ground_truth_causal_table.pkl'
+PATH_CAUSAL_GRAPH_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/utils/ground_truth_causal_graph.json'
+PATH_IMG_CAUSAL_GRAPH_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/utils/ground_truth_causal_graph.png'
