@@ -41,8 +41,8 @@ for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
 
             for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
 
-                for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE,
-                                           global_variables.LABEL_CAUSAL_ONLINE]:
+                for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE]:
+                                           #global_variables.LABEL_CAUSAL_ONLINE]:
 
                     for label_exploration_strategy in [global_variables.LABEL_SOFTMAX_ANNEALING,
                                                        global_variables.LABEL_THOMPSON_SAMPLING,

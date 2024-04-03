@@ -35,7 +35,7 @@ two enemies:
 """
 
 # TODO: @Stefano help me, change key names in envs_causality and envs_test dicts
-dir_save = f'Results_Test2'
+dir_save = f'Test2'
 
 
 def fake_offline_cd(env_params, other_params):

@@ -30,7 +30,7 @@ For clarity, consider the following example:
     - grid 8x8 --> 36 central cells, 28 boundary cells
 """
 
-NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Results_Test1'
+NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Test1'
 
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 N_TRAINING_EPISODE = global_variables.N_TRAINING_EPISODES
@@ -83,5 +83,6 @@ for rows, cols in GRID_SIZES:
         out_causal_table = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS, dir_save,
                                            f'graph_{name_save}').return_causal_table()
 
-        out_causal_table.to_excel(f'{dir_save}/causal_table_{name_save}.xlsx')
-        out_causal_table.to_pickle(f'{dir_save}/causal_table_{name_save}.pkl')
+        if out_causal_table is not None:
+            out_causal_table.to_excel(f'{dir_save}/causal_table_{name_save}.xlsx')
+            out_causal_table.to_pickle(f'{dir_save}/causal_table_{name_save}.pkl')

@@ -14,14 +14,14 @@ this modification, the result will be "action = 1, deltaX = -n_cols, deltaY = 0"
 the correct operation, in the case of row modification, the winner and the defeats are ignored.
 """
 
-NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Results_Test3'
+NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Test3'
 
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 N_TRAINING_EPISODE = global_variables.N_TRAINING_EPISODES
 N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
-GRID_SIZES = [(3, 3), (4, 4),(6, 6), (8, 8), (10, 10)]
+GRID_SIZES = [(3, 3), (4, 4), (6, 6), (8, 8), (10, 10)]
 
 label_kind_of_alg = global_variables.LABEL_RANDOM_AGENT
 label_exploration_strategy = global_variables.LABEL_RANDOM_AGENT
@@ -47,8 +47,8 @@ def make_toroidal(df_input, n_agents, n_enemies, n_goals, n_cols, n_rows):
                                0])
 
         cols_rewards.append([s for s in cols_new_df if
-                            global_variables.LABEL_COL_REWARD in s and f'{global_variables.LABEL_AGENT_CAUSAL_TABLE}{ag}' in s][
-                               0])
+                             global_variables.LABEL_COL_REWARD in s and f'{global_variables.LABEL_AGENT_CAUSAL_TABLE}{ag}' in s][
+                                0])
 
         for goal in range(n_goals):
             cols_GoalNearby.append([s for s in cols_new_df if f'Goal{goal}' in s and
@@ -118,10 +118,12 @@ for rows, cols in GRID_SIZES:
         class_train.start_train(env, batch_update_df_track=1000)
         df_track = class_train.get_df_track()
 
-        new_df_track = make_toroidal(df_track, n_agents=N_AGENTS, n_enemies=N_ENEMIES, n_goals=N_GOALS, n_rows=rows, n_cols=cols)
+        new_df_track = make_toroidal(df_track, n_agents=N_AGENTS, n_enemies=N_ENEMIES, n_goals=N_GOALS, n_rows=rows,
+                                     n_cols=cols)
 
         out_causal_table = CausalDiscovery(new_df_track, N_AGENTS, N_ENEMIES, N_GOALS, dir_save,
                                            f'graph_{name_save}').return_causal_table()
 
-        out_causal_table.to_excel(f'{dir_save}/causal_table_{name_save}.xlsx')
-        out_causal_table.to_pickle(f'{dir_save}/causal_table_{name_save}.pkl')
+        if out_causal_table is not None:
+            out_causal_table.to_excel(f'{dir_save}/causal_table_{name_save}.xlsx')
+            out_causal_table.to_pickle(f'{dir_save}/causal_table_{name_save}.pkl')
