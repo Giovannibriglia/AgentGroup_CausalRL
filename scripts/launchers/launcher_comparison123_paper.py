@@ -15,7 +15,7 @@ final q-table (if available), the number of steps taken to complete each episode
 along with accompanying videos."""
 
 
-dir_save = 'Comparison123'
+dir_save = 'mario'
 
 if_maze = False
 
@@ -39,14 +39,14 @@ for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
             # Create an environment
             environment = CustomEnv(dict_env_params)
 
-            for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
+            for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING]:#, global_variables.LABEL_DQN]:
 
-                for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE]:
+                for label_kind_of_alg2 in [global_variables.LABEL_VANILLA]: #, global_variables.LABEL_CAUSAL_OFFLINE]:
                                            #global_variables.LABEL_CAUSAL_ONLINE]:
 
-                    for label_exploration_strategy in [global_variables.LABEL_SOFTMAX_ANNEALING,
-                                                       global_variables.LABEL_THOMPSON_SAMPLING,
-                                                       global_variables.LABEL_BOLTZMANN_MACHINE,
+                    for label_exploration_strategy in [#global_variables.LABEL_SOFTMAX_ANNEALING,
+                                                       #global_variables.LABEL_THOMPSON_SAMPLING,
+                                                       #global_variables.LABEL_BOLTZMANN_MACHINE,
                                                        global_variables.LABEL_EPSILON_GREEDY]:
                         class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                                f'{label_kind_of_alg}_{label_kind_of_alg2}',

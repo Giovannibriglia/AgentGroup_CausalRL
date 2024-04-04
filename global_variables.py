@@ -1,5 +1,6 @@
 import os
-
+from itertools import product
+import palettable
 import numpy as np
 
 # TODO: RIORDINARE COME DIO COMANDA
@@ -45,6 +46,32 @@ LABEL_SOFTMAX_ANNEALING = 'SA'
 
 LIST_IMPLEMENTED_EXPLORATION_STRATEGIES = [f'{LABEL_EPSILON_GREEDY}', f'{LABEL_THOMPSON_SAMPLING}',
                                            f'{LABEL_SOFTMAX_ANNEALING}', f'{LABEL_BOLTZMANN_MACHINE}']
+
+GROUPS_IMPLEMENTED_ALG_EXP_STR = [f'{algo}_{exp_str}'
+                                  for algo in LIST_IMPLEMENTED_ALGORITHMS
+                                  if algo != LABEL_RANDOM_AGENT
+                                  for exp_str in LIST_IMPLEMENTED_EXPLORATION_STRATEGIES]
+
+# TODO: CHANGE VALUES
+palettes = {
+    LABEL_EPSILON_GREEDY: palettable.colorbrewer.sequential.Blues_9,
+    LABEL_THOMPSON_SAMPLING: palettable.colorbrewer.sequential.Greens_9,
+    LABEL_SOFTMAX_ANNEALING: palettable.colorbrewer.sequential.Oranges_9,
+    LABEL_BOLTZMANN_MACHINE: palettable.colorbrewer.sequential.Reds_9
+}
+
+COLORS_ALGORITHMS = {}
+
+combinations = product(LIST_IMPLEMENTED_ALGORITHMS[1:], LIST_IMPLEMENTED_EXPLORATION_STRATEGIES)
+
+for algo, exp_str in combinations:
+    palette = palettes[exp_str]
+    algo_exp_str = f'{algo}_{exp_str}'
+    palette_index = LIST_IMPLEMENTED_ALGORITHMS.index(algo) - 1  # Adjust index since we start from index 1 in LIST_IMPLEMENTED_ALGORITHMS
+    color_index = LIST_IMPLEMENTED_EXPLORATION_STRATEGIES.index(exp_str)
+    color = palette.mpl_colors[(palette_index + color_index) % len(palette.mpl_colors)]  # Wrap around the palette
+    COLORS_ALGORITHMS[algo_exp_str] = color
+
 
 KEY_METRIC_REWARDS_EPISODE = 'rewards_for_episodes'
 KEY_METRICS_STEPS_EPISODE = 'steps_for_episode'

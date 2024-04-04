@@ -8,7 +8,7 @@ from scipy.ndimage import gaussian_filter1d
 from decimal import *
 
 fontsize = 12
-SIGMA_GAUSSIAN_FILTER = 4
+SIGMA_GAUSSIAN_FILTER = 3
 getcontext().prec = 5
 
 dir_results = 'Comparison123'
@@ -41,7 +41,7 @@ def drop_characters_after_first_word(string: str, words_to_drop: str) -> str:
     return string
 
 
-def IQM_mean(data):
+def IQM_mean(data: list) -> float:
     # Sort the data
     sorted_data = np.sort(data)
 
@@ -64,15 +64,31 @@ def IQM_mean(data):
     return iq_mean
 
 
-def upload_fig(ax_n: plt.axes, values: list, mean_to_display: Decimal, std_to_display: Decimal, label_series: str):
-    # TODO: COLORS, TIMEOUTS AND STD
+def compute_my_confidence_interval(data: list) -> Decimal:
+    median = np.median(data)
+    mad = np.median(np.abs(data - median))
+    reward_range = np.max(data) - np.min(data)
+    if reward_range == 0:
+        value = 0
+    else:
+        value = Decimal(str(mad / reward_range)).quantize(Decimal('.01'))
+    return value
+
+
+def upload_fig(ax_n: plt.axes, values: list, mean_to_display: Decimal, std_to_display: Decimal, label_series: str,
+               str_timeout: str, color_algo: str):
+    # TODO: STD AND FIX COLORS
     series_smooth = gaussian_filter1d(values[0], SIGMA_GAUSSIAN_FILTER)
-    confidence_interval = Decimal(np.std(series_smooth)).quantize(Decimal('.01'))
+    confidence_interval = compute_my_confidence_interval(series_smooth)
     x_data = np.arange(0, len(series_smooth), 1)
-    ax_n.plot(x_data, series_smooth,
-              label=f'{label_series}: {mean_to_display} \u00B1 {std_to_display}')
-    ax_n.fill_between(x_data, (series_smooth - confidence_interval), (series_smooth + confidence_interval),
-                      alpha=0.2)
+    if str_timeout is not None:
+        ax_n.plot(x_data, series_smooth, color=color_algo,
+                  label=f'{label_series}: {mean_to_display} \u00B1 {std_to_display} ({str_timeout})')
+    else:
+        ax_n.plot(x_data, series_smooth, color=color_algo,
+                  label=f'{label_series}: {mean_to_display} \u00B1 {std_to_display}')
+    ax_n.fill_between(x_data, (series_smooth - confidence_interval), (series_smooth + confidence_interval), alpha=0.2)
+
     ax_n.legend(fontsize='small')
 
 
@@ -138,6 +154,15 @@ for file_main_folder in files_inside_main_folder:
                     n_games_performed = len(series['timeout'])
                     n_games_ok = series['timeout'].count(False)
 
+                    if n_games_ok < n_games_performed:
+                        str_timeout = f'{n_games_ok}/{n_games_performed}'
+                    elif n_games_ok == n_games_performed:
+                        str_timeout = None
+                    else:
+                        print(
+                            f'*** Problem with timeout counter: n_games_performed: {n_games_performed} - n_games_ok: {n_games_ok}')
+                        str_timeout = None
+
                     indices_to_remove = [i for i, value in enumerate(series['timeout']) if value]
                     for key in series:
                         if key != 'timeout':
@@ -153,13 +178,14 @@ for file_main_folder in files_inside_main_folder:
                     cumulative_reward_series = [sum(values) / n_games_ok for values in zip(*rewards_series)]
                     IQM_cumulative_reward_series = Decimal(IQM_mean(cumulative_reward_series))
 
-                    IQM_reward_series = Decimal(IQM_mean(rewards_series)).quantize(Decimal('.01'))
-                    conf_interval_reward_series = Decimal(np.std(rewards_series)).quantize(Decimal('.01'))
-                    upload_fig(ax_iqm_reward, rewards_series, IQM_reward_series, conf_interval_reward_series,
-                               label_plot)
+                    IQM_reward_value = Decimal(IQM_mean(rewards_series)).quantize(Decimal('.01'))
+                    confidence_interval_reward_series = compute_my_confidence_interval(rewards_series)
+                    color_algo = global_variables.COLORS_ALGORITHMS[label_plot]
+                    upload_fig(ax_iqm_reward, rewards_series, IQM_reward_value, confidence_interval_reward_series,
+                               label_plot, str_timeout, color_algo)
 
                     IQM_actions_needed = Decimal(IQM_mean(actions_series)).quantize(Decimal('.01'))
 
                     IQM_computation_time = Decimal(IQM_mean(computation_time_series)).quantize(Decimal('.01'))
-            plt.show()
 
+            plt.show()
