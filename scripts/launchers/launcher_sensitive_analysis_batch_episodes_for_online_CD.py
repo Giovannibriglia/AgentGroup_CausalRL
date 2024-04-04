@@ -41,10 +41,10 @@ GROUND_TRUTH_CAUSAL_TABLE = prepare_df_for_comparison(pd.read_pickle(f'{global_v
 with open(f'{global_variables.PATH_CAUSAL_GRAPH_OFFLINE}', 'r') as file:
     GROUND_TRUTH_CAUSAL_GRAPH = json.load(file)
 
-N_SIMULATIONS_CONSIDERED = global_variables.N_SIMULATIONS_PAPER
-N_ENEMIES_CONSIDERED = global_variables.N_ENEMIES_CONSIDERED_PAPER
-N_EPISODES_CONSIDERED = global_variables.N_EPISODES_CONSIDERED_FOR_SENSITIVE_ANALYSIS_PAPER
-GRID_SIZES_CONSIDERED = global_variables.GRID_SIZES_CONSIDERED_PAPER
+N_SIMULATIONS_CONSIDERED = 2  # global_variables.N_SIMULATIONS_PAPER
+N_ENEMIES_CONSIDERED = [1, 2]  # global_variables.N_ENEMIES_CONSIDERED_PAPER
+N_EPISODES_CONSIDERED = [500]  # global_variables.N_EPISODES_CONSIDERED_FOR_SENSITIVE_ANALYSIS_PAPER
+GRID_SIZES_CONSIDERED = [(5, 5)]  # global_variables.GRID_SIZES_CONSIDERED_PAPER
 n_agents = 1
 n_goals = 1
 
@@ -65,8 +65,8 @@ for dict_comb in list_combinations_for_simulations:
     rows, cols = dict_comb['grid_size']
     print(f'\n *** Grid size: {rows}x{cols} - {n_episodes} episodes - {n_enemies} enemies ***')
 
-    dict_comb['df'] = generate_empty_list(N_SIMULATIONS_CONSIDERED, pd.DataFrame)
-    dict_comb['causal_table'] = generate_empty_list(N_SIMULATIONS_CONSIDERED, pd.DataFrame)
+    # dict_comb['df'] = generate_empty_list(N_SIMULATIONS_CONSIDERED, pd.DataFrame)
+    # dict_comb['causal_table'] = generate_empty_list(N_SIMULATIONS_CONSIDERED, pd.DataFrame)
     dict_comb['causal_graph'] = generate_empty_list(N_SIMULATIONS_CONSIDERED, list)
 
     for sim_n in range(N_SIMULATIONS_CONSIDERED):
@@ -94,14 +94,17 @@ for dict_comb in list_combinations_for_simulations:
         class_train.start_train(env, batch_update_df_track=1000)
 
         df_track = class_train.get_df_track()
-        dict_comb['df'][sim_n] = df_track
+        # dict_comb['df'][sim_n] = df_track
 
         cd = CausalDiscovery(df_track, n_agents, n_enemies, n_goals)
         out_causal_graph = cd.return_causal_graph()
         out_causal_table = cd.return_causal_table()
 
-        dict_comb['causal_table'][sim_n] = out_causal_table
+        # dict_comb['causal_table'][sim_n] = out_causal_table
         dict_comb['causal_graph'][sim_n] = out_causal_graph
+
+with open(f'{global_variables.PATH_LIST_OF_DICTS_BATCH_EPISODES_ANALYSIS}', 'w') as json_file:
+    json.dump(list_combinations_for_simulations, json_file, indent=4)
 
 " Second part: comparisons "
 list_combinations_df_results = [{'n_enemies': item[0], 'n_episodes': item[1], 'grid_size': item[2]} for item in
@@ -128,4 +131,5 @@ for new_dict_comb in list_combinations_df_results:
     new_dict_comb['suitable'] = n_checks > int(N_SIMULATIONS_CONSIDERED / 2)  # better than the random case
 
 out_table_results = pd.DataFrame(list_combinations_df_results)
-out_table_results.to_excel(f'{global_variables.GLOBAL_PATH_REPO}/mario.xlsx')
+out_table_results.to_pickle(f'{global_variables.PATH_RESULTS_BATCH_EPISODES_ONLINE_CD}')
+out_table_results.to_excel(f'{global_variables.GLOBAL_PATH_REPO}/batch_episodes_online.xlsx')

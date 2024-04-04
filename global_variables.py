@@ -127,3 +127,4 @@ PATH_CAUSAL_TABLE_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/utils/ground_truth_caus
 PATH_CAUSAL_GRAPH_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/utils/ground_truth_causal_graph.json'
 PATH_IMG_CAUSAL_GRAPH_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/utils/ground_truth_causal_graph.png'
 PATH_RESULTS_BATCH_EPISODES_ONLINE_CD = f'{GLOBAL_PATH_REPO}/scripts/utils/batch_episodes_for_online_cd.pkl'
+PATH_LIST_OF_DICTS_BATCH_EPISODES_ANALYSIS = f'{GLOBAL_PATH_REPO}/scripts/utils/batch_episodes_for_onlince_cd_values.json'
