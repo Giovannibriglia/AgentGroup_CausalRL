@@ -1,7 +1,5 @@
 import os
 from itertools import product
-import re
-from typing import Tuple
 
 import pandas as pd
 import global_variables

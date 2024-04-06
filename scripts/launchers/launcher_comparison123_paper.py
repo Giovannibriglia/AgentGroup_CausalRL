@@ -1,5 +1,3 @@
-import pandas as pd
-
 import global_variables
 from scripts.utils.environment import CustomEnv
 from scripts.utils.others import get_batch_episodes

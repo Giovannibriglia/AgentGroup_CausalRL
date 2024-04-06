@@ -1,7 +1,4 @@
-import numpy as np
 import global_variables
-import os
-import json
 from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.utils.environment import CustomEnv
 from scripts.utils.others import get_batch_episodes
