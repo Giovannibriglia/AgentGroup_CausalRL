@@ -1,3 +1,6 @@
+import sys
+
+sys.path.append("..")  # Add parent directory to sys.path
 import numpy as np
 import random
 import global_variables
@@ -85,4 +88,3 @@ for rows, cols in GRID_SIZES:
 
         cd = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS, dir_save, f'graph_{name_save}',
                              f'causal_table_{name_save}')
-
