@@ -1,7 +1,6 @@
 import random
 import json
 from itertools import product
-
 import numpy as np
 import pandas as pd
 import global_variables
@@ -41,8 +40,8 @@ GROUND_TRUTH_CAUSAL_TABLE = prepare_df_for_comparison(pd.read_pickle(f'{global_v
 with open(f'{global_variables.PATH_CAUSAL_GRAPH_OFFLINE}', 'r') as file:
     GROUND_TRUTH_CAUSAL_GRAPH = json.load(file)
 
-N_SIMULATIONS_CONSIDERED = 2  # global_variables.N_SIMULATIONS_PAPER
-N_ENEMIES_CONSIDERED = [1, 2]  # global_variables.N_ENEMIES_CONSIDERED_PAPER
+N_SIMULATIONS_CONSIDERED = global_variables.N_SIMULATIONS_PAPER
+N_ENEMIES_CONSIDERED = [1]  # global_variables.N_ENEMIES_CONSIDERED_PAPER
 N_EPISODES_CONSIDERED = [500]  # global_variables.N_EPISODES_CONSIDERED_FOR_SENSITIVE_ANALYSIS_PAPER
 GRID_SIZES_CONSIDERED = [(5, 5)]  # global_variables.GRID_SIZES_CONSIDERED_PAPER
 n_agents = 1

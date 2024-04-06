@@ -22,7 +22,7 @@ N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
 GRID_SIZE = (8, 8)
-N_EPISODES = 3000
+N_EPISODES = global_variables.N_TRAINING_EPISODES
 
 label_kind_of_alg = global_variables.LABEL_RANDOM_AGENT
 label_exploration_strategy = global_variables.LABEL_RANDOM_AGENT

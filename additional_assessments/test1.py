@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import global_variables
 import os
 import json
@@ -30,7 +31,7 @@ For clarity, consider the following example:
     - grid 8x8 --> 36 central cells, 28 boundary cells
 """
 
-NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Test1'
+NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Test1_2'
 
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 N_TRAINING_EPISODE = global_variables.N_TRAINING_EPISODES
@@ -54,6 +55,8 @@ for rows, cols in GRID_SIZES:
         name_save = f'{rows}x{cols}_game{simulation_n}'
 
         seed_value = global_variables.seed_values[simulation_n]
+        np.random.seed(seed_value)
+        random.seed(seed_value)
 
         dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
         dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
@@ -80,9 +83,6 @@ for rows, cols in GRID_SIZES:
         class_train.start_train(env, batch_update_df_track=1000)
         df_track = class_train.get_df_track()
 
-        out_causal_table = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS, dir_save,
-                                           f'graph_{name_save}').return_causal_table()
+        cd = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS, dir_save, f'graph_{name_save}',
+                             f'causal_table_{name_save}')
 
-        if out_causal_table is not None:
-            out_causal_table.to_excel(f'{dir_save}/causal_table_{name_save}.xlsx')
-            out_causal_table.to_pickle(f'{dir_save}/causal_table_{name_save}.pkl')

@@ -22,7 +22,7 @@ NODE_SIZE_GRAPH = 1000
 class CausalDiscovery:
 
     def __init__(self, df: pd.DataFrame, n_agents: int, n_enemies: int, n_goals: int, dir_saving_graphs: str = None,
-                 name_saving_graphs: str = None):
+                 name_saving_graphs: str = None, name_saving_causal_table: str = None):
 
         self.n_agents = n_agents
         self.n_enemies = n_enemies
@@ -47,7 +47,8 @@ class CausalDiscovery:
         self.table = None
 
         self.dir_saving = dir_saving_graphs
-        self.name_save = name_saving_graphs
+        self.name_save_graph = name_saving_graphs
+        self.name_save_table = name_saving_causal_table
 
         # self._modify_action_values()
 
@@ -128,7 +129,7 @@ class CausalDiscovery:
         self.structureModel.remove_edges_below_threshold(0.2)
 
         if nx.number_weakly_connected_components(self.structureModel) == 1 and nx.is_directed_acyclic_graph(self.structureModel):
-            if self.dir_saving is not None and self.name_save is not None:
+            if self.dir_saving is not None and self.name_save_graph is not None:
                 self._plot_and_save_causal_graph(self.structureModel, False)
 
             print(f'training bayesian network...')
@@ -150,12 +151,16 @@ class CausalDiscovery:
             sm.add_edges_from(edges)
             self.causal_graph = sm
 
-            if self.dir_saving is not None and self.name_save is not None:
+            if self.dir_saving is not None and self.name_save_graph is not None:
                 self._plot_and_save_causal_graph(sm, True)
 
             print('do-calculus-2...')
             # resume results in a table
             self.table = self.__perform_interventions()
+
+            if self.dir_saving is not None and self.name_save_table is not None:
+                self.table.to_pickle(f'{self.dir_saving}/{self.name_save_table}.pkl')
+
         else:
             self.causal_graph = None
             self.table = None
@@ -310,14 +315,14 @@ class CausalDiscovery:
         structure_to_save = [(x[0], x[1]) for x in sm.edges]
 
         if if_causal:
-            plt.savefig(f'{self.dir_saving}/{self.name_save}_causal_graph.png')
+            plt.savefig(f'{self.dir_saving}/{self.name_save_graph}_causal_graph.png')
 
-            with open(f'{self.dir_saving}/{self.name_save}_notears_structure.json', 'w') as json_file:
+            with open(f'{self.dir_saving}/{self.name_save_graph}_notears_structure.json', 'w') as json_file:
                 json.dump(structure_to_save, json_file)
         else:
-            plt.savefig(f'{self.dir_saving}/{self.name_save}_notears_graph.png')
+            plt.savefig(f'{self.dir_saving}/{self.name_save_graph}_notears_graph.png')
 
-            with open(f'{self.dir_saving}/{self.name_save}_causal_structure.json', 'w') as json_file:
+            with open(f'{self.dir_saving}/{self.name_save_graph}_causal_structure.json', 'w') as json_file:
                 json.dump(structure_to_save, json_file)
 
         plt.close(fig)

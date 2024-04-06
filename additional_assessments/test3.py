@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import global_variables
 import os
@@ -14,7 +15,7 @@ this modification, the result will be "action = 1, deltaX = -n_cols, deltaY = 0"
 the correct operation, in the case of row modification, the winner and the defeats are ignored.
 """
 
-NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Test3'
+NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Test3_2'
 
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 N_TRAINING_EPISODE = global_variables.N_TRAINING_EPISODES
@@ -92,6 +93,8 @@ for rows, cols in GRID_SIZES:
         name_save = f'{rows}x{cols}_game{simulation_n}'
 
         seed_value = global_variables.seed_values[simulation_n]
+        np.random.seed(seed_value)
+        random.seed(seed_value)
 
         dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
         dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
@@ -121,9 +124,7 @@ for rows, cols in GRID_SIZES:
         new_df_track = make_toroidal(df_track, n_agents=N_AGENTS, n_enemies=N_ENEMIES, n_goals=N_GOALS, n_rows=rows,
                                      n_cols=cols)
 
-        out_causal_table = CausalDiscovery(new_df_track, N_AGENTS, N_ENEMIES, N_GOALS, dir_save,
-                                           f'graph_{name_save}').return_causal_table()
+        cd = CausalDiscovery(new_df_track, N_AGENTS, N_ENEMIES, N_GOALS, dir_save, f'graph_{name_save}',
+                             f'causal_table_{name_save}')
 
-        if out_causal_table is not None:
-            out_causal_table.to_excel(f'{dir_save}/causal_table_{name_save}.xlsx')
-            out_causal_table.to_pickle(f'{dir_save}/causal_table_{name_save}.pkl')
+

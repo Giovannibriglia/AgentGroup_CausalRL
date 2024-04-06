@@ -1,8 +1,9 @@
 import os
 import json
+from typing import Tuple
+import re
 import numpy as np
 import pandas as pd
-
 import global_variables
 
 
@@ -40,18 +41,31 @@ class NumpyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def compare_causal_graphs(cg1: list, cg2: list) -> bool:
-    # cg1 and cg2 are lists of lists
-    list1 = cg1.copy()
-    list2 = cg2.copy()
+def compare_causal_graphs(ground_truth: list, other_list: list) -> bool:
+    # Convert ground_truth to a set of tuples for faster membership check
+    ground_truth_set = sorted(set(tuple(item) for item in ground_truth))
 
-    sorted_list1 = [sorted(sublist) for sublist in list1]
-    sorted_list2 = [sorted(sublist) for sublist in list2]
+    other_list_sorted = sorted(set(tuple(item) for item in other_list))
 
-    sorted_list1.sort()
-    sorted_list2.sort()
+    in_other_list_not_in_ground_truth = []
+    in_ground_truth_not_in_other_list = []
 
-    return sorted_list1 == sorted_list2
+    for item in other_list_sorted:
+        if item not in ground_truth_set:
+            in_other_list_not_in_ground_truth.append(item)
+
+    for item in ground_truth_set:
+        if item not in other_list_sorted:
+            in_ground_truth_not_in_other_list.append(item)
+
+    if len(in_other_list_not_in_ground_truth) > 0:
+        print('In other list but not in ground truth: ', in_other_list_not_in_ground_truth,
+              len(in_other_list_not_in_ground_truth))
+    if len(in_ground_truth_not_in_other_list):
+        print('In ground truth but not in list: ', in_ground_truth_not_in_other_list,
+              len(in_ground_truth_not_in_other_list))
+
+    return len(in_other_list_not_in_ground_truth) == 0 and len(in_ground_truth_not_in_other_list) == 0
 
 
 def get_batch_episodes(n_enemies: int, n_rows: int, n_cols: int) -> int:
@@ -69,3 +83,26 @@ def get_batch_episodes(n_enemies: int, n_rows: int, n_cols: int) -> int:
     else:
         print('DEBUGGARE')
         return 1000
+
+
+def extract_grid_size_and_n_enemies(input_string: str) -> Tuple[tuple, int]:
+    match = re.match(r'(Grid|Maze)(\d+)x(\d+)_(\d+)(enemies|enemy)', input_string)
+    if match:
+        grid_size = (int(match.group(2)), int(match.group(3)))
+        n_enemies = int(match.group(4))
+        return grid_size, n_enemies
+    else:
+        return (None, None), None
+
+
+def extract_grid_size(input_string: str) -> tuple:
+    match1 = re.match(r'(Grid|Maze)(\d+)x(\d+)', input_string)
+    match2 = re.match(r'(TorGrid|TorMaze)(\d+)x(\d+)', input_string)
+    if match1:
+        grid_size = (int(match1.group(2)), int(match1.group(3)))
+        return grid_size
+    elif match2:
+        grid_size = (int(match2.group(2)), int(match2.group(3)))
+        return grid_size
+    else:
+        return (None, None)
