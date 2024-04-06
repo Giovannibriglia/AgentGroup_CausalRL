@@ -1,6 +1,6 @@
 import numpy as np
 import random
-import global_variables
+from .. import global_variables
 import os
 import json
 from scripts.algorithms.causal_discovery import CausalDiscovery
