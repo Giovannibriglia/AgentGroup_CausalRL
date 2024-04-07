@@ -1,14 +1,12 @@
-import sys
-
-sys.path.append("..")  # Add parent directory to sys.path
 import numpy as np
 import random
 import global_variables
 import os
 import json
-from scripts.algorithms.causal_discovery import CausalDiscovery
+
 from scripts.utils.environment import CustomEnv
 from scripts.utils.train_models import Training
+from scripts.algorithms.causal_discovery import CausalDiscovery
 
 """
 We develop this assessment to validate our hypothesis concerning the extraction of causal relationships. Our 
