@@ -1,7 +1,7 @@
-import global_variables
 from scripts.utils.environment import CustomEnv
-from scripts.utils.others import get_batch_episodes
 from scripts.utils.train_models import Training
+from scripts.utils.others import get_batch_episodes
+import global_variables
 
 """The objective of this script is to conduct comparative analyses across various environments, algorithms (
 Q-Learning and DQN), exploration strategies (Epsilon-Greedy, Thompson Sampling, Boltzmann Machine, and Softmax 

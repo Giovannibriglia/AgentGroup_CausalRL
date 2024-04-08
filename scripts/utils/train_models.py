@@ -349,7 +349,7 @@ if __name__ == '__main__':
         # Create an environment
         environment = CustomEnv(dict_env_params)
 
-        for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
+        for label_kind_of_alg in [global_variables.LABEL_DQN, global_variables.LABEL_DQN]:
 
             for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_VANILLA]:
 
@@ -361,14 +361,4 @@ if __name__ == '__main__':
                                            f'{label_kind_of_alg}_{label_kind_of_alg2}',
                                            f'{label_exploration_strategy}')
 
-                    add_name_dir_save = 'Maze' if if_maze else 'Grid' + f'{rows}x{cols}_{n_enemies}' + 'enemies' if n_enemies > 1 else 'enemy'
-
-                    class_train.start_train(environment,
-                                            dir_save_metrics=f'Comparison/{add_name_dir_save}',
-                                            name_save_metrics=f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_game{x}',
-                                            episodes_to_visualize=[0,
-                                                                   int(global_variables.N_TRAINING_EPISODES / 3),
-                                                                   int(global_variables.N_TRAINING_EPISODES * 0.66),
-                                                                   global_variables.N_TRAINING_EPISODES - 1])
-                    # dir_save_videos=f'Comparison/{add_name_dir_save}',
-                    # name_save_videos=f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_game{x}')
+                    class_train.start_train(environment)

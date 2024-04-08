@@ -5,13 +5,11 @@ import shutil
 import time
 import warnings
 from typing import Tuple
-
 import cv2
 import numpy as np
 import pygame
 import pygame.camera
 from gymnasium.spaces import Discrete
-
 import global_variables
 from global_variables import VALUE_AGENT_CELL, VALUE_GOAL_CELL, VALUE_EMPTY_CELL, VALUE_WALL_CELL, VALUE_ENEMY_CELL, \
     VALUE_ENTITY_FAR, KEY_SAME_ENEMY_ACTIONS, KEY_RANDOM_ENEMY_ACTIONS, LEN_PREDEFINED_ENEMIES_ACTIONS, \
@@ -503,3 +501,4 @@ class CustomEnv:
         # Print the named matrix
         print(named_matrix, '\n')
         time.sleep(2)
+
