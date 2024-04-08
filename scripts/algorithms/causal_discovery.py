@@ -9,7 +9,7 @@ from causalnex.network import BayesianNetwork
 from causalnex.structure.notears import from_pandas
 from matplotlib import pyplot as plt
 from causalnex.structure import StructureModel
-import global_variables
+from ... import global_variables
 import json
 
 warnings.filterwarnings("ignore")

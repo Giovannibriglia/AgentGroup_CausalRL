@@ -1,6 +1,5 @@
 import os
 from itertools import product
-
 import pandas as pd
 import global_variables
 import matplotlib.pyplot as plt
