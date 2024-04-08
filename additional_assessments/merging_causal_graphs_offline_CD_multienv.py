@@ -5,6 +5,7 @@ import global_variables
 import os
 from collections import Counter
 from causalnex.structure import StructureModel
+from scripts.utils.others import compare_causal_graphs
 
 DIR_GET_RESULTS = 'OfflineCD_MultiEnv'
 
@@ -23,7 +24,7 @@ element_counts = Counter(tuple_lists)
 edges = []
 for element, count in element_counts.items():
     if count > int(len(causal_graphs_json)/2):
-        print(f"Element: {element}, Occurrences: {count}")
+        # print(f"Edge: {element}, Occurrences: {count}")
         edges.append(element)
 
 sm = StructureModel()
@@ -39,16 +40,20 @@ plt.show()
 with open(f'{global_variables.PATH_CAUSAL_GRAPH_OFFLINE}', 'r') as file:
     GROUND_TRUTH_CAUSAL_GRAPH = json.load(file)
 
-edges2 = []
+edges_ground_truth = []
 for element in GROUND_TRUTH_CAUSAL_GRAPH:
-    edges2.append(element)
+    edges_ground_truth.append(element)
 
-sm2 = StructureModel()
-sm2.add_edges_from(edges2)
+sm_true = StructureModel()
+sm_true.add_edges_from(edges_ground_truth)
 
 plt.figure(dpi=1000)
 plt.title(f'True causal graph', fontsize=20)
 # Draw the graph with custom labels
-nx.draw(sm2, with_labels=True, font_size=9, arrowsize=30, arrows=True,
-        edge_color='orange', node_size=1000, font_weight='bold', pos=nx.circular_layout(sm2))
+nx.draw(sm_true, with_labels=True, font_size=9, arrowsize=30, arrows=True,
+        edge_color='orange', node_size=1000, font_weight='bold', pos=nx.circular_layout(sm_true))
 plt.show()
+
+print('\n', compare_causal_graphs(edges_ground_truth, edges))
+
+print(f'\nGround truth edges: {len(edges_ground_truth)} - Average causal graph: {len(edges)}')

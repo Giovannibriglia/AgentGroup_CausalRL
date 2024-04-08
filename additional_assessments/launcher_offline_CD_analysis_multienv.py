@@ -32,7 +32,7 @@ DIR_SAVING = 'OfflineCD_MultiEnv'
 N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
-GRID_SIZE = (3, 3)
+GRID_SIZE = (4, 4)
 N_EPISODES = 3000
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 
@@ -89,6 +89,5 @@ for sim_n in range(N_SIMULATIONS):
     plt.show()
     plt.close(fig)
 
-# evaluate data
-# TODO: merge causal graphs and merge causal table in some way
+" For evaluating data, run 'merging_causal_graphs_offline_CD_multienv.py' "
 

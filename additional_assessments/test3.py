@@ -127,4 +127,4 @@ for rows, cols in GRID_SIZES:
         cd = CausalDiscovery(new_df_track, N_AGENTS, N_ENEMIES, N_GOALS, dir_save, f'graph_{name_save}',
                              f'causal_table_{name_save}')
 
-
+" For evaluating data, run 'evaluation_for_test1_and_test3.py' "
