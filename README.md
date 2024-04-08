@@ -75,19 +75,26 @@ requirements.txt
 1. Create a new python virtual environment with 'python 3.10'
 2. Install 'requirements'
    ```
-   pip install requirements
+   pip install -r requirements.txt
    ```
-3. Try running example
+3. Install setup
    ```
-   TODO: @gio sviluppa un breve test
+   python setup.py install
+   ```
+
+## How to Reproduce Paper Results
+   For comparison: Vanilla vs Causal Offline vs Online in Grid-like Environments:
+   ```
+   python scripts/launchers/launcher_comparison123_paper.py
+   ```
+   For comparison: With and Without Transfer Learning in Maze-like Environments:
+   ```
+   python scripts/launchers/launcher_comparison4_paper.py
    ```
 
 ## Configuration 
 ### Main Parameters
 ### Other Parameters
-
-## How to Reproduce Paper Results
-
 
 ## How to Develop your Own Extension
 
