@@ -23,6 +23,7 @@ def generate_empty_list(X: int, data_type) -> list:
     return [data_type() for _ in range(X)]
 
 
+"""
 def prepare_df_for_comparison(df1: pd.DataFrame) -> pd.DataFrame:
     col_df1 = df1.columns.to_list()
     # Sort DataFrames by values
@@ -36,14 +37,14 @@ def prepare_df_for_comparison(df1: pd.DataFrame) -> pd.DataFrame:
 
 
 GROUND_TRUTH_CAUSAL_TABLE = prepare_df_for_comparison(pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}'))
-
+"""
 with open(f'{global_variables.PATH_CAUSAL_GRAPH_OFFLINE}', 'r') as file:
     GROUND_TRUTH_CAUSAL_GRAPH = json.load(file)
 
 N_SIMULATIONS_CONSIDERED = global_variables.N_SIMULATIONS_PAPER
-N_ENEMIES_CONSIDERED = [1]  # global_variables.N_ENEMIES_CONSIDERED_PAPER
-N_EPISODES_CONSIDERED = [500]  # global_variables.N_EPISODES_CONSIDERED_FOR_SENSITIVE_ANALYSIS_PAPER
-GRID_SIZES_CONSIDERED = [(5, 5)]  # global_variables.GRID_SIZES_CONSIDERED_PAPER
+N_ENEMIES_CONSIDERED = global_variables.N_ENEMIES_CONSIDERED_PAPER
+N_EPISODES_CONSIDERED = global_variables.N_EPISODES_CONSIDERED_FOR_SENSITIVE_ANALYSIS_PAPER
+GRID_SIZES_CONSIDERED = global_variables.GRID_SIZES_CONSIDERED_PAPER
 n_agents = 1
 n_goals = 1
 
