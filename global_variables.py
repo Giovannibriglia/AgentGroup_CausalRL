@@ -59,11 +59,8 @@ palettes = {
     LABEL_SOFTMAX_ANNEALING: palettable.colorbrewer.sequential.Oranges_9,
     LABEL_BOLTZMANN_MACHINE: palettable.colorbrewer.sequential.Reds_9
 }
-
 COLORS_ALGORITHMS = {}
-
 combinations = product(LIST_IMPLEMENTED_ALGORITHMS[1:], LIST_IMPLEMENTED_EXPLORATION_STRATEGIES)
-
 for algo, exp_str in combinations:
     palette = palettes[exp_str]
     algo_exp_str = f'{algo}_{exp_str}'

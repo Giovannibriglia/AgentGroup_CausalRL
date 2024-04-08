@@ -92,14 +92,19 @@ requirements.txt
    python scripts/launchers/launcher_comparison4_paper.py
    ```
 
-## Configuration 
-### Main Parameters
-### Other Parameters
+## Parameters 
+![experiments_parameters](experiments_parameters.png)
+<p align="center">
+  <img width="460" height="300" src=values_reasons_parameters.png>
+</p>
 
-## How to Develop your Own Extension
+## Develop your Own Extension
+Your extension can take various paths:
+1) One direction involves modifying the causal discovery algorithms.
+2) Another direction entails adding new agents (currently Q-Learning and DQN have been developed). It's crucial to maintain consistency with the training class by implementing the "__update_Q_or_memory__", "__update_exp_fact__", "__select_action__" and "__return_q_table__" functions. Additionally, in the "global_variables.py" script, you need to include your custom label.
+3) The third direction involves testing new environments.
 
-
-## Citation 
+## Citation  
 ```
 @inproceedings{}
 ```
