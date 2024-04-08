@@ -37,7 +37,7 @@ for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
                 # Create an environment
                 environment = CustomEnv(dict_env_params)
 
-                for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
+                for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING]: #, global_variables.LABEL_DQN]:
 
                     for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE]:
 
