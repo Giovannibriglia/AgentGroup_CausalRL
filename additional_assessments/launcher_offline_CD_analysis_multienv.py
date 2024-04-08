@@ -32,7 +32,7 @@ DIR_SAVING = 'OfflineCD_MultiEnv'
 N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
-GRID_SIZE = (4, 4)
+GRID_SIZE = (3, 3)
 N_EPISODES = 3000
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 
@@ -68,6 +68,7 @@ for sim_n in range(N_SIMULATIONS):
 
     class_train.start_train(env, batch_update_df_track=1000)
     df_track = class_train.get_df_track()
+    df_track.to_pickle(f'{DIR_SAVING}/df_track_{sim_n}.pkl')
 
     cd = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS)
     out_causal_table = cd.return_causal_table()

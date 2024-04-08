@@ -23,9 +23,22 @@ element_counts = Counter(tuple_lists)
 
 edges = []
 for element, count in element_counts.items():
-    if count > int(len(causal_graphs_json)/2):
+    if count > int(len(causal_graphs_json) / 2):
         # print(f"Edge: {element}, Occurrences: {count}")
         edges.append(element)
+
+
+def generate_plot(edges: list, title):
+    sm_true = StructureModel()
+    sm_true.add_edges_from(edges)
+
+    plt.figure(dpi=1000)
+    plt.title(f'{title}', fontsize=20)
+    # Draw the graph with custom labels
+    nx.draw(sm_true, with_labels=True, font_size=9, arrowsize=30, arrows=True,
+            edge_color='orange', node_size=1000, font_weight='bold', pos=nx.circular_layout(sm_true))
+    plt.show()
+
 
 sm = StructureModel()
 sm.add_edges_from(edges)
