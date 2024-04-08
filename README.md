@@ -15,6 +15,13 @@ This repository provides the Framework detailed in [Generalisable Improvement to
 
 ```
 *** TO COMPLETE ***
+additional_assessments
+   |__init__.py
+   |__evaluation_for_test1_and_test3.py
+   |__launcher_offline_CD_analysis_multienv.py
+   |__test1.py
+   |__test2.py
+   |__test3.py
 images_for_render
    |__bowser.png
    |__goal.png
@@ -23,24 +30,37 @@ images_for_render
 Results
    |__Comparison123
    |__Comparison4
+   |__OfflineCD_MultiEnv
+   |__Test1
+   |__Test3
 scripts
    |__algorithms
+      |__init__py
       |__causal_discovery.py
       |__dqn_agent.py
       |__q_learning_agent.py
       |__random_agent.py
    |__launchers
+      |__init__.py
       |__launcher_comparison4_paper.py
       |__launcher_comparison123_paper.py
       |__launcher_offline_CD_analysis.py
       |__launcher_sensitive_analysis_batch_episodes_for_online_CD.py
    |__utils
+      |__init.py
+      |__batch_episodes_for_online_cd_values.pkl
       |__dqn_class_and_memory.py
       |__environment.py
       |__exploration_strategies.py
+      |__ground_truth_causal_graph.json
+      |__ground_truth_causal_graph.png
       |__ground_truth_causal_table.pkl
+      |__numpy_encoder_json.py
+      |__others.py
       |__seed_values.npy
       |__train_models.py
+   __init__.py
+   plot_and_tables.py
 Videos
    |__Comparison123
    |__Comparison4
