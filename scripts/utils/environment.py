@@ -10,7 +10,7 @@ import numpy as np
 import pygame
 import pygame.camera
 from gymnasium.spaces import Discrete
-import global_variables
+from ... import global_variables
 from global_variables import VALUE_AGENT_CELL, VALUE_GOAL_CELL, VALUE_EMPTY_CELL, VALUE_WALL_CELL, VALUE_ENEMY_CELL, \
     VALUE_ENTITY_FAR, KEY_SAME_ENEMY_ACTIONS, KEY_RANDOM_ENEMY_ACTIONS, LEN_PREDEFINED_ENEMIES_ACTIONS, \
     N_WALLS_COEFFICIENT, DELAY_VISUALIZATION_VIDEO, FPS_video
