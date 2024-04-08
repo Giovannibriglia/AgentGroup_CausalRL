@@ -5,8 +5,8 @@ import pandas as pd
 import torch
 from gymnasium.spaces import Discrete
 
-import global_variables
 from scripts.utils import exploration_strategies
+import global_variables
 
 
 class DQNAgent:

@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from .. import global_variables
+import global_variables
 import os
 import json
 
