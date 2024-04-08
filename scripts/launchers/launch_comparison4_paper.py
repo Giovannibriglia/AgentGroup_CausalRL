@@ -15,7 +15,6 @@ The simulation results include metrics such as rewards for each episode, computa
 final q-table, the number of steps taken to complete each episode and number of timeout occurred, 
 along with accompanying videos."""
 
-
 dir_save = 'Comparison4'
 
 if_maze = True
@@ -50,7 +49,6 @@ for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
             for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE]:
 
                 for if_transfer_learning in [True, False]:
-
                     label_exploration_strategy = global_variables.LABEL_EPSILON_GREEDY
 
                     dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
@@ -68,9 +66,9 @@ for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
                     name_save += f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_game{simulation_n}'
 
                     """class_train.start_train(environment,
-                                            dir_save_metrics=dir_save_final,
-                                            name_save_metrics=name_save,
-                                            batch_update_df_track=None,
-                                            episodes_to_visualize=global_variables.EPISODES_TO_VISUALIZE_PAPER,
-                                            dir_save_videos=dir_save_final,
-                                            name_save_videos=name_save)"""
+                                                dir_save_metrics=dir_save_final,
+                                                name_save_metrics=name_save,
+                                                batch_update_df_track=None,
+                                                episodes_to_visualize=global_variables.EPISODES_TO_VISUALIZE_PAPER,
+                                                dir_save_videos=dir_save_final,
+                                                name_save_videos=name_save)"""

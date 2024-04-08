@@ -18,7 +18,9 @@ This repository provides the Framework detailed in [Generalisable Improvement to
 additional_assessments
    |__init__.py
    |__evaluation_for_test1_and_test3.py
+   |__launcher_offline_CD_analysis.py
    |__launcher_offline_CD_analysis_multienv.py
+   |__launcher_sensitive_analysis_batch_episodes_for_online_CD.py
    |__test1.py
    |__test2.py
    |__test3.py
@@ -44,8 +46,6 @@ scripts
       |__init__.py
       |__launcher_comparison4_paper.py
       |__launcher_comparison123_paper.py
-      |__launcher_offline_CD_analysis.py
-      |__launcher_sensitive_analysis_batch_episodes_for_online_CD.py
    |__utils
       |__init.py
       |__batch_episodes_for_online_cd_values.pkl

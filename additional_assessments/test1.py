@@ -3,7 +3,6 @@ import random
 import global_variables
 import os
 import json
-
 from scripts.utils.environment import CustomEnv
 from scripts.utils.train_models import Training
 from scripts.algorithms.causal_discovery import CausalDiscovery

@@ -12,10 +12,10 @@ The simulation results include metrics such as rewards for each episode, computa
 final q-table (if available), the number of steps taken to complete each episode and number of timeout occurred, 
 along with accompanying videos."""
 
-
-dir_save = 'mario'
+dir_save = 'Comparison123'
 
 if_maze = False
+
 
 for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
     for rows, cols in global_variables.GRID_SIZES_CONSIDERED_PAPER:
@@ -37,14 +37,15 @@ for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
             # Create an environment
             environment = CustomEnv(dict_env_params)
 
-            for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING]:#, global_variables.LABEL_DQN]:
+            for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
 
-                for label_kind_of_alg2 in [global_variables.LABEL_VANILLA]: #, global_variables.LABEL_CAUSAL_OFFLINE]:
-                                           #global_variables.LABEL_CAUSAL_ONLINE]:
+                for label_kind_of_alg2 in [
+                    global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE,
+                    global_variables.LABEL_CAUSAL_ONLINE]:
 
-                    for label_exploration_strategy in [#global_variables.LABEL_SOFTMAX_ANNEALING,
-                                                       #global_variables.LABEL_THOMPSON_SAMPLING,
-                                                       #global_variables.LABEL_BOLTZMANN_MACHINE,
+                    for label_exploration_strategy in [global_variables.LABEL_SOFTMAX_ANNEALING,
+                                                       global_variables.LABEL_THOMPSON_SAMPLING,
+                                                       global_variables.LABEL_BOLTZMANN_MACHINE,
                                                        global_variables.LABEL_EPSILON_GREEDY]:
                         class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                                f'{label_kind_of_alg}_{label_kind_of_alg2}',
@@ -60,7 +61,11 @@ for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
                         class_train.start_train(environment,
                                                 dir_save_metrics=dir_save_final,
                                                 name_save_metrics=name_save,
-                                                batch_update_df_track=get_batch_episodes(n_enemies, rows, cols) if cond_online else None,
+                                                batch_update_df_track=get_batch_episodes(n_enemies, rows,
+                                                                                         cols) if cond_online else None,
                                                 episodes_to_visualize=global_variables.EPISODES_TO_VISUALIZE_PAPER,
                                                 dir_save_videos=dir_save_final,
                                                 name_save_videos=name_save)
+
+
+

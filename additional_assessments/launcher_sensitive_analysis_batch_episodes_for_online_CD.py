@@ -97,7 +97,7 @@ for dict_comb in list_combinations_for_simulations:
 
         cd = CausalDiscovery(df_track, n_agents, n_enemies, n_goals)
         out_causal_graph = cd.return_causal_graph()
-        out_causal_table = cd.return_causal_table()
+        # out_causal_table = cd.return_causal_table()
 
         # dict_comb['causal_table'][sim_n] = out_causal_table
         dict_comb['causal_graph'][sim_n] = out_causal_graph
