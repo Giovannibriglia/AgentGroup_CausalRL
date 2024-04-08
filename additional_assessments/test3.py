@@ -15,7 +15,7 @@ this modification, the result will be "action = 1, deltaX = -n_cols, deltaY = 0"
 the correct operation, in the case of row modification, the winner and the defeats are ignored.
 """
 
-NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Test3_2'
+NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Test3'
 
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 N_TRAINING_EPISODE = global_variables.N_TRAINING_EPISODES
