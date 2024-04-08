@@ -79,7 +79,7 @@ KEY_METRIC_TIME_EPISODE = 'time_for_episode'
 KEY_METRIC_TIMEOUT_CONDITION = 'if_timeout_occurred'
 KEY_METRIC_Q_TABLE = 'q_table'
 
-PATH_IMAGES_FOR_RENDER = f'{GLOBAL_PATH_REPO}/images_for_render'
+PATH_IMAGES_FOR_RENDER = f'{GLOBAL_PATH_REPO}/scripts/utils/images_for_render'
 
 DICT_LEARNING_PARAMETERS_PAPER = {'GAMMA': 0.99, 'LEARNING_RATE': 0.0001,
                                   'START_EXPLORATION_PROBABILITY': 1, 'MIN_EXPLORATION_PROBABILITY': 0.01,
