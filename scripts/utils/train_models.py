@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from gymnasium.spaces import Discrete
 from tqdm.auto import tqdm
-from ... import global_variables
+import global_variables
 from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.algorithms.dqn_agent import DQNAgent
 from scripts.algorithms.q_learning_agent import QLearningAgent
