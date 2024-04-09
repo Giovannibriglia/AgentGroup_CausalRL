@@ -1,7 +1,6 @@
 import global_variables
 from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.utils.environment import CustomEnv
-from scripts.utils.others import get_batch_episodes
 from scripts.utils.train_models import Training
 
 """
@@ -45,7 +44,7 @@ def fake_offline_cd(env_params, other_params):
                            f'{label_kind_of_alg}',
                            f'{label_exploration_strategy}')
 
-    class_train.start_train(env, batch_update_df_track=1000, episodes_to_visualize=[0])
+    class_train.start_train(env, batch_update_df_track=1000)
     df_track = class_train.get_df_track()
     out_causal_table = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS).return_causal_table()
     return out_causal_table
@@ -123,7 +122,7 @@ for label_env_causality in envs_causality.keys():
         # Create an environment
         environment = CustomEnv(dict_env_params)
 
-        for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
+        for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING]:
 
             for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_CAUSAL_ONLINE]:
                 label_exploration_strategy = global_variables.LABEL_EPSILON_GREEDY
@@ -143,7 +142,5 @@ for label_env_causality in envs_causality.keys():
                 class_train.start_train(environment,
                                         dir_save_metrics=dir_save_final,
                                         name_save_metrics=name_save,
-                                        batch_update_df_track=get_batch_episodes(N_ENEMIES, ROWS_GRID, COLUMNS_GRID) if cond_online else None,
-                                        episodes_to_visualize=global_variables.EPISODES_TO_VISUALIZE_PAPER,
-                                        dir_save_videos=dir_save_final,
-                                        name_save_videos=name_save)
+                                        batch_update_df_track=500 if cond_online else None,
+                                        )
