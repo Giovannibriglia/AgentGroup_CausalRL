@@ -251,38 +251,6 @@ class CausalDiscovery:
             for var_dep in range(len(self.dependents_var)):
                 self.ie.reset_do(self.dependents_var[var_dep])
 
-        """else:
-            arrays = []
-            for feat_ind in self.independents_var:
-                arrays.append(self.df[feat_ind].unique())
-            var_combinations = list(product(*arrays))
-
-            for n, comb_n in enumerate(var_combinations):
-                print('\n')
-
-                for var_ind in range(len(self.independents_var)):
-                    try:
-                        self.ie.do_intervention(self.independents_var[var_ind], int(comb_n[var_ind]))
-                        print(f'{self.independents_var[var_ind]} = {int(comb_n[var_ind])}')
-                        table.at[n, f'{self.independents_var[var_ind]}'] = int(comb_n[var_ind])
-                    except:
-                        # print(f'Do-operation not possible for {self.independents_var[var_ind]} = {int(comb_n[var_ind])}')
-                        table.at[n, f'{self.independents_var[var_ind]}'] = pd.NA
-
-                after = self.ie.query()
-                for var_dep in self.dependents_var:
-                    print(f'Distribution of {var_dep}): {after[var_dep]}')
-                    max_key, max_value = max(after[var_dep].items(), key=lambda x: x[1])
-                    if round(max_value, 4) > round(1 / len(after[var_dep]), 4):
-                        table.at[n, f'{var_dep}'] = int(max_key)
-                        print(f'{var_dep} -> {int(max_key)}: {round(max_value, 2)}')
-                    else:
-                        table.at[n, f'{var_dep}'] = pd.NA
-                        # print(f'{var_dep}) -> unknown')
-
-                for var_ind in range(len(self.independents_var)):
-                    self.ie.reset_do(self.independents_var[var_ind])"""
-
         return table
 
     def return_causal_table(self):
