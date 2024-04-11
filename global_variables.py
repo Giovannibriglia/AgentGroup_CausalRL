@@ -17,8 +17,8 @@ DICT_IMPLEMENTED_ACTIONS = {0: np.array([0, 0]),  # stop
 
 N_TRAINING_EPISODES = 3000
 N_SIMULATIONS_PAPER = 10
-GRID_SIZES_CONSIDERED_PAPER = [(5, 5), (10, 10)]
-N_ENEMIES_CONSIDERED_PAPER = [2, 5, 10]
+GRID_SIZES_CONSIDERED_PAPER = [(10, 10), (5, 5)]
+N_ENEMIES_CONSIDERED_PAPER = [10, 5, 2]
 EPISODES_TO_VISUALIZE_PAPER = [0,
                                int(N_TRAINING_EPISODES / 3),
                                int(N_TRAINING_EPISODES * 0.66),
@@ -151,4 +151,3 @@ PATH_CAUSAL_TABLE_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/utils/ground_truth_caus
 PATH_CAUSAL_GRAPH_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/utils/ground_truth_causal_graph.json'
 PATH_IMG_CAUSAL_GRAPH_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/utils/ground_truth_causal_graph.png'
 PATH_RESULTS_BATCH_EPISODES_ONLINE_CD = f'{GLOBAL_PATH_REPO}/scripts/utils/batch_episodes_for_online_cd.pkl'
-PATH_LIST_OF_DICTS_BATCH_EPISODES_ANALYSIS = f'{GLOBAL_PATH_REPO}/scripts/utils/batch_episodes_for_online_cd_values.json'

@@ -12,7 +12,7 @@ with open(f'{global_variables.PATH_CAUSAL_GRAPH_OFFLINE}', 'r') as file:
 
 N_ENEMIES = 1
 N_TRAINING_EPISODE = global_variables.N_TRAINING_EPISODES
-NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Test3'
+NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Test1'
 files_inside_main_folder = os.listdir(NAME_DIR_RESULTS)
 
 col_n_checks_ok = 'n_checks_ok'
@@ -36,6 +36,7 @@ for file_inside_main_folder in files_inside_main_folder:
             causal_graph = json.load(file)
 
         n_simulations += 1
+        print(len(causal_graph))
         if compare_causal_graphs(GROUND_TRUTH_CAUSAL_GRAPH, causal_graph):
             n_checks_ok += 1
 

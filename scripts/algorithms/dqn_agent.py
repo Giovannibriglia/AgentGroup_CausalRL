@@ -5,6 +5,7 @@ import torch
 from gymnasium.spaces import Discrete
 from scripts.utils import exploration_strategies
 import global_variables
+import warnings
 
 
 class DQNAgent:
@@ -25,6 +26,8 @@ class DQNAgent:
         random.seed(self.seed_value)
 
         self.n_episodes = dict_other_params['N_EPISODES']
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.kind_of_alg = kind_of_alg
         if self.kind_of_alg not in global_variables.LIST_IMPLEMENTED_ALGORITHMS:
@@ -65,35 +68,41 @@ class DQNAgent:
     def select_action(self, current_state: np.ndarray, enemies_nearby_agent: np.ndarray = None,
                       goals_nearby_agent: np.ndarray = None, causal_table: pd.DataFrame = None) -> int:
         state = current_state.copy()
-        if global_variables.LABEL_CAUSAL in self.kind_of_alg:
 
+        if global_variables.LABEL_CAUSAL in self.kind_of_alg:
             possible_actions = self._get_possible_actions(enemies_nearby_agent, goals_nearby_agent, causal_table)
 
             action = self.agent.choose_action(state, possible_actions)
-            if isinstance(action, torch.Tensor):
-                action = int(action.cpu().item())
 
-            """if not any(math.isnan(x) for x in enemies_nearby_agent) and enemies_nearby_agent is not None and len(enemies_nearby_agent) > 0:
-                if action in enemies_nearby_agent:
-                    print(f'enemies nearby {enemies_nearby_agent} - action chosen {action}')
-                    raise AssertionError(f'Wrong causal model, enemies nearby')
+            if action not in possible_actions and action not in goals_nearby_agent.tolist():
+                print(
+                    f'enemies nearby: {enemies_nearby_agent} - possible actions: {possible_actions} - action chosen {action}')
+                warnings.warn("Wrong causal model, enemies nearby", UserWarning)
 
-            if not any(math.isnan(x) for x in goals_nearby_agent) and goals_nearby_agent is not None and len(goals_nearby_agent) > 0:
-                if action not in goals_nearby_agent:
-                    print(f'goals nearby {goals_nearby_agent} - action chosen {action}')
-                    raise AssertionError(f'Wrong causal model, goals nearby')"""
+            if action not in possible_actions and action in enemies_nearby_agent.tolist():
+                print(
+                    f'goals nearby {goals_nearby_agent} - possible actions: {possible_actions} - action chosen {action}')
+                warnings.warn("Wrong causal model, goals nearby", UserWarning)
         else:
-            action = self.agent.choose_action(state)
-            if isinstance(action, torch.Tensor):
-                action = int(action.cpu().item())
+            possible_actions = list(np.arange(0, self.n_actions, 1))
+            action = self.agent.choose_action(state, possible_actions)
+
         return action
 
     def _get_possible_actions(self, enemies_nearby: np.ndarray, goals_nearby: np.ndarray,
                               causal_table: pd.DataFrame) -> list:
 
+        # TODO: RIFARE
         possible_actions = list(np.arange(0, self.n_actions, 1))
 
-        # Get column names containing action, reward, deltaX, and deltaY
+        possible_actions_goals = [element for element in possible_actions if element in goals_nearby]
+        possible_actions_enemies = [element for element in possible_actions if element not in enemies_nearby]
+        if len(possible_actions_goals) > 0:
+            possible_actions = possible_actions_goals
+        elif len(possible_actions_enemies) > 0:
+            possible_actions = possible_actions_enemies
+
+        """# Get column names containing action, reward, deltaX, and deltaY
         col_action = next(s for s in causal_table.columns if global_variables.LABEL_COL_ACTION in s)
         col_reward = next(s for s in causal_table.columns if global_variables.LABEL_COL_REWARD in s)
         # col_deltaX = next(s for s in causal_table.columns if global_variables.LABEL_COL_DELTAX in s)
@@ -113,6 +122,6 @@ class DQNAgent:
             if len(selected_actions_enemies) > 0:
                 possible_actions = [x for x in possible_actions if x not in selected_actions_enemies]
         else:
-            possible_actions = selected_actions_goals
+            possible_actions = selected_actions_goals"""
 
         return possible_actions

@@ -19,7 +19,7 @@ if_maze = False
 for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
     for rows, cols in global_variables.GRID_SIZES_CONSIDERED_PAPER:
         for n_enemies in global_variables.N_ENEMIES_CONSIDERED_PAPER:
-            
+
             if not (rows == 5 and n_enemies == 10):
                 seed_value = global_variables.seed_values[simulation_n]
 
@@ -37,14 +37,14 @@ for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
                 # Create an environment
                 environment = CustomEnv(dict_env_params)
 
-                for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING]: #, global_variables.LABEL_DQN]:
+                for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
 
                     for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE]:
 
-                        for label_exploration_strategy in [global_variables.LABEL_SOFTMAX_ANNEALING,
+                        for label_exploration_strategy in [global_variables.LABEL_BOLTZMANN_MACHINE,
                                                            global_variables.LABEL_THOMPSON_SAMPLING,
-                                                           global_variables.LABEL_BOLTZMANN_MACHINE,
-                                                           global_variables.LABEL_EPSILON_GREEDY]:
+                                                           global_variables.LABEL_EPSILON_GREEDY,
+                                                           global_variables.LABEL_SOFTMAX_ANNEALING]:
                             class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                                    f'{label_kind_of_alg}_{label_kind_of_alg2}',
                                                    f'{label_exploration_strategy}')

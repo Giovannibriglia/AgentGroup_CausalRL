@@ -1,3 +1,4 @@
+import os
 import random
 import json
 from itertools import product
@@ -103,33 +104,8 @@ for dict_comb in list_combinations_for_simulations:
         # dict_comb['causal_table'][sim_n] = out_causal_table
         dict_comb['causal_graph'][sim_n] = out_causal_graph
 
-with open(f'{global_variables.PATH_LIST_OF_DICTS_BATCH_EPISODES_ANALYSIS}', 'w') as json_file:
-    json.dump(list_combinations_for_simulations, json_file, indent=4)
+os.makedirs(f'{global_variables.GLOBAL_PATH_REPO}/Results/Sensitive_Analysis_Batch_Episodes', exist_ok=True)
+with open(f'{global_variables.GLOBAL_PATH_REPO}/Results/Sensitive_Analysis_Batch_Episodes/batch_episodes_for_online_cd_values.json', 'w') as json_file:
+    json.dump(list_combinations_for_simulations, json_file)
 
-" Second part: comparisons "
-list_combinations_df_results = [{'n_enemies': item[0], 'n_episodes': item[1], 'grid_size': item[2]} for item in
-                                combinations_enemies_episodes_grid]
 
-for new_dict_comb in list_combinations_df_results:
-    n_enemies = new_dict_comb['n_enemies']
-    grid_size = new_dict_comb['grid_size']
-    n_episodes = new_dict_comb['n_episodes']
-
-    filtered_dict = [value for value in list_combinations_for_simulations if
-                     value['n_enemies'] == n_enemies and value['grid_size'] == grid_size and value[
-                         'n_episodes'] == n_episodes][0]
-
-    vet_causal_graphs = filtered_dict['causal_graph']
-    n_checks = 0
-    for sim_n in range(N_SIMULATIONS_CONSIDERED):
-        causal_graph = vet_causal_graphs[sim_n]
-
-        if compare_causal_graphs(causal_graph, GROUND_TRUTH_CAUSAL_GRAPH):
-            n_checks += 1
-
-    new_dict_comb[f'checks_over_{N_SIMULATIONS_CONSIDERED}simulations'] = n_checks
-    new_dict_comb['suitable'] = n_checks > int(N_SIMULATIONS_CONSIDERED / 2)  # better than the random case
-
-out_table_results = pd.DataFrame(list_combinations_df_results)
-out_table_results.to_pickle(f'{global_variables.PATH_RESULTS_BATCH_EPISODES_ONLINE_CD}')
-out_table_results.to_excel(f'{global_variables.GLOBAL_PATH_REPO}/batch_episodes_online.xlsx')

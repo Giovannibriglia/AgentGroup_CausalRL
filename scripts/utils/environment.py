@@ -290,14 +290,10 @@ class CustomEnv:
 
         return self.agents_positions
 
-    def get_nearby_agent(self) -> Tuple[np.ndarray, np.ndarray]:
+    def get_nearby_agent(self) -> Tuple[list, list]:
 
-        def _remove_value(arr, value):
-            arr = np.array(arr)
-            return np.where(arr == value, np.nan, arr)
-
-        self.enemies_nearby = np.full((self.n_agents, self.n_enemies), self.value_entity_far)
-        self.goals_nearby = np.full((self.n_agents, self.n_goals), self.value_entity_far)
+        self.enemies_nearby = np.empty((self.n_agents, self.n_enemies), dtype=object)
+        self.goals_nearby = np.empty((self.n_agents, self.n_goals), dtype=object)
 
         for agent in range(self.n_agents):
             pos_xy_agent = self.agents_positions[agent]
@@ -307,8 +303,9 @@ class CustomEnv:
             for n, pos_xy_enemy in enumerate(self.enemies_positions):
                 self.enemies_nearby[agent][n] = self._get_direction(pos_xy_agent, pos_xy_enemy)
 
-        self.enemies_nearby = _remove_value(self.enemies_nearby, self.value_entity_far)
-        self.goals_nearby = _remove_value(self.goals_nearby, self.value_entity_far)
+        # self.enemies_nearby = self.enemies_nearby[np.any(self.enemies_nearby != self.value_entity_far, axis=1)]
+        # self.goals_nearby = self.goals_nearby[np.any(self.goals_nearby != self.value_entity_far, axis=1)]
+
         return self.enemies_nearby, self.goals_nearby
 
     def init_gui(self, algorithm: str, exploration_strategy: str, n_episodes: int, path_images: str, save_video: bool):
