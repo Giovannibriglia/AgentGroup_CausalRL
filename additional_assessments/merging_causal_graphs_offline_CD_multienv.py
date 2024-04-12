@@ -18,13 +18,13 @@ causal_graphs_json = [s for s in os.listdir(dir_get_results) if 'causal_graph' i
 df_tracks = [s for s in os.listdir(dir_get_results) if 'df_track' in s and '.pkl' in s]
 
 
-def generate_plot(edges: list, title):
+def generate_plot(edges: list, title, if_arrows):
     sm_true = StructureModel()
     sm_true.add_edges_from(edges)
 
     plt.figure(dpi=1000)
     plt.title(f'{title}', fontsize=20)
-    nx.draw(sm_true, with_labels=True, font_size=7, arrowsize=30, arrows=True,
+    nx.draw(sm_true, with_labels=True, font_size=7, arrowsize=30, arrows=if_arrows,
             edge_color='orange', node_size=1000, font_weight='bold', pos=nx.circular_layout(sm_true))
     plt.show()
 
@@ -44,7 +44,7 @@ for element, count in element_counts.items():
         # print(f"Edge: {element}, Occurrences: {count}")
         edges.append(element)
 
-generate_plot(edges, 'Average causal graph')
+generate_plot(edges, 'Average causal graph', True)
 
 features = set()
 for sublist in edges:

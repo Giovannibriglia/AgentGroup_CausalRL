@@ -46,7 +46,8 @@ def fake_offline_cd(env_params, other_params):
 
     class_train.start_train(env, batch_update_df_track=1000)
     df_track = class_train.get_df_track()
-    out_causal_table = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS).return_causal_table()
+    cd = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS)
+    out_causal_table = cd.return_causal_table()
     return out_causal_table
 
 
@@ -55,7 +56,7 @@ COLUMNS_GRID = 4
 N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
-N_EPISODES_CD = global_variables.N_TRAINING_EPISODES
+N_EPISODES_CD = 30 #global_variables.N_TRAINING_EPISODES
 N_TRAINING_EPISODES = global_variables.N_TRAINING_EPISODES
 
 env_causality1 = {'agents_positions': [(0, 3)],
@@ -118,21 +119,28 @@ for label_env_causality in envs_causality.keys():
                            'predefined_env': env_test}
 
         dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
-
+        dict_other_params['N_EPISODES'] = N_TRAINING_EPISODES
         # Create an environment
         environment = CustomEnv(dict_env_params)
 
         for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING]:
 
-            for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_CAUSAL_ONLINE]:
+            for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_ONLINE, global_variables.LABEL_CAUSAL_OFFLINE]:
+
                 label_exploration_strategy = global_variables.LABEL_EPSILON_GREEDY
 
-                class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
-                                       f'{label_kind_of_alg}_{label_kind_of_alg2}',
-                                       f'{label_exploration_strategy}',
-                                       offline_causal_table)
+                if global_variables.LABEL_CAUSAL_ONLINE in label_kind_of_alg2:
+                    class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
+                                           f'{label_kind_of_alg}_{label_kind_of_alg2}',
+                                           f'{label_exploration_strategy}')
+                elif global_variables.LABEL_CAUSAL_OFFLINE in label_kind_of_alg2:
+                    class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
+                                           f'{label_kind_of_alg}_{label_kind_of_alg2}',
+                                           f'{label_exploration_strategy}',
+                                           offline_causal_table)
 
-                add_name_dir_save = 'Grid' + f'{ROWS_GRID}x{COLUMNS_GRID}_{N_ENEMIES}' + 'enemies' if N_ENEMIES > 1 else 'enemy'
+                add_name_dir_save = 'Grid' + f'{ROWS_GRID}x{COLUMNS_GRID}_{N_ENEMIES}'
+                add_name_dir_save += 'enemies' if N_ENEMIES > 1 else 'enemy'
 
                 dir_save_final = f'{dir_save}/{add_name_dir_save}'
                 name_save = f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_{label_env_causality}_{label_env_test}'
@@ -142,5 +150,4 @@ for label_env_causality in envs_causality.keys():
                 class_train.start_train(environment,
                                         dir_save_metrics=dir_save_final,
                                         name_save_metrics=name_save,
-                                        batch_update_df_track=500 if cond_online else None,
-                                        )
+                                        batch_update_df_track=1000 if cond_online else None)

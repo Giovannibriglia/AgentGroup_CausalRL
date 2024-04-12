@@ -1,5 +1,7 @@
 import math
 import random
+import time
+
 import numpy as np
 import pandas as pd
 from gymnasium.spaces import Discrete
@@ -61,7 +63,7 @@ class QLearningAgent:
                       goals_nearby_agent: np.ndarray = None, causal_table: pd.DataFrame = None) -> int:
         state = current_state.copy()
 
-        if global_variables.LABEL_CAUSAL in self.kind_of_alg:
+        if global_variables.LABEL_CAUSAL in self.kind_of_alg and causal_table is not None:
 
             possible_actions = self._get_possible_actions(enemies_nearby_agent, goals_nearby_agent, causal_table)
 
@@ -84,38 +86,45 @@ class QLearningAgent:
 
     def _get_possible_actions(self, enemies_nearby: np.ndarray, goals_nearby: np.ndarray,
                               causal_table: pd.DataFrame) -> list:
-        # TODO: RIFARE
-        possible_actions = list(np.arange(0, self.n_actions, 1))
 
-        possible_actions_goals = [element for element in possible_actions if element in goals_nearby]
-        possible_actions_enemies = [element for element in possible_actions if element not in enemies_nearby]
-        if len(possible_actions_goals) > 0:
-            possible_actions = possible_actions_goals
-        elif len(possible_actions_enemies) > 0:
-            possible_actions = possible_actions_enemies
-
-        """# Get column names containing action, reward, deltaX, and deltaY
         col_action = next(s for s in causal_table.columns if global_variables.LABEL_COL_ACTION in s)
         col_reward = next(s for s in causal_table.columns if global_variables.LABEL_COL_REWARD in s)
-        # col_deltaX = next(s for s in causal_table.columns if global_variables.LABEL_COL_DELTAX in s)
-        # col_deltaY = next(s for s in causal_table.columns if global_variables.LABEL_COL_DELTAY in s)
+        col_enemy_nearby = next(s for s in causal_table.columns if global_variables.LABEL_ENEMY_CAUSAL_TABLE in s and
+                                global_variables.LABEL_NEARBY_CAUSAL_TABLE in s)
+        col_goal_nearby = next(s for s in causal_table.columns if
+                               global_variables.LABEL_GOAL_CAUSAL_TABLE in s and global_variables.LABEL_NEARBY_CAUSAL_TABLE in s)
 
-        # Goals model
-        cond_reward_goals = causal_table[col_reward] == global_variables.VALUE_REWARD_WINNER_PAPER
-        selected_rows_goals = causal_table[causal_table[col_action].isin(goals_nearby) & cond_reward_goals]
-        selected_actions_goals = selected_rows_goals[col_action].unique()
-
-        if len(selected_actions_goals) == 0:
-            # Enemies model
-            cond_reward_enemies = causal_table[col_reward] == global_variables.VALUE_REWARD_LOSER_PAPER
-            selected_rows_enemies = causal_table[causal_table[col_action].isin(enemies_nearby) & cond_reward_enemies]
-            selected_actions_enemies = selected_rows_enemies[col_action].unique()
-
-            if len(selected_actions_enemies) > 0:
-                possible_actions = [x for x in possible_actions if x not in selected_actions_enemies]
+        if enemies_nearby is not None and goals_nearby is not None:
+            filtered_rows = causal_table[(causal_table[col_goal_nearby].isin(goals_nearby)) &
+                                         (causal_table[col_enemy_nearby].isin(enemies_nearby))]
+        elif enemies_nearby is not None:
+            filtered_rows = causal_table[(causal_table[col_goal_nearby].isin([50])) &
+                                         (causal_table[col_enemy_nearby].isin(enemies_nearby))]
+        elif goals_nearby is not None:
+            filtered_rows = causal_table[(causal_table[col_goal_nearby].isin(goals_nearby)) &
+                                         (causal_table[col_enemy_nearby].isin([50]))]
         else:
-            possible_actions = selected_actions_goals"""
-        # print(possible_actions)
+            filtered_rows = causal_table
+
+        max_achievable_reward = filtered_rows[col_reward].max()
+        filtered_max_reward = filtered_rows[filtered_rows[col_reward] == max_achievable_reward]
+        # Group by action and calculate average rewards
+        grouped = filtered_max_reward.groupby([col_reward, col_enemy_nearby, col_goal_nearby])[col_action]
+        # Initialize a variable to hold the common values
+        possible_actions = None
+        # Iterate over the groups
+        for name, group in grouped:
+            # If it's the first group, initialize common_values with the values of the first group
+            if possible_actions is None:
+                possible_actions = set(group)
+            # Otherwise, take the intersection of common_values and the values of the current group
+            else:
+                possible_actions = possible_actions.intersection(group)
+        if possible_actions is not None:
+            possible_actions = list(possible_actions)
+        else:
+            possible_actions = []
+
         return possible_actions
 
     def return_q_table(self):

@@ -15,9 +15,6 @@ from scripts.algorithms.random_agent import RandomAgent
 from scripts.utils.environment import CustomEnv
 from scripts.utils.others import NumpyEncoder, compare_causal_graphs
 
-with open(f'{global_variables.PATH_CAUSAL_GRAPH_OFFLINE}', 'r') as file:
-    GROUND_TRUTH_CAUSAL_GRAPH = json.load(file)
-
 OFFLINE_CAUSAL_TABLE = pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
 
 
@@ -32,6 +29,8 @@ class Training:
         self.dict_other_params = dict_other_params
 
         self.kind_of_alg = kind_of_alg
+        if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg:
+            self.GROUND_TRUTH_ONLINE_CAUSAL_GRAPH = None
         self.exploration_strategy = exploration_strategy
 
         self.key_metric_rewards_for_episodes = global_variables.KEY_METRIC_REWARDS_EPISODE
@@ -76,10 +75,20 @@ class Training:
         else:
             raise AssertionError(f'{self.kind_of_alg} chosen not implemented')
 
-        if predefined_causal_table is not None:
-            self.offline_causal_table = predefined_causal_table
+        if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg:
+            if predefined_causal_table is not None:
+                self.online_causal_table = predefined_causal_table
+            else:
+                self.online_causal_table = None
+        elif global_variables.LABEL_CAUSAL_OFFLINE in self.kind_of_alg:
+            if predefined_causal_table is not None:
+                self.offline_causal_table = predefined_causal_table
+            else:
+                raise AssertionError('there is no causal table')
+        elif global_variables.LABEL_RANDOM_AGENT in self.kind_of_alg or global_variables.LABEL_VANILLA in self.kind_of_alg:
+            pass
         else:
-            self.offline_causal_table = OFFLINE_CAUSAL_TABLE
+            raise AssertionError('there is no causal table')
 
     def start_train(self, env, dir_save_metrics: str = None, name_save_metrics: str = None,
                     batch_update_df_track: int = None,
@@ -122,13 +131,14 @@ class Training:
 
                 self._update_episode_metrics(episode, computation_time_episode)
 
+                if self.batch_update_df_track is not None and (episode % self.batch_update_df_track == 0):
+                    self._update_df_track()
+                    self.dict_df_track = {key: [] for key in self.cols_df_track}
+
+                    if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg:
+                        self._cd_online()
+
         self._update_game_metrics()
-
-        if self.batch_update_df_track is not None:
-            self._update_df_track()
-
-        if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg:
-            self._cd_online()
 
     def _update_game_metrics(self):
         if global_variables.LABEL_Q_LEARNING in self.kind_of_alg:
@@ -147,10 +157,6 @@ class Training:
 
     def _update_episode_metrics(self, episode: int, comp_time_episode: float):
         self.algorithm.update_exp_fact(episode)
-
-        if self.batch_update_df_track is not None and (episode >= self.batch_update_df_track):
-            self._update_df_track()
-            self.dict_df_track = {key: [] for key in self.cols_df_track}
 
         if episode in self.episodes_to_visualize and self.name_save_videos is not None and self.dir_save_videos is not None:
             dir_save = f'{global_variables.GLOBAL_PATH_REPO}/Videos/{self.dir_save_videos}'
@@ -180,7 +186,7 @@ class Training:
             if_lose = if_loses[agent_n]
             self.done = dones[agent_n]
 
-            self._update_knowledge(agent_n, current_states, actions, rewards, next_states)
+            self._update_algorithm_knowledge(agent_n, current_states, actions, rewards, next_states)
 
             self.total_episode_reward += rewards[agent_n]
             self.step_for_episode += 1
@@ -196,7 +202,7 @@ class Training:
 
         return time.time() - initial_time_episode
 
-    def _update_knowledge(self, agent_n, current_states, actions, rewards, next_states):
+    def _update_algorithm_knowledge(self, agent_n, current_states, actions, rewards, next_states):
 
         if global_variables.LABEL_DQN in self.kind_of_alg:
             general_state = np.zeros(self.rows * self.cols)
@@ -277,7 +283,6 @@ class Training:
 
         is_causal = global_variables.LABEL_CAUSAL in self.kind_of_alg
         is_dqn = global_variables.LABEL_DQN in self.kind_of_alg
-        causal_table = self.online_causal_table if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg else self.offline_causal_table
 
         for agent_n in range(self.n_agents):
             current_state = current_states[agent_n]
@@ -289,10 +294,14 @@ class Training:
                 current_state = general_state
 
             if is_causal:
-                action = self.algorithm.select_action(current_state,
-                                                      enemies_nearby_agents[agent_n],
-                                                      goals_nearby_agents[agent_n],
-                                                      causal_table)
+                causal_table = self.online_causal_table if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg else self.offline_causal_table
+                if causal_table is not None:
+                    action = self.algorithm.select_action(current_state,
+                                                          enemies_nearby_agents[agent_n],
+                                                          goals_nearby_agents[agent_n],
+                                                          causal_table)
+                else:
+                    action = self.algorithm.select_action(current_state)
             else:
                 action = self.algorithm.select_action(current_state)
 
@@ -303,7 +312,7 @@ class Training:
     def _define_metrics(self):
         self.dict_metrics = {f'{self.key_metric_rewards_for_episodes}': [],
                              f'{self.key_metric_steps_for_episodes}': [],
-                             f'{self.key_metric_average_time_for_episodes}': [], # seconds
+                             f'{self.key_metric_average_time_for_episodes}': [],  # seconds
                              f'{self.key_metric_timeout_condition}': False,
                              f'{self.key_metric_q_table}': None}
 
@@ -338,10 +347,15 @@ class Training:
 
             out_causal_graph = cd.return_causal_graph()
 
-            if compare_causal_graphs(out_causal_graph, GROUND_TRUTH_CAUSAL_GRAPH):
-                self.n_checks_causal_table_online += 1
-            elif self.kind_th_CI == 'consecutive':
-                self.n_checks_causal_table_online = 0
+            if self.GROUND_TRUTH_ONLINE_CAUSAL_GRAPH is None:
+                self.GROUND_TRUTH_ONLINE_CAUSAL_GRAPH = out_causal_graph
+            else:
+                if compare_causal_graphs(out_causal_graph, self.GROUND_TRUTH_ONLINE_CAUSAL_GRAPH):
+                    self.n_checks_causal_table_online += 1
+                else:
+                    if self.kind_th_CI == 'consecutive':
+                        self.n_checks_causal_table_online = 0
+                    self.GROUND_TRUTH_ONLINE_CAUSAL_GRAPH = out_causal_graph
 
 
 if __name__ == '__main__':
@@ -364,14 +378,14 @@ if __name__ == '__main__':
 
         environment = CustomEnv(dict_env_params)
 
-        for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING]: #, global_variables.LABEL_DQN]:
+        for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING]:  # , global_variables.LABEL_DQN]:
 
             for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE]:
 
-                for label_exploration_strategy in [#global_variables.LABEL_THOMPSON_SAMPLING,
-                                                   #global_variables.LABEL_SOFTMAX_ANNEALING,
-                                                   #global_variables.LABEL_BOLTZMANN_MACHINE,
-                                                   global_variables.LABEL_EPSILON_GREEDY]:
+                for label_exploration_strategy in [  # global_variables.LABEL_THOMPSON_SAMPLING,
+                    # global_variables.LABEL_SOFTMAX_ANNEALING,
+                    # global_variables.LABEL_BOLTZMANN_MACHINE,
+                    global_variables.LABEL_EPSILON_GREEDY]:
                     class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                            f'{label_kind_of_alg}_{label_kind_of_alg2}',
                                            f'{label_exploration_strategy}')

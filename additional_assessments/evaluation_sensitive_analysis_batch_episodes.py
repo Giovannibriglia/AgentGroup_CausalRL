@@ -1,9 +1,25 @@
 import itertools
+import networkx as nx
+from causalnex.structure import StructureModel
+from matplotlib import pyplot as plt
 import global_variables
 import json
 import pandas as pd
 
-N_SIMULATIONS_CONSIDERED = 10
+
+def generate_plot(edges: list, title, if_arrows):
+    sm_true = StructureModel()
+    sm_true.add_edges_from(edges)
+
+    plt.figure(dpi=1000)
+    plt.title(f'{title}', fontsize=20)
+    nx.draw(sm_true, with_labels=True, font_size=7, arrowsize=30, arrows=if_arrows,
+            edge_color='orange', node_size=1000, font_weight='bold', pos=nx.circular_layout(sm_true))
+    plt.savefig(f'{title}.png')
+    # plt.show()
+
+
+N_SIMULATIONS_CONSIDERED = global_variables.N_SIMULATIONS_PAPER
 path_list_values = f'{global_variables.GLOBAL_PATH_REPO}/Results/Sensitive_Analysis_Batch_Episodes/batch_episodes_for_online_cd_values.json'
 with open(f'{path_list_values}', 'r') as file:
     list_values = json.load(file)
@@ -51,10 +67,11 @@ for new_dict_comb in combinations:
     n_checks = 0
     for sim_n in range(N_SIMULATIONS_CONSIDERED):
         causal_graph = vet_causal_graphs[sim_n]
-        # TODO test
-        print('ok' if len(causal_graph) == 6 else None)
+        generate_plot(causal_graph, f'{grid_size} - {n_enemies} enemies - {n_episodes} ep - {sim_n}', True)
+        # print('ok' if len(causal_graph) == 6 else None)
         # if compare_causal_graphs(causal_graph, GROUND_TRUTH_CAUSAL_GRAPH):
-            # n_checks += 1
+        # TODO: test
+        # n_checks += 1
 
     new_dict_comb[f'checks_over_{N_SIMULATIONS_CONSIDERED}simulations'] = n_checks
     new_dict_comb['suitable'] = n_checks > int(N_SIMULATIONS_CONSIDERED / 2)  # better than the random case
