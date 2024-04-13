@@ -1,3 +1,4 @@
+import pandas as pd
 from scripts.utils.environment import CustomEnv
 from scripts.utils.train_models import Training
 from scripts.utils.others import get_batch_episodes
@@ -14,12 +15,17 @@ along with accompanying videos."""
 
 dir_save = 'Comparison123'
 
-if_maze = False
+OFFLINE_CAUSAL_TABLE = pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
 
-for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
-    for rows, cols in global_variables.GRID_SIZES_CONSIDERED_PAPER:
-        for n_enemies in global_variables.N_ENEMIES_CONSIDERED_PAPER:
-            
+if_maze = False
+GRID_SIZES = global_variables.GRID_SIZES_CONSIDERED_PAPER
+ENEMIES = global_variables.N_ENEMIES_CONSIDERED_PAPER
+N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
+
+for simulation_n in range(N_SIMULATIONS):
+    for rows, cols in GRID_SIZES:
+        for n_enemies in ENEMIES:
+
             if not (rows == 5 and n_enemies == 10):
                 seed_value = global_variables.seed_values[simulation_n]
 
@@ -37,17 +43,24 @@ for simulation_n in range(global_variables.N_SIMULATIONS_PAPER):
                 # Create an environment
                 environment = CustomEnv(dict_env_params)
 
-                for label_kind_of_alg in [global_variables.LABEL_DQN]:
+                for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
 
-                    for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE]:
+                    for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_OFFLINE]:
 
-                        for label_exploration_strategy in [global_variables.LABEL_SOFTMAX_ANNEALING,
-                                                           global_variables.LABEL_THOMPSON_SAMPLING,
+                        for label_exploration_strategy in [global_variables.LABEL_THOMPSON_SAMPLING,
                                                            global_variables.LABEL_BOLTZMANN_MACHINE,
-                                                           global_variables.LABEL_EPSILON_GREEDY]:
-                            class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
-                                                   f'{label_kind_of_alg}_{label_kind_of_alg2}',
-                                                   f'{label_exploration_strategy}')
+                                                           global_variables.LABEL_EPSILON_GREEDY,
+                                                           global_variables.LABEL_SOFTMAX_ANNEALING]:
+
+                            if global_variables.LABEL_CAUSAL_OFFLINE in label_kind_of_alg2:
+                                class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
+                                                       f'{label_kind_of_alg}_{label_kind_of_alg2}',
+                                                       f'{label_exploration_strategy}',
+                                                       OFFLINE_CAUSAL_TABLE)
+                            else:
+                                class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
+                                                       f'{label_kind_of_alg}_{label_kind_of_alg2}',
+                                                       f'{label_exploration_strategy}')
 
                             add_name_dir_save = 'Maze' if if_maze else 'Grid' + f'{rows}x{cols}_{n_enemies}' + 'enemies' if n_enemies > 1 else 'enemy'
 
