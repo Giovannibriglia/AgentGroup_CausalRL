@@ -65,7 +65,7 @@ class QLearningAgent:
 
         if global_variables.LABEL_CAUSAL in self.kind_of_alg and causal_table is not None:
 
-            possible_actions = self._get_possible_actions(enemies_nearby_agent, goals_nearby_agent, causal_table)
+            possible_actions = self._get_possible_actions(causal_table, enemies_nearby_agent, goals_nearby_agent)
 
             action = self.agent.choose_action(state, possible_actions)
 
@@ -84,8 +84,13 @@ class QLearningAgent:
 
         return action
 
-    def _get_possible_actions(self, enemies_nearby: np.ndarray, goals_nearby: np.ndarray,
-                              causal_table: pd.DataFrame) -> list:
+    def _get_possible_actions(self, causal_table: pd.DataFrame,
+                              enemies_nearby: np.ndarray = None, goals_nearby: np.ndarray = None) -> list:
+
+        if enemies_nearby is not None:
+            enemies_nearby = list(set(enemies_nearby))
+        if goals_nearby is not None:
+            goals_nearby = list(set(goals_nearby))
 
         col_action = next(s for s in causal_table.columns if global_variables.LABEL_COL_ACTION in s)
         col_reward = next(s for s in causal_table.columns if global_variables.LABEL_COL_REWARD in s)

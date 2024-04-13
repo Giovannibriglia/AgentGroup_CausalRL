@@ -1,5 +1,4 @@
 import pandas as pd
-
 from scripts.utils.environment import CustomEnv
 from scripts.utils.train_models import Training
 from scripts.utils.others import get_batch_episodes
@@ -46,7 +45,7 @@ for simulation_n in range(N_SIMULATIONS):
 
                 for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
 
-                    for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE]:
+                    for label_kind_of_alg2 in [global_variables.LABEL_VANILLA]:
 
                         for label_exploration_strategy in [global_variables.LABEL_THOMPSON_SAMPLING,
                                                            global_variables.LABEL_BOLTZMANN_MACHINE,

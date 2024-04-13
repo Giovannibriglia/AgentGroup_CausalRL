@@ -395,7 +395,9 @@ class BoltzmannQAgent:
             stateX, stateY = int(state[0]), int(state[1])
             values = self.q_table[stateX, stateY, :]
         if possible_actions is not None:
-            values = values[possible_actions]
+            if len(possible_actions) > 0:
+                values = values[possible_actions]
+
         probabilities = self.softmax(values)
         return np.random.choice(possible_actions or np.arange(self.n_actions), p=probabilities)
 
@@ -527,8 +529,10 @@ class SoftmaxAnnealingQAgent:
         else:
             stateX, stateY = int(state[0]), int(state[1])
             values = self.q_table[stateX, stateY, :]
+
         if possible_actions is not None:
-            values = values[possible_actions]
+            if len(possible_actions) > 0:
+                values = values[possible_actions]
         probabilities = self.softmax(values)
         return np.random.choice(possible_actions or np.arange(self.n_actions), p=probabilities)
 
