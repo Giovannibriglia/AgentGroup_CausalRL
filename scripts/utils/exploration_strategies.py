@@ -252,11 +252,13 @@ class EpsilonGreedyQAgent:
 
     def _choose_action_q_table(self, state, possible_actions):
         if np.random.uniform(0, 1) < self.exp_proba:
-            action = np.random.choice(possible_actions) if possible_actions else np.random.randint(self.n_actions)
+            action = np.random.choice(possible_actions) if possible_actions is not None and len(possible_actions) > 0 else np.random.randint(self.n_actions)
+
         else:
             q_values = self.q_table[state[0], state[1], :]
-            if possible_actions:
-                q_values = np.array([q_values[a] if a in possible_actions else -np.inf for a in range(self.n_actions)])
+            if possible_actions is not None:
+                if len(possible_actions) > 0:
+                    q_values = np.array([q_values[a] if a in possible_actions else -np.inf for a in range(self.n_actions)])
             action = np.argmax(q_values)
         return action
 
@@ -387,7 +389,7 @@ class BoltzmannQAgent:
         probabilities = exp_values / np.sum(exp_values)
         return probabilities
 
-    def choose_action(self, state, possible_actions=None):
+    def choose_action(self, state: np.ndarray, possible_actions: list = None):
         if self.if_deep:
             state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
             values = self.policy_net(state).squeeze().detach().cpu().numpy()
@@ -399,7 +401,8 @@ class BoltzmannQAgent:
                 values = values[possible_actions]
 
         probabilities = self.softmax(values)
-        return np.random.choice(possible_actions or np.arange(self.n_actions), p=probabilities)
+        return np.random.choice(possible_actions if possible_actions is not None else np.arange(self.n_actions),
+                                p=probabilities)
 
     def update_Q_or_memory(self, state, action, reward, next_state):
         if self.if_deep:
@@ -534,7 +537,9 @@ class SoftmaxAnnealingQAgent:
             if len(possible_actions) > 0:
                 values = values[possible_actions]
         probabilities = self.softmax(values)
-        return np.random.choice(possible_actions or np.arange(self.n_actions), p=probabilities)
+
+        return np.random.choice(possible_actions if possible_actions is not None else np.arange(self.n_actions),
+                                p=probabilities)
 
     def update_Q_or_memory(self, state, action, reward, next_state):
         if self.if_deep:

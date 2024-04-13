@@ -47,10 +47,10 @@ for simulation_n in range(N_SIMULATIONS):
 
                     for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_OFFLINE]:
 
-                        for label_exploration_strategy in [global_variables.LABEL_THOMPSON_SAMPLING,
-                                                           global_variables.LABEL_BOLTZMANN_MACHINE,
-                                                           global_variables.LABEL_EPSILON_GREEDY,
-                                                           global_variables.LABEL_SOFTMAX_ANNEALING]:
+                        for label_exploration_strategy in [global_variables.LABEL_EPSILON_GREEDY,
+                                                           global_variables.LABEL_THOMPSON_SAMPLING,
+                                                           global_variables.LABEL_SOFTMAX_ANNEALING,
+                                                           global_variables.LABEL_BOLTZMANN_MACHINE]:
 
                             if global_variables.LABEL_CAUSAL_OFFLINE in label_kind_of_alg2:
                                 class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
