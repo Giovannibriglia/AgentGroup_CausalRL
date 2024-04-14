@@ -540,7 +540,6 @@ class SoftmaxAnnealingQAgent:
             if len(possible_actions) > 0:
                 values = values[possible_actions]
             else:
-                # If possible_actions is empty, choose from all actions
                 return np.random.choice(np.arange(self.n_actions))
         probabilities = self.softmax(values)
 
