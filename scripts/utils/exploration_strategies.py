@@ -399,6 +399,9 @@ class BoltzmannQAgent:
         if possible_actions is not None:
             if len(possible_actions) > 0:
                 values = values[possible_actions]
+            else:
+                # If possible_actions is empty, choose from all actions
+                return np.random.choice(np.arange(self.n_actions))
 
         probabilities = self.softmax(values)
         return np.random.choice(possible_actions if possible_actions is not None else np.arange(self.n_actions),
@@ -536,6 +539,9 @@ class SoftmaxAnnealingQAgent:
         if possible_actions is not None:
             if len(possible_actions) > 0:
                 values = values[possible_actions]
+            else:
+                # If possible_actions is empty, choose from all actions
+                return np.random.choice(np.arange(self.n_actions))
         probabilities = self.softmax(values)
 
         return np.random.choice(possible_actions if possible_actions is not None else np.arange(self.n_actions),
