@@ -70,9 +70,9 @@ def compare_causal_graphs(ground_truth: list, other_list: list) -> bool:
 
 
 def get_batch_episodes(n_enemies: int, n_rows: int, n_cols: int, table_batch: pd.DataFrame) -> int:
-    condition = ((table_batch['#Enemies'] == n_enemies) &
-                 (table_batch['Grid Size'] == f'{n_rows}x{n_cols}') &
-                 (table_batch['Suitable'] == 'yes'))
+    condition = ((table_batch['n_enemies'] == n_enemies) &
+                 (table_batch['grid_size'] == f'{n_rows}x{n_cols}') &
+                 (table_batch['suitable'] == 'yes'))
 
     filtered_df = table_batch[condition]
 
