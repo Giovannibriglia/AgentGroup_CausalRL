@@ -31,7 +31,7 @@ two enemies:
 """
 
 # TODO: @Stefano help me, change key names in envs_causality and envs_test dicts
-dir_save = f'Test2'
+dir_save = f'Test3'
 
 
 def fake_offline_cd(env_params, other_params):
@@ -56,7 +56,7 @@ COLUMNS_GRID = 4
 N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
-N_EPISODES_CD = 30 #global_variables.N_TRAINING_EPISODES
+N_EPISODES_CD = 500
 N_TRAINING_EPISODES = global_variables.N_TRAINING_EPISODES
 
 env_causality1 = {'agents_positions': [(0, 3)],
@@ -129,16 +129,15 @@ for label_env_causality in envs_causality.keys():
 
                 label_exploration_strategy = global_variables.LABEL_EPSILON_GREEDY
 
-                if global_variables.LABEL_CAUSAL_ONLINE in label_kind_of_alg2:
-                    class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
-                                           f'{label_kind_of_alg}_{label_kind_of_alg2}',
-                                           f'{label_exploration_strategy}')
-
-                elif global_variables.LABEL_CAUSAL_OFFLINE in label_kind_of_alg2:
+                if global_variables.LABEL_CAUSAL_OFFLINE in label_kind_of_alg2:
                     class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                            f'{label_kind_of_alg}_{label_kind_of_alg2}',
                                            f'{label_exploration_strategy}',
                                            offline_causal_table)
+                else:
+                    class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
+                                           f'{label_kind_of_alg}_{label_kind_of_alg2}',
+                                           f'{label_exploration_strategy}')
 
                 add_name_dir_save = 'Grid' + f'{ROWS_GRID}x{COLUMNS_GRID}_{N_ENEMIES}'
                 add_name_dir_save += 'enemies' if N_ENEMIES > 1 else 'enemy'
@@ -151,4 +150,4 @@ for label_env_causality in envs_causality.keys():
                 class_train.start_train(environment,
                                         dir_save_metrics=dir_save_final,
                                         name_save_metrics=name_save,
-                                        batch_update_df_track=1000 if cond_online else None)
+                                        batch_update_df_track=N_EPISODES_CD if cond_online else None)

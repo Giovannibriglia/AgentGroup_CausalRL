@@ -347,15 +347,14 @@ class Training:
 
             out_causal_graph = cd.return_causal_graph()
 
-            if self.GROUND_TRUTH_ONLINE_CAUSAL_GRAPH is None:
-                self.GROUND_TRUTH_ONLINE_CAUSAL_GRAPH = out_causal_graph
-            else:
+            if self.GROUND_TRUTH_ONLINE_CAUSAL_GRAPH is not None:
                 if compare_causal_graphs(out_causal_graph, self.GROUND_TRUTH_ONLINE_CAUSAL_GRAPH):
                     self.n_checks_causal_table_online += 1
                 else:
                     if self.kind_th_CI == 'consecutive':
                         self.n_checks_causal_table_online = 0
-                    self.GROUND_TRUTH_ONLINE_CAUSAL_GRAPH = out_causal_graph
+
+            self.GROUND_TRUTH_ONLINE_CAUSAL_GRAPH = out_causal_graph
 
 
 if __name__ == '__main__':

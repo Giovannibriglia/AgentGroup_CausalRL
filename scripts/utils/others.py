@@ -7,6 +7,7 @@ import pandas as pd
 import global_variables
 
 
+# TODO: SISTEMARE COME DIO COMANDA
 def create_next_alg_folder(base_dir: str, core_word_path: str) -> str:
     # Ensure base directory exists
     if not os.path.exists(base_dir):
@@ -59,30 +60,26 @@ def compare_causal_graphs(ground_truth: list, other_list: list) -> bool:
             in_ground_truth_not_in_other_list.append(item)
 
     if len(in_other_list_not_in_ground_truth) > 0:
-        print('In other list but not in ground truth: ', in_other_list_not_in_ground_truth,
-              len(in_other_list_not_in_ground_truth))
+        # print('In other list but not in ground truth: ', in_other_list_not_in_ground_truth, len(in_other_list_not_in_ground_truth))
+        pass
     if len(in_ground_truth_not_in_other_list):
-        print('In ground truth but not in list: ', in_ground_truth_not_in_other_list,
-              len(in_ground_truth_not_in_other_list))
+        # print('In ground truth but not in list: ', in_ground_truth_not_in_other_list, len(in_ground_truth_not_in_other_list))
+        pass
 
     return len(in_other_list_not_in_ground_truth) == 0 and len(in_ground_truth_not_in_other_list) == 0
 
 
-def get_batch_episodes(n_enemies: int, n_rows: int, n_cols: int) -> int:
-    df_batch_episodes_online_CD = pd.read_pickle(f'{global_variables.PATH_RESULTS_BATCH_EPISODES_ONLINE_CD}')
+def get_batch_episodes(n_enemies: int, n_rows: int, n_cols: int, table_batch: pd.DataFrame) -> int:
+    condition = ((table_batch['#Enemies'] == n_enemies) &
+                 (table_batch['Grid Size'] == f'{n_rows}x{n_cols}') &
+                 (table_batch['Suitable'] == 'yes'))
 
-    condition = ((df_batch_episodes_online_CD['n_enemies'] == n_enemies) &
-                 (df_batch_episodes_online_CD['grid_size'] == (n_rows, n_cols)) &
-                 (df_batch_episodes_online_CD['suitable'] == True))
+    filtered_df = table_batch[condition]
 
-    filtered_df = df_batch_episodes_online_CD[condition]
-
-    if filtered_df:
-        print('DEBUGGAREEEEE ', filtered_df['n_episodes'].min())
+    if not filtered_df.empty:
         return filtered_df['n_episodes'].min()
     else:
-        print('DEBUGGARE')
-        return 1000
+        return 500
 
 
 def extract_grid_size_and_n_enemies(input_string: str) -> Tuple[tuple, int]:
