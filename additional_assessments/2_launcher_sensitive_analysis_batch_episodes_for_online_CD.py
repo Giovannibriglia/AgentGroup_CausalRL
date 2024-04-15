@@ -22,12 +22,10 @@ def generate_empty_list(X: int, data_type) -> list:
     return [data_type() for _ in range(X)]
 
 
-with open(f'{global_variables.PATH_CAUSAL_GRAPH_OFFLINE}', 'r') as file:
-    GROUND_TRUTH_CAUSAL_GRAPH = json.load(file)
-
+DIR_SAVING = f'{global_variables.GLOBAL_PATH_REPO}/Results/Sensitive_Analysis_Batch_Episodes'
 N_SIMULATIONS_CONSIDERED = global_variables.N_SIMULATIONS_PAPER
 N_ENEMIES_CONSIDERED = global_variables.N_ENEMIES_CONSIDERED_PAPER
-N_EPISODES_CONSIDERED = global_variables.N_EPISODES_CONSIDERED_FOR_SENSITIVE_ANALYSIS_PAPER
+N_EPISODES_CONSIDERED = [max(global_variables.N_EPISODES_CONSIDERED_FOR_SENSITIVE_ANALYSIS_PAPER)]
 GRID_SIZES_CONSIDERED = global_variables.GRID_SIZES_CONSIDERED_PAPER
 n_agents = 1
 n_goals = 1
@@ -36,7 +34,7 @@ dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
 dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
 
 label_kind_of_alg = f'{global_variables.LABEL_Q_LEARNING}_{global_variables.LABEL_VANILLA}'
-label_exploration_strategy = 'EG'
+label_exploration_strategy = f'{global_variables.LABEL_EPSILON_GREEDY}'
 
 " First part: simulations "
 combinations_enemies_episodes_grid = list(product(N_ENEMIES_CONSIDERED, N_EPISODES_CONSIDERED, GRID_SIZES_CONSIDERED))
@@ -49,7 +47,11 @@ for dict_comb in list_combinations_for_simulations:
     rows, cols = dict_comb['grid_size']
     print(f'\n *** Grid size: {rows}x{cols} - {n_episodes} episodes - {n_enemies} enemies ***')
 
-    dict_comb['causal_graph'] = generate_empty_list(N_SIMULATIONS_CONSIDERED, list)
+    dict_to_save = {'grid_size': (rows, cols), 'n_enemies': n_enemies, 'n_episodes': n_episodes,
+                    'env': generate_empty_list(N_SIMULATIONS_CONSIDERED, list),
+                    'causal_table': generate_empty_list(N_SIMULATIONS_CONSIDERED, list),
+                    'causal_graph': generate_empty_list(N_SIMULATIONS_CONSIDERED, list),
+                    'df_track': generate_empty_list(N_SIMULATIONS_CONSIDERED, list)}
 
     for sim_n in range(N_SIMULATIONS_CONSIDERED):
         seed_value = global_variables.seed_values[sim_n]
@@ -68,22 +70,25 @@ for dict_comb in list_combinations_for_simulations:
         dict_other_params['N_EPISODES'] = n_episodes
 
         env = CustomEnv(dict_env_params)
+        env_to_save = np.vectorize(lambda x: env.number_names_grid.get(x, str(x)))(env.grid_for_game)
+        dict_to_save['env'][sim_n] = env_to_save.tolist()
 
         class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                f'{label_kind_of_alg}',
                                f'{label_exploration_strategy}')
 
-        class_train.start_train(env, batch_update_df_track=250)
+        class_train.start_train(env, batch_update_df_track=500)
 
         df_track = class_train.get_df_track()
+        dict_to_save['df_track'][sim_n] = df_track.to_dict(orient='records')
 
         cd = CausalDiscovery(df_track, n_agents, n_enemies, n_goals)
         out_causal_graph = cd.return_causal_graph()
+        out_causal_table = cd.return_causal_table()
+        dict_to_save['causal_table'][sim_n] = out_causal_table.to_dict(orient='records')
+        dict_to_save['causal_graph'][sim_n] = out_causal_graph
 
-        dict_comb['causal_graph'][sim_n] = out_causal_graph
+    os.makedirs(f'{DIR_SAVING}', exist_ok=True)
 
-os.makedirs(f'{global_variables.GLOBAL_PATH_REPO}/Results/Sensitive_Analysis_Batch_Episodes', exist_ok=True)
-with open(f'{global_variables.GLOBAL_PATH_REPO}/Results/Sensitive_Analysis_Batch_Episodes/batch_episodes_for_online_cd_values2.json', 'w') as json_file:
-    json.dump(list_combinations_for_simulations, json_file)
-
-
+    with open(f'{DIR_SAVING}/results_grid{rows}x{cols}_{n_enemies}enemies_{n_episodes}episodes.json', 'w') as json_file:
+        json.dump(dict_to_save, json_file)

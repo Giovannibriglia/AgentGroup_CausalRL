@@ -3,8 +3,10 @@ import networkx as nx
 from causalnex.structure import StructureModel
 from matplotlib import pyplot as plt
 import global_variables
+from scripts.utils.test_causal_table import TestCausalTable
 import json
 import pandas as pd
+
 
 # TODO: valuta il mergato se passa il test
 def generate_plot(edges: list, title, if_arrows):

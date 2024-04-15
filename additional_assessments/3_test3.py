@@ -133,6 +133,7 @@ for label_env_causality in envs_causality.keys():
                     class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                            f'{label_kind_of_alg}_{label_kind_of_alg2}',
                                            f'{label_exploration_strategy}')
+
                 elif global_variables.LABEL_CAUSAL_OFFLINE in label_kind_of_alg2:
                     class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                            f'{label_kind_of_alg}_{label_kind_of_alg2}',

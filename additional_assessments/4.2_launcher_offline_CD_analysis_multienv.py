@@ -90,5 +90,5 @@ for sim_n in range(N_SIMULATIONS):
     plt.show()
     plt.close(fig)
 
-" For evaluating data, run 'merging_causal_graphs_offline_CD_multienv.py' "
+" For evaluating data, run 'merge_causal_graphs.py' "
 
