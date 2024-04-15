@@ -4,8 +4,7 @@ This repository provides the Framework detailed in [Generalisable Improvement to
 
 ![flowchart_resume](flowchart_resume.png)
 
-**Paper**: [Generalisable Improvement to Q-Learning Exploration with Causal Models of Core Environment Mechanics](https://www.ecai2024.eu/calls/main-track)
-**Project website**: ...
+**Paper**: [Generalisable Improvement to Q-Learning Exploration with Causal Models of Core Environment Mechanics]( https://www.ecai2024.eu/calls/main-track)
 
 **Maintainer**: [Giovanni Briglia](https://github.com/Giovannibriglia)  
 **Affiliation**: [Distributed and Pervasive Intelligence Group](https://dipi-unimore.netlify.app/) at [University of Modena and Reggio Emilia](https://www.unimore.it/)  
@@ -14,26 +13,24 @@ This repository provides the Framework detailed in [Generalisable Improvement to
 ## Project Structure
 
 ```
-*** TO COMPLETE ***
 additional_assessments
    |__init__.py
-   |__evaluation_for_test1_and_test3.py
-   |__launcher_offline_CD_analysis.py
-   |__launcher_offline_CD_analysis_multienv.py
-   |__launcher_sensitive_analysis_batch_episodes_for_online_CD.py
-   |__test1.py
-   |__test2.py
-   |__test3.py
-images_for_render
-   |__bowser.png
-   |__goal.png
-   |__supermario.png
-   |__wall.png
+   |__1_evaluation_for_test1_and_test2.py
+   |__1_test1_and_test2
+   |__2_evaluation_sensitive_analysis_batch_episodes.py
+   |__2_launcher_sensitive_analysis_batch_episodes_for_online_cd.py
+   |__3_evaluation_test3.py
+   |__3_test3
+   |__4.1_launcher_offline_CD_analysis.py
+   |__4.2_launcher_offline_CD_analysis_multienv.py
+   |__init__.py
 Results
    |__Comparison123
    |__Comparison4
    |__OfflineCD_MultiEnv
+   |__Sensitive_Analysis_Batch_Episodes
    |__Test1
+   |__Test2
    |__Test3
 scripts
    |__algorithms
@@ -47,6 +44,11 @@ scripts
       |__launcher_comparison4_paper.py
       |__launcher_comparison123_paper.py
    |__utils
+      |__images_for_render
+         |__bowser.png
+         |__goal.png
+         |__supermario.png
+         |__wall.png
       |__init.py
       |__batch_episodes_for_online_cd_values.pkl
       |__dqn_class_and_memory.py
@@ -55,20 +57,26 @@ scripts
       |__ground_truth_causal_graph.json
       |__ground_truth_causal_graph.png
       |__ground_truth_causal_table.pkl
-      |__numpy_encoder_json.py
+      |__merge_causal_graphs.py
       |__others.py
       |__seed_values.npy
+      |__test_causal_table
       |__train_models.py
    __init__.py
+   example.py
    plot_and_tables.py
 Videos
    |__Comparison123
    |__Comparison4
-abstract.png
+__init__.py
+experiments_parameters.png
+flowchart_resume.png
 global_variables.py
 LICENSE
 README
 requirements.txt
+setup.py
+values_reasons_parameters.png
 ```
 
 ## Installation
@@ -81,18 +89,21 @@ requirements.txt
    ```
    python setup.py install
    ```
-
-## How to Reproduce Paper Results
-   For comparison: Vanilla vs Causal Offline vs Online in Grid-like Environments:
+4. Run test example
    ```
-   python scripts/launchers/launcher_comparison123_paper.py
+   python -m scripts/example.py
+   ```
+## How to Reproduce Paper Results
+   For comparison: Vanilla vs Causal Offline vs Causal Online in Grid-like Environments:
+   ```
+   python -m scripts/launchers/launcher_comparison123_paper.py
    ```
    For comparison: With and Without Transfer Learning in Maze-like Environments:
    ```
-   python scripts/launchers/launcher_comparison4_paper.py
+   python -m scripts/launchers/launcher_comparison4_paper.py
    ```
 
-## Parameters 
+## Parameters FINIREEEEEEEEEEEEEE
 ![experiments_parameters](experiments_parameters.png)
 <p align="center">
   <img width="460" height="300" src=values_reasons_parameters.png>
