@@ -13,14 +13,15 @@ The simulation results include metrics such as rewards for each episode, computa
 final q-table (if available), the number of steps taken to complete each episode and number of timeout occurred, 
 along with accompanying videos."""
 
-dir_save = 'Comparison123'
+dir_save = 'Example'
 
 OFFLINE_CAUSAL_TABLE = pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
+table_batch_episodes = pd.read_pickle(f'{global_variables.PATH_RESULTS_BATCH_EPISODES_ONLINE_CD}')
 
 if_maze = False
-GRID_SIZES = global_variables.GRID_SIZES_CONSIDERED_PAPER
-ENEMIES = global_variables.N_ENEMIES_CONSIDERED_PAPER
-N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
+GRID_SIZES = [(5, 5)]
+ENEMIES = [2]
+N_SIMULATIONS = 3
 
 for simulation_n in range(N_SIMULATIONS):
     for rows, cols in GRID_SIZES:
@@ -45,12 +46,10 @@ for simulation_n in range(N_SIMULATIONS):
 
                 for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
 
-                    for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_OFFLINE]:
+                    for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_VANILLA,
+                                               global_variables.LABEL_CAUSAL_ONLINE]:
 
-                        for label_exploration_strategy in [global_variables.LABEL_EPSILON_GREEDY,
-                                                           global_variables.LABEL_THOMPSON_SAMPLING,
-                                                           global_variables.LABEL_SOFTMAX_ANNEALING,
-                                                           global_variables.LABEL_BOLTZMANN_MACHINE]:
+                        for label_exploration_strategy in [global_variables.LABEL_EPSILON_GREEDY]:
 
                             if global_variables.LABEL_CAUSAL_OFFLINE in label_kind_of_alg2:
                                 class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
@@ -73,7 +72,7 @@ for simulation_n in range(N_SIMULATIONS):
                                                     dir_save_metrics=dir_save_final,
                                                     name_save_metrics=name_save,
                                                     batch_update_df_track=get_batch_episodes(n_enemies, rows,
-                                                                                             cols) if cond_online else None,
+                                                                                             cols, table_batch_episodes) if cond_online else None,
                                                     episodes_to_visualize=global_variables.EPISODES_TO_VISUALIZE_PAPER,
                                                     dir_save_videos=dir_save_final,
                                                     name_save_videos=name_save)

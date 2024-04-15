@@ -165,7 +165,7 @@ class Training:
 
         self.dict_metrics[f'{self.key_metric_rewards_for_episodes}'].append(self.total_episode_reward)
         self.dict_metrics[f'{self.key_metric_steps_for_episodes}'].append(self.step_for_episode)
-        self.dict_metrics[f'{self.key_metric_average_time_for_episodes}'].append(round(comp_time_episode))
+        self.dict_metrics[f'{self.key_metric_average_time_for_episodes}'].append(comp_time_episode)
 
         mean = round(np.mean(self.dict_metrics[f'{self.key_metric_rewards_for_episodes}']), 2)
         self.pbar.set_postfix_str(
