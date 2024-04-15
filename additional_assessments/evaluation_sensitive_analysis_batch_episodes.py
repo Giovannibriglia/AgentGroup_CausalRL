@@ -6,7 +6,7 @@ import global_variables
 import json
 import pandas as pd
 
-
+# TODO: valuta il mergato se passa il test
 def generate_plot(edges: list, title, if_arrows):
     sm_true = StructureModel()
     sm_true.add_edges_from(edges)

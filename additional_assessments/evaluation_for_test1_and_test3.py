@@ -6,7 +6,7 @@ import pandas as pd
 import warnings
 warnings.filterwarnings("ignore")
 
-
+# TODO: valuta il mergato se passa il test
 with open(f'{global_variables.PATH_CAUSAL_GRAPH_OFFLINE}', 'r') as file:
     GROUND_TRUTH_CAUSAL_GRAPH = json.load(file)
 
