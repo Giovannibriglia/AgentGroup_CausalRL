@@ -87,7 +87,7 @@ class QLearningAgent:
     def _get_possible_actions(self, causal_table: pd.DataFrame,
                               enemies_nearby: np.ndarray = None, goals_nearby: np.ndarray = None) -> list:
 
-        possible_actions = np.arange(0, self.n_actions, 1)
+        """possible_actions = np.arange(0, self.n_actions, 1)
         goals_nearby = [s for s in list(set(goals_nearby)) if s != 50]
         enemies_nearby = [s for s in list(set(enemies_nearby)) if s != 50]
         if len(goals_nearby) > 0:
@@ -95,14 +95,14 @@ class QLearningAgent:
         elif len(enemies_nearby) > 0:
             possible_actions = [s for s in possible_actions if s not in enemies_nearby]
 
-        return possible_actions
+        return possible_actions"""
 
-        """
         if enemies_nearby is not None:
             enemies_nearby = list(set(enemies_nearby))
         if goals_nearby is not None:
             goals_nearby = list(set(goals_nearby))
-            col_action = next(s for s in causal_table.columns if global_variables.LABEL_COL_ACTION in s)
+
+        col_action = next(s for s in causal_table.columns if global_variables.LABEL_COL_ACTION in s)
         col_reward = next(s for s in causal_table.columns if global_variables.LABEL_COL_REWARD in s)
         col_enemy_nearby = next(s for s in causal_table.columns if global_variables.LABEL_ENEMY_CAUSAL_TABLE in s and
                                 global_variables.LABEL_NEARBY_CAUSAL_TABLE in s)
@@ -140,7 +140,7 @@ class QLearningAgent:
         else:
             possible_actions = []
 
-        return possible_actions"""
+        return possible_actions
 
     def return_q_table(self):
         if self.exploration_strategy != global_variables.LABEL_THOMPSON_SAMPLING:

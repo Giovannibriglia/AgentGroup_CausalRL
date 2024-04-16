@@ -26,13 +26,13 @@ This inconsistency arises because the action taken is not zero. By experimenting
 the goal placed in different cells and subsequently merging the resultant causal tables and graphs, we hope to 
 address and resolve this issue effectively."""
 
-DIR_SAVING = 'OfflineCD_MultiEnv'
+DIR_SAVING = 'OfflineCD_MultiEnv_4x4'
 
 
 N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
-GRID_SIZE = (3, 3)
+GRID_SIZE = (4, 4)
 N_EPISODES = 3000
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 
@@ -83,7 +83,7 @@ for sim_n in range(N_SIMULATIONS):
     fig = plt.figure(dpi=1000)
     sm = StructureModel()
     sm.add_edges_from(out_causal_graph)
-    plt.title(f'Causal graph ground truth', fontsize=16)
+    plt.title(f'Causal graph', fontsize=16)
     nx.draw(sm, with_labels=True, font_size=7, arrowsize=30, arrows=True,
             edge_color='orange', node_size=1000, font_weight='bold', pos=nx.circular_layout(sm))
     plt.savefig(f'{DIR_SAVING}/causal_graph_{sim_n}.png')

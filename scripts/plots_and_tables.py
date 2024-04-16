@@ -12,7 +12,7 @@ from scripts.utils.others import extract_grid_size_and_n_enemies
 fontsize = 12
 SIGMA_GAUSSIAN_FILTER = 3
 
-dir_results = 'Test3'
+dir_results = 'Test3_vecchio'
 N_GAMES_PERFORMED = global_variables.N_SIMULATIONS_PAPER
 
 n_episodes = global_variables.N_TRAINING_EPISODES

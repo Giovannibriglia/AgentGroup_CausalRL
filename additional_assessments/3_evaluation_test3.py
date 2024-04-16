@@ -14,21 +14,21 @@ from scripts.utils.others import extract_grid_size_and_n_enemies
 fontsize = 12
 SIGMA_GAUSSIAN_FILTER = 3
 
-dir_results = 'Test3'
+dir_results = 'Test3_vecchio'
 N_GAMES_PERFORMED = global_variables.N_SIMULATIONS_PAPER
 
 n_episodes = global_variables.N_TRAINING_EPISODES
 
-group_env = ['complete_CD', 'less_incomplete_CD', 'incomplete_CD'
-             'incomplete_knowledge_for_OfflineCD', 'less_incomplete__knowledge_for_OfflineCD', 'incomplete_knowledge_for_OfflineCD']
-group_kind_algs = [f'{global_variables.LABEL_Q_LEARNING}_{global_variables.LABEL_CAUSAL_OFFLINE}_{global_variables.LABEL_EPSILON_GREEDY}',
-                   f'{global_variables.LABEL_Q_LEARNING}_{global_variables.LABEL_CAUSAL_ONLINE}_{global_variables.LABEL_EPSILON_GREEDY}']
+group_causality = ['env1causal', 'env2causal', 'env3causal']
+group_test = ['env1test', 'env2test', 'env3test']
+group_kind_algs = [
+    f'{global_variables.LABEL_Q_LEARNING}_{global_variables.LABEL_CAUSAL_OFFLINE}_{global_variables.LABEL_EPSILON_GREEDY}',
+    f'{global_variables.LABEL_Q_LEARNING}_{global_variables.LABEL_CAUSAL_ONLINE}_{global_variables.LABEL_EPSILON_GREEDY}']
 
 vet_enemies = [1]
 vet_grid_sizes = [(4, 4)]
 
-combinations_grid_enemies = list(product(vet_enemies, vet_grid_sizes))
-combinations_algs = list(product(group_kind_algs, group_env))
+combinations = list(product(group_kind_algs, group_causality, group_test))
 
 dir_saving_plots_and_table = f'{global_variables.GLOBAL_PATH_REPO}/Plots_and_Tables/{dir_results}'
 os.makedirs(dir_saving_plots_and_table, exist_ok=True)
@@ -92,8 +92,8 @@ def compute_my_confidence_interval(data: list) -> Decimal:
 
 def compute_metrics(rewards: list, cumulative_rewards: list, actions: list, computation_times: list) -> dict:
     dict_out = {}
-    IQM_cumulative_reward_value = IQM_mean(cumulative_rewards)
-    confidence_interval_cumulative_reward_series = compute_my_confidence_interval(cumulative_rewards)
+    IQM_cumulative_reward_value = cumulative_rewards[-1]
+    confidence_interval_cumulative_reward_series = compute_my_confidence_interval(rewards)*len(rewards)
     dict_out[
         f'{col_average_cumulative_reward}'] = f'{IQM_cumulative_reward_value} \u00B1 {confidence_interval_cumulative_reward_series}'
 
@@ -121,16 +121,16 @@ def upload_fig(ax_n: plt.axes, values: list, value_to_display: str, label_series
     series_smooth = gaussian_filter1d(values, SIGMA_GAUSSIAN_FILTER)
     x_data = np.arange(0, len(series_smooth), 1)
     if str_timeout is not None:
-        ax_n.plot(x_data, series_smooth, #color=color_algo,
+        ax_n.plot(x_data, series_smooth,  # color=color_algo,
                   label=f'{label_series}: {value_to_display} ({str_timeout})')
     else:
-        ax_n.plot(x_data, series_smooth, #color=color_algo,
+        ax_n.plot(x_data, series_smooth,  # color=color_algo,
                   label=f'{label_series}: {value_to_display}')
 
     mean_str, std_str = value_to_display.split(' ± ')
     confidence_interval = float(std_str)
     ax_n.fill_between(x_data, (series_smooth - confidence_interval), (series_smooth + confidence_interval),
-                      #color=color_algo,
+                      # color=color_algo,
                       alpha=0.2)
 
     ax_n.legend(fontsize='small')
@@ -157,29 +157,25 @@ for file_main_folder in files_inside_main_folder:
     file_main_folder = f'{dir_results}/{file_main_folder}'
     files_inside_second_folder = os.listdir(file_main_folder)
 
-    dict_values = {f'{comb[0]}_{comb[1]}': {f'{name_rewards_series}': [],
-                                            f'{name_actions_series}': [],
-                                            f'{name_computation_time_series}': [],
-                                            f'{name_timeout_series}': []} for comb in combinations_algs}
+    dict_values = {f'{comb[0]}_{comb[1]}_{comb[2]}': {f'{name_rewards_series}': [],
+                                                      f'{name_actions_series}': [],
+                                                      f'{name_computation_time_series}': [],
+                                                      f'{name_timeout_series}': []} for comb in combinations}
 
     grid_size, n_enemies = extract_grid_size_and_n_enemies(os.path.basename(file_main_folder))
     figures_subtitle = f'{os.path.basename(file_main_folder).replace("_", " ")} - Averaged over {N_GAMES_PERFORMED} games'
 
     # for make order
     for algorithm in dict_values.keys():
-        selected_elements = [algorithm] #[s for s in files_inside_second_folder if algorithm in s]
+        with open(f'{file_main_folder}/{algorithm}.json', 'r') as file:
+            series = json.load(file)
 
-        for element in selected_elements:
-            with open(f'{file_main_folder}/{element}.json', 'r') as file:
-                series = json.load(file)
-
-            label_plot = drop_characters_after_first_word(element, group_env).replace("_", " ")[:-1]
-            dict_values[algorithm][f'{name_rewards_series}'].append(series[global_variables.KEY_METRIC_REWARDS_EPISODE])
-            dict_values[algorithm][f'{name_actions_series}'].append(series[global_variables.KEY_METRICS_STEPS_EPISODE])
-            dict_values[algorithm][f'{name_computation_time_series}'].append(
-                series[global_variables.KEY_METRIC_TIME_EPISODE])
-            dict_values[algorithm][f'{name_timeout_series}'].append(
-                series[global_variables.KEY_METRIC_TIMEOUT_CONDITION])
+        dict_values[algorithm][f'{name_rewards_series}'].append(series[global_variables.KEY_METRIC_REWARDS_EPISODE])
+        dict_values[algorithm][f'{name_actions_series}'].append(series[global_variables.KEY_METRICS_STEPS_EPISODE])
+        dict_values[algorithm][f'{name_computation_time_series}'].append(
+            series[global_variables.KEY_METRIC_TIME_EPISODE])
+        dict_values[algorithm][f'{name_timeout_series}'].append(
+            series[global_variables.KEY_METRIC_TIMEOUT_CONDITION])
 
     # for table
     for algorithm, series in dict_values.items():
@@ -208,82 +204,79 @@ for file_main_folder in files_inside_main_folder:
 
     # for plots and tables
     os.makedirs(save_plot, exist_ok=True)
-    for group_chosen in [group_env, group_kind_algs]:
+    for item_chosen in group_test:
+        print(item_chosen)
+        algos_chosen_from_dict = {key: value for key, value in dict_values.items() if item_chosen in key}
 
-        for item_chosen in group_chosen:
-            algos_chosen_from_dict = {key: value for key, value in dict_values.items() if item_chosen in key}
+        fig_reward, ax_iqm_reward = plt.subplots(dpi=1000)
+        ax_iqm_reward.set_title(f'Average reward {item_chosen}')
+        fig_reward.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
 
-            fig_reward, ax_iqm_reward = plt.subplots(dpi=1000)
-            ax_iqm_reward.set_title('Average reward')
-            fig_reward.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
+        fig_cum_reward, ax_cum_reward = plt.subplots(dpi=1000)
+        ax_cum_reward.set_title(f'Cumulative reward {item_chosen}')
+        fig_cum_reward.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
 
-            fig_cum_reward, ax_cum_reward = plt.subplots(dpi=1000)
-            ax_cum_reward.set_title('Cumulative reward')
-            fig_cum_reward.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
+        fig_actions, ax_actions = plt.subplots(dpi=1000)
+        ax_actions.set_title(f'Actions needed {item_chosen}')
+        fig_actions.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
 
-            fig_actions, ax_actions = plt.subplots(dpi=1000)
-            ax_actions.set_title('Actions needed to complete the episode')
-            fig_actions.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
+        """fig_time, ax_time = plt.subplots(dpi=1000)
+        ax_time.set_title(f'Computation time {item_chosen}')
+        fig_time.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)"""
 
-            fig_time, ax_time = plt.subplots(dpi=1000)
-            ax_time.set_title('Computation time needed to complete the episode')
-            fig_time.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
+        for algorithm, series in algos_chosen_from_dict.items():
+            if series[f'{name_rewards_series}']:
 
-            for algorithm, series in algos_chosen_from_dict.items():
-                print(algorithm)
-                if series[f'{name_rewards_series}']:
+                # label_plot, for_title = re.split(r'(?<=EG)', algorithm, maxsplit=1)
+                label_plot = algorithm.replace(f'{item_chosen}', '')
 
-                    #label_plot, for_title = re.split(r'(?<=EG)', algorithm, maxsplit=1)
-                    label_plot = algorithm
+                n_games_performed = len(series[f'{name_timeout_series}'])
+                n_games_ok = series[f'{name_timeout_series}'].count(False)
 
-                    n_games_performed = len(series[f'{name_timeout_series}'])
-                    n_games_ok = series[f'{name_timeout_series}'].count(False)
+                if n_games_ok < n_games_performed:
+                    str_timeout = f'{n_games_ok}/{n_games_performed}'
+                elif n_games_ok == n_games_performed:
+                    str_timeout = None
+                else:
+                    print(
+                        f'*** Problem with timeout counter: n_games_performed: {n_games_performed} - n_games_ok: {n_games_ok}')
+                    str_timeout = None
 
-                    if n_games_ok < n_games_performed:
-                        str_timeout = f'{n_games_ok}/{n_games_performed}'
-                    elif n_games_ok == n_games_performed:
-                        str_timeout = None
-                    else:
-                        print(
-                            f'*** Problem with timeout counter: n_games_performed: {n_games_performed} - n_games_ok: {n_games_ok}')
-                        str_timeout = None
+                indices_to_remove = [i for i, value in enumerate(series[f'{name_timeout_series}']) if value]
+                for key in series:
+                    if key != f'{name_timeout_series}':
+                        series[key] = [sublist for i, sublist in enumerate(series[key]) if
+                                       i not in indices_to_remove]
 
-                    indices_to_remove = [i for i, value in enumerate(series[f'{name_timeout_series}']) if value]
-                    for key in series:
-                        if key != f'{name_timeout_series}':
-                            series[key] = [sublist for i, sublist in enumerate(series[key]) if
-                                           i not in indices_to_remove]
+                rewards_series = list_average(series[f'{name_rewards_series}'])
+                cumulative_rewards_series = cumulative_list(rewards_series)
+                actions_series = list_average(series[f'{name_actions_series}'])
+                computation_time_series = list_average(series[f'{name_computation_time_series}'])
 
-                    rewards_series = list_average(series[f'{name_rewards_series}'])
-                    cumulative_rewards_series = cumulative_list(rewards_series)
-                    actions_series = list_average(series[f'{name_actions_series}'])
-                    computation_time_series = list_average(series[f'{name_computation_time_series}'])
+                dict_metrics = compute_metrics(rewards_series, cumulative_rewards_series, actions_series,
+                                               computation_time_series)
 
-                    dict_metrics = compute_metrics(rewards_series, cumulative_rewards_series, actions_series,
-                                                   computation_time_series)
+                cumulative_rewards_value_to_save = dict_metrics[f'{col_average_cumulative_reward}']
+                actions_value_to_save = dict_metrics[f'{col_average_actions_needed}']
+                reward_value_to_save = dict_metrics[f'{col_average_reward}']
+                computation_time_value_to_save = dict_metrics[f'{col_average_computation_time}']
 
-                    cumulative_rewards_value_to_save = dict_metrics[f'{col_average_cumulative_reward}']
-                    actions_value_to_save = dict_metrics[f'{col_average_actions_needed}']
-                    reward_value_to_save = dict_metrics[f'{col_average_reward}']
-                    computation_time_value_to_save = dict_metrics[f'{col_average_computation_time}']
+                upload_fig(ax_iqm_reward, rewards_series, reward_value_to_save, label_plot, str_timeout)
+                upload_fig(ax_cum_reward, cumulative_rewards_series, cumulative_rewards_value_to_save, label_plot,
+                           str_timeout)
+                upload_fig(ax_actions, actions_series, actions_value_to_save, label_plot, str_timeout)
+                # upload_fig(ax_time, computation_time_series, computation_time_value_to_save, label_plot, str_timeout)
 
-                    upload_fig(ax_iqm_reward, rewards_series, reward_value_to_save, label_plot, str_timeout)
-                    upload_fig(ax_cum_reward, cumulative_rewards_series, cumulative_rewards_value_to_save, label_plot,
-                               str_timeout)
-                    upload_fig(ax_actions, actions_series, actions_value_to_save, label_plot, str_timeout)
-                    upload_fig(ax_time, computation_time_series, computation_time_value_to_save, label_plot,
-                               str_timeout)
+        # fig_time.savefig(f'{save_plot}/time_{item_chosen}.png')
+        fig_actions.savefig(f'{save_plot}/actions_{item_chosen}.png')
+        fig_cum_reward.savefig(f'{save_plot}/cum_reward_{item_chosen}.png')
+        fig_reward.savefig(f'{save_plot}/reward_{item_chosen}.png')
 
-            fig_time.savefig(f'{save_plot}/time_{item_chosen}.png')
-            fig_actions.savefig(f'{save_plot}/actions_{item_chosen}.png')
-            fig_cum_reward.savefig(f'{save_plot}/cum_reward_{item_chosen}.png')
-            fig_reward.savefig(f'{save_plot}/reward_{item_chosen}.png')
-
-            # plt.show()
-            plt.close(fig_time)
-            plt.close(fig_actions)
-            plt.close(fig_cum_reward)
-            plt.close(fig_reward)
+        plt.show()
+        # plt.close(fig_time)
+        plt.close(fig_actions)
+        plt.close(fig_cum_reward)
+        plt.close(fig_reward)
 
 table_results.to_excel(f'{dir_saving_plots_and_table}/results.xlsx')
 table_results.to_pickle(f'{dir_saving_plots_and_table}/results.pkl')

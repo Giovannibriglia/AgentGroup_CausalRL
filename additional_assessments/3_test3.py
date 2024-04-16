@@ -30,7 +30,6 @@ two enemies:
 
 """
 
-# TODO: @Stefano help me, change key names in envs_causality and envs_test dicts
 dir_save = f'Test3'
 
 
@@ -56,7 +55,7 @@ COLUMNS_GRID = 4
 N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
-N_EPISODES_CD = 500
+N_EPISODES_CD = global_variables.N_TRAINING_EPISODES
 N_TRAINING_EPISODES = global_variables.N_TRAINING_EPISODES
 
 env_causality1 = {'agents_positions': [(0, 3)],
@@ -71,7 +70,7 @@ env_causality3 = {'agents_positions': [(0, 3)],
                   'enemies_positions': [(2, 1)],
                   'goals_positions': [(1, 1)],
                   'walls_positions': []}
-envs_causality = {'incomplete_CD': env_causality1, 'less_incomplete_CD': env_causality2, 'complete_CD': env_causality3}
+envs_causality = {'env3causal': env_causality1, 'env2causal': env_causality2, 'env1causal': env_causality3}
 
 env_test1 = {'agents_positions': [(0, 3)],
              'enemies_positions': [(2, 1)],
@@ -85,8 +84,7 @@ env_test3 = {'agents_positions': [(0, 3)],
              'enemies_positions': [(2, 1)],
              'goals_positions': [(1, 2)],
              'walls_positions': []}
-envs_test = {'incomplete_knowledge_for_OfflineCD': env_test1, 'less_incomplete__knowledge_for_OfflineCD': env_test2,
-             'complete_knowledge_for_OfflineCD': env_test3}
+envs_test = {'env3test': env_test1, 'env2test': env_test2, 'env1test': env_test3}
 
 dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
 
@@ -125,7 +123,7 @@ for label_env_causality in envs_causality.keys():
 
         for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING]:
 
-            for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_ONLINE, global_variables.LABEL_CAUSAL_OFFLINE]:
+            for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_CAUSAL_OFFLINE]:
 
                 label_exploration_strategy = global_variables.LABEL_EPSILON_GREEDY
 

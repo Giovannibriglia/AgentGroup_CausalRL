@@ -56,10 +56,9 @@ cd = CausalDiscovery(df_track, N_AGENTS, N_ENEMIES, N_GOALS)
 out_causal_table = cd.return_causal_table()
 out_causal_graph = cd.return_causal_graph()
 
-out_causal_table.to_excel(f'{global_variables.GLOBAL_PATH_REPO}/mario.xlsx')
+out_causal_table.to_pickle(f'{global_variables.GLOBAL_PATH_REPO}/out_causal_table_8x8.pkl')
 
-out_causal_table.to_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
-with open(f'{global_variables.PATH_CAUSAL_GRAPH_OFFLINE}', 'w') as json_file:
+with open(f'{global_variables.GLOBAL_PATH_REPO}/out_causal_graph_8x8.json', 'w') as json_file:
     json.dump(out_causal_graph, json_file)
 
 fig = plt.figure(dpi=1000)
@@ -68,5 +67,4 @@ sm.add_edges_from(out_causal_graph)
 plt.title(f'Causal graph ground truth', fontsize=16)
 nx.draw(sm, with_labels=True, font_size=7, arrowsize=30, arrows=True,
         edge_color='orange', node_size=1000, font_weight='bold', pos=nx.circular_layout(sm))
-plt.savefig(f'{global_variables.PATH_IMG_CAUSAL_GRAPH_OFFLINE}')
 plt.show()
