@@ -19,7 +19,7 @@ The result of this simulation is the causal table used in algorithms incorporati
 #  A potential solution involves incorporating the impact of walls as a distinct feature termed "Wall_Nearby_Agent"
 #  in the modeling process.
 N_AGENTS = 1
-N_ENEMIES = 1
+N_ENEMIES = 3
 N_GOALS = 1
 GRID_SIZE = (8, 8)
 N_EPISODES = global_variables.N_TRAINING_EPISODES

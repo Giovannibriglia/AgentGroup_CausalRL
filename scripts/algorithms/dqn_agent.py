@@ -102,47 +102,4 @@ class DQNAgent:
 
         return possible_actions"""
 
-        if enemies_nearby is not None:
-            enemies_nearby = list(set(enemies_nearby))
-        if goals_nearby is not None:
-            goals_nearby = list(set(goals_nearby))
-
-        col_action = next(s for s in causal_table.columns if global_variables.LABEL_COL_ACTION in s)
-        col_reward = next(s for s in causal_table.columns if global_variables.LABEL_COL_REWARD in s)
-        col_enemy_nearby = next(s for s in causal_table.columns if global_variables.LABEL_ENEMY_CAUSAL_TABLE in s and
-                                global_variables.LABEL_NEARBY_CAUSAL_TABLE in s)
-        col_goal_nearby = next(s for s in causal_table.columns if
-                               global_variables.LABEL_GOAL_CAUSAL_TABLE in s and global_variables.LABEL_NEARBY_CAUSAL_TABLE in s)
-
-        if enemies_nearby is not None and goals_nearby is not None:
-            filtered_rows = causal_table[(causal_table[col_goal_nearby].isin(goals_nearby)) &
-                                         (causal_table[col_enemy_nearby].isin(enemies_nearby))]
-        elif enemies_nearby is not None:
-            filtered_rows = causal_table[(causal_table[col_goal_nearby].isin([50])) &
-                                         (causal_table[col_enemy_nearby].isin(enemies_nearby))]
-        elif goals_nearby is not None:
-            filtered_rows = causal_table[(causal_table[col_goal_nearby].isin(goals_nearby)) &
-                                         (causal_table[col_enemy_nearby].isin([50]))]
-        else:
-            filtered_rows = causal_table
-
-        max_achievable_reward = filtered_rows[col_reward].max()
-        filtered_max_reward = filtered_rows[filtered_rows[col_reward] == max_achievable_reward]
-        # Group by action and calculate average rewards
-        grouped = filtered_max_reward.groupby([col_reward, col_enemy_nearby, col_goal_nearby])[col_action]
-        # Initialize a variable to hold the common values
-        possible_actions = None
-        # Iterate over the groups
-        for name, group in grouped:
-            # If it's the first group, initialize common_values with the values of the first group
-            if possible_actions is None:
-                possible_actions = set(group)
-            # Otherwise, take the intersection of common_values and the values of the current group
-            else:
-                possible_actions = possible_actions.intersection(group)
-        if possible_actions is not None:
-            possible_actions = list(possible_actions)
-        else:
-            possible_actions = []
-
-        return possible_actions
+        return global_variables.get_possible_actions(causal_table, enemies_nearby, goals_nearby)

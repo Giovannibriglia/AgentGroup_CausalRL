@@ -7,17 +7,35 @@ from matplotlib import pyplot as plt
 import os
 from collections import Counter
 from causalnex.structure import StructureModel
+import json
 
 
 class MergeCausalGraphs:
-    def __init__(self, dict_results):
-        self.dict_results = f'{dict_results}'
+    def __init__(self, dir_results: str = None, dict_results: dict = None):
+        if dir_results is not None:
+            self.dir_results = f'{dir_results}'
+            self.dict_results = None
+        elif dict_results is not None:
+            self.dict_results = dict_results
+            self.dir_results = None
+        else:
+            raise AssertionError('you must specify at least one between dir_results and dict_results')
 
     def start_merging(self):
-        self.causal_graphs_json = [s for s in os.listdir(self.dict_results) if 'causal_graph' in s]
+        self.list_causal_graphs = []
+        if self.dir_results is not None:
+            for s in os.listdir(self.dir_results):
+                if 'causal_graph' in s and ".json" in s:
+                    with open(f'{self.dir_results}/{s}', 'r') as file:
+                        graph = json.load(file)
+                        self.list_causal_graphs.append(graph)
+        else:
+            for graph in self.dict_results['causal_graph']:
+                self.list_causal_graphs.append(graph)
+                #self.list_causal_graphs.append([value['causal_graph'] for value in dict_inside.values() if isinstance(value, dict) and 'causal_graph' in value])
 
         combined_list = []
-        for single_causal_graph in self.causal_graphs_json:
+        for single_causal_graph in self.list_causal_graphs:
             combined_list += single_causal_graph
 
         tuple_lists = [tuple(sublist) for sublist in combined_list]
@@ -25,7 +43,7 @@ class MergeCausalGraphs:
 
         self.edges = []
         for element, count in element_counts.items():
-            if count > int(len(self.causal_graphs_json) / 2):
+            if count > int(len(self.list_causal_graphs) / 2):
                 # print(f"Edge: {element}, Occurrences: {count}")
                 self.edges.append(element)
 
@@ -35,7 +53,13 @@ class MergeCausalGraphs:
         return self.edges
 
     def start_cd(self):
-        self.df_tracks = [s for s in os.listdir(self.dict_results) if 'df_track' in s]
+        if self.dir_results is not None:
+            self.df_tracks = [pd.read_pickle(f'{self.dir_results}/{s}') for s in os.listdir(self.dir_results) if 'df_track' in s]
+        else:
+            self.df_tracks = []
+            for df_as_dict in self.dict_results['df_track']:
+                self.df_tracks.append(pd.DataFrame(df_as_dict))
+
         # concat df
         concatenated_df = pd.DataFrame()
         for single_df in self.df_tracks:
@@ -125,6 +149,3 @@ class MergeCausalGraphs:
                 edge_color='orange', node_size=1000, font_weight='bold', pos=nx.circular_layout(sm_true))
         plt.show()
         plt.close(fig)
-
-
-

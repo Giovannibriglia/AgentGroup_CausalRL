@@ -1,1 +1,1 @@
-[["Action_Agent0", "DeltaX_Agent0"], ["Action_Agent0", "DeltaY_Agent0"], ["Action_Agent0", "Reward_Agent0"], ["Enemy0_Nearby_Agent0", "Reward_Agent0"], ["Goal0_Nearby_Agent0", "Reward_Agent0"]]
+[["Action_Agent0", "DeltaX_Agent0"], ["Action_Agent0", "Reward_Agent0"], ["Enemy0_Nearby_Agent0", "Reward_Agent0"], ["Goal0_Nearby_Agent0", "Reward_Agent0"], ["Action_Agent0", "DeltaY_Agent0"]]

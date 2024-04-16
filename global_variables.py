@@ -2,6 +2,7 @@ import os
 from itertools import product
 import palettable
 import numpy as np
+import pandas as pd
 
 # TODO: RIORDINARE COME DIO COMANDA
 
@@ -151,3 +152,61 @@ PATH_CAUSAL_TABLE_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/utils/ground_truth_caus
 PATH_CAUSAL_GRAPH_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/utils/ground_truth_causal_graph.json'
 PATH_IMG_CAUSAL_GRAPH_OFFLINE = f'{GLOBAL_PATH_REPO}/scripts/utils/ground_truth_causal_graph.png'
 PATH_RESULTS_BATCH_EPISODES_ONLINE_CD = f'{GLOBAL_PATH_REPO}/scripts/utils/batch_episodes_for_online_cd.pkl'
+
+
+def get_possible_actions(causal_table: pd.DataFrame,
+                         enemies_nearby: np.ndarray = None, goals_nearby: np.ndarray = None) -> list:
+    """possible_actions = np.arange(0, self.n_actions, 1)
+    goals_nearby = [s for s in list(set(goals_nearby)) if s != 50]
+    enemies_nearby = [s for s in list(set(enemies_nearby)) if s != 50]
+    if len(goals_nearby) > 0:
+        possible_actions = goals_nearby
+    elif len(enemies_nearby) > 0:
+        possible_actions = [s for s in possible_actions if s not in enemies_nearby]
+
+    return possible_actions"""
+
+    if enemies_nearby is not None:
+        enemies_nearby = list(set(enemies_nearby))
+    if goals_nearby is not None:
+        goals_nearby = list(set(goals_nearby))
+
+    col_action = next(s for s in causal_table.columns if LABEL_COL_ACTION in s)
+    col_reward = next(s for s in causal_table.columns if LABEL_COL_REWARD in s)
+    col_enemy_nearby = next(s for s in causal_table.columns if LABEL_ENEMY_CAUSAL_TABLE in s and
+                            LABEL_NEARBY_CAUSAL_TABLE in s)
+    col_goal_nearby = next(s for s in causal_table.columns if
+                           LABEL_GOAL_CAUSAL_TABLE in s and LABEL_NEARBY_CAUSAL_TABLE in s)
+
+    if enemies_nearby is not None and goals_nearby is not None:
+        filtered_rows = causal_table[(causal_table[col_goal_nearby].isin(goals_nearby)) &
+                                     (causal_table[col_enemy_nearby].isin(enemies_nearby))]
+    elif enemies_nearby is not None:
+        filtered_rows = causal_table[(causal_table[col_goal_nearby].isin([50])) &
+                                     (causal_table[col_enemy_nearby].isin(enemies_nearby))]
+    elif goals_nearby is not None:
+        filtered_rows = causal_table[(causal_table[col_goal_nearby].isin(goals_nearby)) &
+                                     (causal_table[col_enemy_nearby].isin([50]))]
+    else:
+        filtered_rows = causal_table
+
+    max_achievable_reward = filtered_rows[col_reward].max()
+    filtered_max_reward = filtered_rows[filtered_rows[col_reward] == max_achievable_reward]
+    # Group by action and calculate average rewards
+    grouped = filtered_max_reward.groupby([col_reward, col_enemy_nearby, col_goal_nearby])[col_action]
+    # Initialize a variable to hold the common values
+    possible_actions = None
+    # Iterate over the groups
+    for name, group in grouped:
+        # If it's the first group, initialize common_values with the values of the first group
+        if possible_actions is None:
+            possible_actions = set(group)
+        # Otherwise, take the intersection of common_values and the values of the current group
+        else:
+            possible_actions = possible_actions.intersection(group)
+    if possible_actions is not None:
+        possible_actions = list(possible_actions)
+    else:
+        possible_actions = []
+
+    return possible_actions
