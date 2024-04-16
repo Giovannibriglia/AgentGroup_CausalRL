@@ -59,6 +59,7 @@ for simulation_n in range(6, N_SIMULATIONS, 1):
                                                            f'{label_kind_of_alg}_{label_kind_of_alg2}',
                                                            f'{label_exploration_strategy}',
                                                            OFFLINE_CAUSAL_TABLE)
+
                                 else:
                                     class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                                            f'{label_kind_of_alg}_{label_kind_of_alg2}',
