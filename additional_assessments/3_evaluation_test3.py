@@ -8,6 +8,8 @@ import json
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
 from decimal import *
+
+from scripts.utils import others
 from scripts.utils.others import extract_grid_size_and_n_enemies
 
 fontsize = 12
@@ -41,76 +43,6 @@ def drop_characters_after_first_word(string: str, words_to_drop: list) -> str:
         if word in string:
             return string.split(word)[0]
     return string
-
-
-def IQM_mean(data: list) -> Decimal:
-    # Sort the data
-    sorted_data = np.sort(data)
-
-    # Calculate quartiles
-    Q1 = np.percentile(sorted_data, 25)
-    Q3 = np.percentile(sorted_data, 75)
-
-    # Calculate IQR
-    IQR = Q3 - Q1
-
-    # Find indices of data within 1.5*IQR from Q1 and Q3
-    lower_bound = Q1 - 1.5 * IQR
-    upper_bound = Q3 + 1.5 * IQR
-
-    within_iqr_indices = np.where((sorted_data >= lower_bound) & (sorted_data <= upper_bound))[0]
-
-    # Calculate IQM
-    iq_mean = Decimal(np.mean(sorted_data[within_iqr_indices])).quantize(Decimal('0.01'))
-
-    return iq_mean
-
-
-def list_average(list_of_lists: list[list]) -> list:
-    list_length = len(list_of_lists[0])  # Assuming all sublists have the same length
-    averages = []
-    for i in range(list_length):
-        total = sum(sublist[i] for sublist in list_of_lists)
-        averages.append(total / len(list_of_lists))
-    return averages
-
-
-def cumulative_list(input_list: list) -> list:
-    cumulative_result = []
-    cumulative_sum = 0
-    for item in input_list:
-        cumulative_sum += item
-        cumulative_result.append(cumulative_sum)
-    return cumulative_result
-
-
-def compute_my_confidence_interval(data: list) -> Decimal:
-    value = Decimal(np.std(data)).quantize(Decimal('.01'))
-    return value
-
-
-def compute_metrics(rewards: list, cumulative_rewards: list, actions: list, computation_times: list) -> dict:
-    dict_out = {}
-    IQM_cumulative_reward_value = cumulative_rewards[-1]
-    confidence_interval_cumulative_reward_series = compute_my_confidence_interval(rewards)*len(rewards)
-    dict_out[
-        f'{col_average_cumulative_reward}'] = f'{IQM_cumulative_reward_value} \u00B1 {confidence_interval_cumulative_reward_series}'
-
-    IQM_reward_value = IQM_mean(rewards)
-    confidence_interval_reward_series = compute_my_confidence_interval(rewards)
-    dict_out[f'{col_average_reward}'] = f'{IQM_reward_value} \u00B1 {confidence_interval_reward_series}'
-
-    IQM_actions_needed = IQM_mean(actions)
-    confidence_interval_actions_needed_series = compute_my_confidence_interval(actions)
-    dict_out[
-        f'{col_average_actions_needed}'] = f'{IQM_actions_needed} \u00B1 {confidence_interval_actions_needed_series}'
-
-    IQM_computation_time = IQM_mean(computation_times)
-    confidence_interval_computation_time_series = compute_my_confidence_interval(computation_times)
-    dict_out[
-        f'{col_average_computation_time}'] = f'{IQM_computation_time} \u00B1 {confidence_interval_computation_time_series}'
-
-    return dict_out
 
 
 def upload_fig(ax_n: plt.axes, values: list, value_to_display: str, label_series: str,
@@ -179,12 +111,12 @@ for file_main_folder in files_inside_main_folder:
     # for table
     for algorithm, series in dict_values.items():
         if series[f'{name_rewards_series}']:
-            rewards_series = list_average(series[f'{name_rewards_series}'])
-            cumulative_rewards_series = cumulative_list(rewards_series)
-            actions_series = list_average(series[f'{name_actions_series}'])
-            computation_time_series = list_average(series[f'{name_computation_time_series}'])
+            rewards_series = others.list_average(series[f'{name_rewards_series}'])
+            cumulative_rewards_series = others.cumulative_list(rewards_series)
+            actions_series = others.list_average(series[f'{name_actions_series}'])
+            computation_time_series = others.list_average(series[f'{name_computation_time_series}'])
 
-            dict_metrics = compute_metrics(rewards_series, cumulative_rewards_series, actions_series,
+            dict_metrics = others.compute_metrics(rewards_series, cumulative_rewards_series, actions_series,
                                            computation_time_series)
 
             cumulative_rewards_value_to_save = dict_metrics[f'{col_average_cumulative_reward}']

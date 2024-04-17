@@ -46,8 +46,8 @@ for simulation_n in range(N_SIMULATIONS):
 
                 for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
 
-                    for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_ONLINE,
-                                               global_variables.LABEL_CAUSAL_OFFLINE]:
+                    for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_CAUSAL_ONLINE,
+                                               global_variables.LABEL_VANILLA]:
 
                         if not(label_kind_of_alg == global_variables.LABEL_DQN and label_kind_of_alg2 == global_variables.LABEL_CAUSAL_ONLINE):
 

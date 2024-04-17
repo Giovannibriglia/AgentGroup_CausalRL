@@ -227,7 +227,7 @@ class EpsilonGreedyQAgent:
 
     def _init_q_table(self, dict_learning_parameters):
         predefined_q_table = dict_learning_parameters.get('KNOWLEDGE_TRANSFERRED')
-        self.q_table = predefined_q_table if predefined_q_table is not None else np.zeros(
+        self.q_table = np.array(predefined_q_table) if predefined_q_table is not None else np.zeros(
             (self.rows, self.cols, self.n_actions))
 
     def choose_action(self, state, possible_actions=None):
@@ -368,7 +368,7 @@ class BoltzmannQAgent:
         if self.if_deep:
             self.init_deep_learning_components(learning_params)
         else:
-            self.q_table = predefined_q_table if predefined_q_table is not None else np.zeros(
+            self.q_table = np.array(predefined_q_table) if predefined_q_table is not None else np.zeros(
                 (self.rows, self.cols, self.n_actions))
 
     def init_deep_learning_components(self, learning_params):
@@ -507,7 +507,7 @@ class SoftmaxAnnealingQAgent:
         if self.if_deep:
             self.init_deep_learning_components(learning_params)
         else:
-            self.q_table = predefined_q_table if predefined_q_table is not None else np.zeros(
+            self.q_table = np.array(predefined_q_table) if predefined_q_table is not None else np.zeros(
                 (self.rows, self.cols, self.n_actions))
 
     def init_deep_learning_components(self, learning_params):
@@ -665,7 +665,9 @@ class ThompsonSamplingQAgent:
             self.alpha = np.full((self.rows, self.cols, self.n_actions), alpha)
             self.beta = np.full((self.rows, self.cols, self.n_actions), beta)
         else:
-            self.alpha, self.beta = predefined_q_table
+            alpha2, beta2 = predefined_q_table
+            self.alpha = np.array(alpha2)
+            self.beta = np.array(beta2)
 
     def choose_action(self, state, possible_actions=None):
         sampled_values = self.sample_beta_distribution(state)

@@ -102,6 +102,9 @@ class Training:
         self.dir_save_videos = dir_save_videos
         self.name_save_videos = name_save_videos
 
+        self.name_alg = 'TF_' if self.dict_learning_parameters['KNOWLEDGE_TRANSFERRED'] is not None else ''
+        self.name_alg += f'{self.kind_of_alg}_{self.exploration_strategy}'
+
         if episodes_to_visualize is None:
             self.episodes_to_visualize = []
         else:
@@ -173,7 +176,7 @@ class Training:
 
         mean = round(np.mean(self.dict_metrics[f'{self.key_metric_rewards_for_episodes}']), 2)
         self.pbar.set_postfix_str(
-            f'{self.kind_of_alg} {self.exploration_strategy}, Average reward: {mean}, #Defeats: {self.env.n_times_loser}')
+            f'{self.name_alg}, Average reward: {mean}, #Defeats: {self.env.n_times_loser}')
 
     def _run_episode(self, episode: int) -> float:
         initial_time_episode = time.time()
@@ -339,7 +342,7 @@ class Training:
 
         if episode in self.episodes_to_visualize:
             save_video = True if (self.name_save_videos is not None and self.dir_save_videos is not None) else False
-            self.env.init_gui(f'{self.kind_of_alg}_{self.exploration_strategy}', self.exploration_strategy,
+            self.env.init_gui(self.name_alg, self.exploration_strategy,
                               self.n_episodes, global_variables.PATH_IMAGES_FOR_RENDER, save_video)
 
         self.total_episode_reward = 0
