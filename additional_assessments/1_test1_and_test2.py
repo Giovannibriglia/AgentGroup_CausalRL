@@ -39,7 +39,7 @@ N_TRAINING_EPISODE = global_variables.N_TRAINING_EPISODES
 N_AGENTS = 1
 N_ENEMIES = 1
 N_GOALS = 1
-GRID_SIZES = [(3, 3), (5, 5), (8, 8), (10, 10)]
+GRID_SIZES = [(3, 3), (4, 4), (5, 5), (8, 8), (10, 10)]
 
 label_kind_of_alg = global_variables.LABEL_RANDOM_AGENT
 label_exploration_strategy = global_variables.LABEL_RANDOM_AGENT
@@ -86,26 +86,30 @@ def make_toroidal(df_input, n_agents, n_enemies, n_goals, n_cols, n_rows):
 
     for index, row in new_df.iterrows():
         for ag in range(n_agents):
-            if row[cols_actions[ag]] != 0 and row[cols_DeltaX[ag]] == 0 and row[cols_DeltaY[ag]] == 0:
+            if row[cols_actions[ag]] != 0 and (row[cols_DeltaX[ag]] == 0 and row[cols_DeltaY[ag]] == 0):
+                # print('Past', row)
+                new_df.at[index, cols_rewards[ag]] = global_variables.VALUE_REWARD_ALIVE_PAPER
 
-                new_df.at[index, cols_rewards[ag]] = 0
                 for en in range(n_enemies):
                     new_df.at[index, cols_EnemyNearby[en]] = global_variables.VALUE_ENTITY_FAR
 
                 for goal in range(n_goals):
                     new_df.at[index, cols_GoalNearby[goal]] = global_variables.VALUE_ENTITY_FAR
 
-                new_df.at[index, cols_DeltaY[ag]] = - (n_rows - 1)
-                new_df.at[index, cols_DeltaY[ag]] = - (n_rows - 1)
-
                 if row[cols_actions[ag]] == 1:  # up
                     new_df.at[index, cols_DeltaY[ag]] = - (n_rows - 1)
+                    new_df.at[index, cols_DeltaX[ag]] = 0
                 elif row[cols_actions[ag]] == 2:  # down
                     new_df.at[index, cols_DeltaY[ag]] = (n_rows - 1)
+                    new_df.at[index, cols_DeltaX[ag]] = 0
                 elif row[cols_actions[ag]] == 3:  # right
                     new_df.at[index, cols_DeltaX[ag]] = - (n_cols - 1)
+                    new_df.at[index, cols_DeltaY[ag]] = 0
                 elif row[cols_actions[ag]] == 4:  # left
                     new_df.at[index, cols_DeltaX[ag]] = (n_cols - 1)
+                    new_df.at[index, cols_DeltaY[ag]] = 0
+
+                # print('New: ', new_df.loc[index, :])
     return new_df
 
 
@@ -151,12 +155,12 @@ for rows, cols in GRID_SIZES:
         class_train.start_train(env, batch_update_df_track=1000)
         df_track = class_train.get_df_track()
 
-        for if_tor_grid in [True, False]:
+        for if_tor_grid in [True]:
 
             if if_tor_grid:
                 toroidal_df_track = make_toroidal(df_track, n_agents=N_AGENTS, n_enemies=N_ENEMIES, n_goals=N_GOALS,
-                                             n_rows=rows,
-                                             n_cols=cols)
+                                                  n_rows=rows,
+                                                  n_cols=cols)
                 dict_to_save_tor_grid['df_track'][simulation_n] = toroidal_df_track.to_dict(orient='records')
 
                 cd = CausalDiscovery(toroidal_df_track, N_AGENTS, N_ENEMIES, N_GOALS)
@@ -170,10 +174,11 @@ for rows, cols in GRID_SIZES:
                 causal_graph = cd.return_causal_graph()
                 dict_to_save_grid['causal_graph'][simulation_n] = causal_graph
 
-    with open(f'{DIR_SAVE_RESULTS_GRID}/results_Grid{rows}x{cols}_{N_ENEMIES}enemies_{N_TRAINING_EPISODE}episodes.json', 'w') as json_file:
-        json.dump(dict_to_save_grid, json_file)
+    # with open(f'{DIR_SAVE_RESULTS_GRID}/results_Grid{rows}x{cols}_{N_ENEMIES}enemies_{N_TRAINING_EPISODE}episodes.json',
+    # 'w') as json_file:
+    # json.dump(dict_to_save_grid, json_file)
 
-    with open(f'{DIR_SAVE_RESULTS_TOR_GRID}/results_TorGrid{rows}x{cols}_{N_ENEMIES}enemies_{N_TRAINING_EPISODE}episodes.json', 'w') as json_file:
+    with open(
+            f'{DIR_SAVE_RESULTS_TOR_GRID}/results_TorGrid{rows}x{cols}_{N_ENEMIES}enemies_{N_TRAINING_EPISODE}episodes.json',
+            'w') as json_file:
         json.dump(dict_to_save_tor_grid, json_file)
-
-

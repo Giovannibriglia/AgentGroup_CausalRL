@@ -10,7 +10,6 @@ from scipy.ndimage import gaussian_filter1d
 from decimal import *
 from scripts.utils.others import extract_grid_size_and_n_enemies
 
-# TODO: evaluation for the exact number of defeats
 fontsize = 12
 SIGMA_GAUSSIAN_FILTER = 3
 
