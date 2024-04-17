@@ -4,7 +4,7 @@ import global_variables
 import json
 import os
 from scripts.utils.merge_causal_graphs import MergeCausalGraphs
-from scripts.utils.others import extract_grid_size, compare_causal_graphs
+from scripts.utils.others import extract_grid_size_and_n_enemies_with_results, compare_causal_graphs
 from scripts.utils.test_causal_table import TestCausalTable
 import pandas as pd
 import warnings

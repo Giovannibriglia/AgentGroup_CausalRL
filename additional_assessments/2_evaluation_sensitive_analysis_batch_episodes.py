@@ -1,8 +1,11 @@
 import itertools
+import os
+
 import networkx as nx
 from causalnex.structure import StructureModel
 from matplotlib import pyplot as plt
 import global_variables
+from scripts.utils.others import extract_grid_size_and_n_enemies_with_results
 from scripts.utils.test_causal_table import TestCausalTable
 import json
 import pandas as pd
@@ -22,9 +25,22 @@ def generate_plot(edges: list, title, if_arrows):
 
 
 N_SIMULATIONS_CONSIDERED = global_variables.N_SIMULATIONS_PAPER
-path_list_values = f'{global_variables.GLOBAL_PATH_REPO}/Results/Sensitive_Analysis_Batch_Episodes/batch_episodes_for_online_cd_values.json'
-with open(f'{path_list_values}', 'r') as file:
-    list_values = json.load(file)
+N_EPISODES_ANALYSIS = global_variables.N_EPISODES_CONSIDERED_FOR_SENSITIVE_ANALYSIS_PAPER
+DIR_RESULTS = 'Sensitive_Analysis_Batch_Episodes2'
+
+DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/{DIR_RESULTS}'
+for file_main_folder in os.listdir(DIR_RESULTS):
+    print(file_main_folder)
+    grid_size, n_enemies = extract_grid_size_and_n_enemies_with_results(file_main_folder)
+    print(grid_size, n_enemies)
+
+    with open(f'{DIR_RESULTS}/{file_main_folder}', 'r') as file:
+        series = json.load(file)
+
+    print(series.keys())
+
+
+
 
 unique_values = {}
 
@@ -81,7 +97,7 @@ for new_dict_comb in combinations:
     list_rows.append(new_dict_comb)
 
 out_table_results = pd.DataFrame(list_rows)
-out_table_results.to_pickle(f'{global_variables.PATH_RESULTS_BATCH_EPISODES_ONLINE_CD}')
-out_table_results.to_pickle(f'{global_variables.GLOBAL_PATH_REPO}/Results/Sensitive_Analysis_Batch_Episodes/res.pkl')
-out_table_results.to_pickle(f'{global_variables.GLOBAL_PATH_REPO}/Results/Sensitive_Analysis_Batch_Episodes/res.xlsx')
+"""out_table_results.to_pickle(f'{global_variables.PATH_RESULTS_BATCH_EPISODES_ONLINE_CD}')
+out_table_results.to_pickle(f'{global_variables.GLOBAL_PATH_REPO}/Results/Sensitive_Analysis_Batch_Episodes2/res.pkl')
+out_table_results.to_pickle(f'{global_variables.GLOBAL_PATH_REPO}/Results/Sensitive_Analysis_Batch_Episodes2/res.xlsx')"""
 out_table_results.to_excel(f'{global_variables.GLOBAL_PATH_REPO}/batch_episodes_online.xlsx')

@@ -110,6 +110,7 @@ class Training:
         if self.batch_update_df_track is not None:
             self.cols_df_track = global_variables.define_columns_causal_table(self.n_agents, self.n_enemies,
                                                                               self.n_goals)
+            self.cols_df_track.append('episode')
             self.dict_df_track = {key: [] for key in self.cols_df_track}
             self.df_track = pd.DataFrame(columns=self.cols_df_track)
 
@@ -139,6 +140,9 @@ class Training:
                         self._cd_online()
 
         self._update_game_metrics()
+
+        if batch_update_df_track is not None:
+            self._update_df_track()
 
     def _update_game_metrics(self):
         if global_variables.LABEL_Q_LEARNING in self.kind_of_alg:
@@ -193,7 +197,7 @@ class Training:
 
             if self.batch_update_df_track is not None:
                 self._update_dict_track(actions, current_states, next_states, rewards, enemies_nearby_agents,
-                                        goals_nearby_agents)
+                                        goals_nearby_agents, episode)
 
             if if_lose:
                 self.current_states = self.env.reset(if_reset_n_time_loser=False)
@@ -239,7 +243,7 @@ class Training:
         return actions, next_states, enemies_nearby_agents, goals_nearby_agents
 
     def _update_dict_track(self, actions, current_states, next_states, rewards, enemies_nearby_agents,
-                           goals_nearby_agents):
+                           goals_nearby_agents, episode):
         n_agents = len(actions)
         n_enemies = len(enemies_nearby_agents[0])
         n_goals = len(goals_nearby_agents[0])
@@ -269,12 +273,15 @@ class Training:
                     f'{global_variables.LABEL_GOAL_CAUSAL_TABLE}{goal}_Nearby_{global_variables.LABEL_AGENT_CAUSAL_TABLE}{agent}'].append(
                     goals_nearby_agents[agent][goal])
 
+            self.dict_df_track['episode'].append(int(episode))
+
     def _update_df_track(self):
         new_df_track = pd.DataFrame(self.dict_df_track)
         new_df_track = new_df_track.applymap(lambda x: int(global_variables.VALUE_ENTITY_FAR) if pd.isna(x) else x)
         self.df_track = pd.concat([self.df_track, new_df_track], ignore_index=True)
 
     def get_df_track(self):
+        self.df_track = self.df_track.drop('episode', axis=1)
         return self.df_track
 
     def _step_agents_inside_train(self, current_states: np.ndarray, enemies_nearby_agents: np.ndarray,
@@ -340,8 +347,10 @@ class Training:
         self.done = False
 
     def _cd_online(self):
+        df = self.df_track.drop('episode', axis=1, inplace=False)
+
         if self.n_checks_causal_table_online < self.th_CI:
-            cd = CausalDiscovery(self.df_track, self.n_agents, self.n_enemies, self.n_goals)
+            cd = CausalDiscovery(df, self.n_agents, self.n_enemies, self.n_goals)
 
             self.online_causal_table = cd.return_causal_table()
 

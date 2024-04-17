@@ -92,14 +92,11 @@ def extract_grid_size_and_n_enemies(input_string: str) -> Tuple[tuple, int]:
         return (None, None), None
 
 
-def extract_grid_size(input_string: str) -> tuple:
-    match1 = re.match(r'(Grid|Maze)(\d+)x(\d+)', input_string)
-    match2 = re.match(r'(TorGrid|TorMaze)(\d+)x(\d+)', input_string)
-    if match1:
-        grid_size = (int(match1.group(2)), int(match1.group(3)))
-        return grid_size
-    elif match2:
-        grid_size = (int(match2.group(2)), int(match2.group(3)))
-        return grid_size
+def extract_grid_size_and_n_enemies_with_results(input_string: str) -> Tuple[tuple, int]:
+    match = re.match(r'(results_|)(grid|maze|TorGrid|Grid|Maze)(\d+)x(\d+)_(\d+)(enemies|enemy)', input_string)
+    if match:
+        grid_size = (int(match.group(3)), int(match.group(4)))
+        n_enemies = int(match.group(5))
+        return grid_size, n_enemies
     else:
-        return (None, None)
+        return (None, None), None
