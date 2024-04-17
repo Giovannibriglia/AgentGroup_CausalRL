@@ -1,3 +1,5 @@
+import os
+
 import global_variables
 from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.utils.environment import CustomEnv
@@ -123,7 +125,7 @@ for label_env_causality in envs_causality.keys():
 
         for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING]:
 
-            for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_CAUSAL_OFFLINE]:
+            for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_ONLINE, global_variables.LABEL_CAUSAL_OFFLINE]:
 
                 label_exploration_strategy = global_variables.LABEL_EPSILON_GREEDY
 
@@ -141,6 +143,7 @@ for label_env_causality in envs_causality.keys():
                 add_name_dir_save += 'enemies' if N_ENEMIES > 1 else 'enemy'
 
                 dir_save_final = f'{dir_save}/{add_name_dir_save}'
+                os.makedirs(dir_save_final, exist_ok=True)
                 name_save = f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_{label_env_causality}_{label_env_test}'
 
                 cond_online = label_kind_of_alg2 == global_variables.LABEL_CAUSAL_ONLINE
