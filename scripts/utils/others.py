@@ -102,6 +102,7 @@ def extract_grid_size_and_n_enemies_with_results(input_string: str) -> Tuple[tup
     else:
         return (None, None), None
 
+
 def IQM_mean(data: list) -> Decimal:
     # Sort the data
     sorted_data = np.sort(data)
@@ -148,10 +149,12 @@ def compute_my_confidence_interval(data: list) -> Decimal:
     return value
 
 
-def compute_metrics(rewards: list, cumulative_rewards: list, actions: list, computation_times: list) -> dict:
+def compute_metrics(rewards: list, cumulative_rewards: list, actions: list, computation_times: list,
+                    col_average_cumulative_reward: str, col_average_reward: str, col_average_actions_needed: str,
+                    col_average_computation_time: str) -> dict:
     dict_out = {}
     IQM_cumulative_reward_value = cumulative_rewards[-1]
-    confidence_interval_cumulative_reward_series = compute_my_confidence_interval(rewards)*len(rewards)
+    confidence_interval_cumulative_reward_series = compute_my_confidence_interval(rewards) * len(rewards)
     dict_out[
         f'{col_average_cumulative_reward}'] = f'{IQM_cumulative_reward_value} \u00B1 {confidence_interval_cumulative_reward_series}'
 

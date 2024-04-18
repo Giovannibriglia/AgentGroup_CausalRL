@@ -15,7 +15,7 @@ from scripts.utils.others import extract_grid_size_and_n_enemies
 fontsize = 12
 SIGMA_GAUSSIAN_FILTER = 3
 
-dir_results = 'Test3_vecchio'
+dir_results = 'Test3'
 N_GAMES_PERFORMED = global_variables.N_SIMULATIONS_PAPER
 
 n_episodes = global_variables.N_TRAINING_EPISODES
@@ -94,7 +94,7 @@ for file_main_folder in files_inside_main_folder:
                                                       f'{name_timeout_series}': []} for comb in combinations}
 
     grid_size, n_enemies = extract_grid_size_and_n_enemies(os.path.basename(file_main_folder))
-    figures_subtitle = f'{os.path.basename(file_main_folder).replace("_", " ")} - Averaged over {N_GAMES_PERFORMED} games'
+    figures_subtitle = f'{os.path.basename(file_main_folder).replace("_", " ")} - Averaged over {1} games'
 
     # for make order
     for algorithm in dict_values.keys():
@@ -117,7 +117,11 @@ for file_main_folder in files_inside_main_folder:
             computation_time_series = others.list_average(series[f'{name_computation_time_series}'])
 
             dict_metrics = others.compute_metrics(rewards_series, cumulative_rewards_series, actions_series,
-                                           computation_time_series)
+                                                  computation_time_series,
+                                                  col_average_cumulative_reward,
+                                                  col_average_reward,
+                                                  col_average_actions_needed,
+                                                  col_average_computation_time)
 
             cumulative_rewards_value_to_save = dict_metrics[f'{col_average_cumulative_reward}']
             actions_value_to_save = dict_metrics[f'{col_average_actions_needed}']
@@ -151,14 +155,13 @@ for file_main_folder in files_inside_main_folder:
         ax_actions.set_title(f'Actions needed {item_chosen}')
         fig_actions.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
 
-        """fig_time, ax_time = plt.subplots(dpi=1000)
+        fig_time, ax_time = plt.subplots(dpi=1000)
         ax_time.set_title(f'Computation time {item_chosen}')
-        fig_time.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)"""
+        fig_time.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
 
         for algorithm, series in algos_chosen_from_dict.items():
             if series[f'{name_rewards_series}']:
 
-                # label_plot, for_title = re.split(r'(?<=EG)', algorithm, maxsplit=1)
                 label_plot = algorithm.replace(f'{item_chosen}', '')
 
                 n_games_performed = len(series[f'{name_timeout_series}'])
@@ -173,19 +176,17 @@ for file_main_folder in files_inside_main_folder:
                         f'*** Problem with timeout counter: n_games_performed: {n_games_performed} - n_games_ok: {n_games_ok}')
                     str_timeout = None
 
-                indices_to_remove = [i for i, value in enumerate(series[f'{name_timeout_series}']) if value]
-                for key in series:
-                    if key != f'{name_timeout_series}':
-                        series[key] = [sublist for i, sublist in enumerate(series[key]) if
-                                       i not in indices_to_remove]
+                rewards_series = others.list_average(series[f'{name_rewards_series}'])
+                cumulative_rewards_series = others.cumulative_list(rewards_series)
+                actions_series = others.list_average(series[f'{name_actions_series}'])
+                computation_time_series = others.list_average(series[f'{name_computation_time_series}'])
 
-                rewards_series = list_average(series[f'{name_rewards_series}'])
-                cumulative_rewards_series = cumulative_list(rewards_series)
-                actions_series = list_average(series[f'{name_actions_series}'])
-                computation_time_series = list_average(series[f'{name_computation_time_series}'])
-
-                dict_metrics = compute_metrics(rewards_series, cumulative_rewards_series, actions_series,
-                                               computation_time_series)
+                dict_metrics = others.compute_metrics(rewards_series, cumulative_rewards_series, actions_series,
+                                                      computation_time_series,
+                                                      col_average_cumulative_reward,
+                                                      col_average_reward,
+                                                      col_average_actions_needed,
+                                                      col_average_computation_time)
 
                 cumulative_rewards_value_to_save = dict_metrics[f'{col_average_cumulative_reward}']
                 actions_value_to_save = dict_metrics[f'{col_average_actions_needed}']
@@ -196,15 +197,15 @@ for file_main_folder in files_inside_main_folder:
                 upload_fig(ax_cum_reward, cumulative_rewards_series, cumulative_rewards_value_to_save, label_plot,
                            str_timeout)
                 upload_fig(ax_actions, actions_series, actions_value_to_save, label_plot, str_timeout)
-                # upload_fig(ax_time, computation_time_series, computation_time_value_to_save, label_plot, str_timeout)
+                upload_fig(ax_time, computation_time_series, computation_time_value_to_save, label_plot, str_timeout)
 
-        # fig_time.savefig(f'{save_plot}/time_{item_chosen}.png')
-        fig_actions.savefig(f'{save_plot}/actions_{item_chosen}.png')
-        fig_cum_reward.savefig(f'{save_plot}/cum_reward_{item_chosen}.png')
-        fig_reward.savefig(f'{save_plot}/reward_{item_chosen}.png')
+        fig_time.savefig(f'{save_plot}/test3_time_{item_chosen}.png')
+        fig_actions.savefig(f'{save_plot}/test3_actions_{item_chosen}.png')
+        fig_cum_reward.savefig(f'{save_plot}/test3_cum_reward_{item_chosen}.png')
+        fig_reward.savefig(f'{save_plot}/test3_reward_{item_chosen}.png')
 
         plt.show()
-        # plt.close(fig_time)
+        plt.close(fig_time)
         plt.close(fig_actions)
         plt.close(fig_cum_reward)
         plt.close(fig_reward)

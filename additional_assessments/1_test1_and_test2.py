@@ -96,18 +96,10 @@ def make_toroidal(df_input, n_agents, n_enemies, n_goals, n_cols, n_rows):
                 for goal in range(n_goals):
                     new_df.at[index, cols_GoalNearby[goal]] = global_variables.VALUE_ENTITY_FAR
 
-                if row[cols_actions[ag]] == 1:  # up
-                    new_df.at[index, cols_DeltaY[ag]] = - (n_rows - 1)
-                    new_df.at[index, cols_DeltaX[ag]] = 0
-                elif row[cols_actions[ag]] == 2:  # down
-                    new_df.at[index, cols_DeltaY[ag]] = (n_rows - 1)
-                    new_df.at[index, cols_DeltaX[ag]] = 0
-                elif row[cols_actions[ag]] == 3:  # right
-                    new_df.at[index, cols_DeltaX[ag]] = - (n_cols - 1)
-                    new_df.at[index, cols_DeltaY[ag]] = 0
-                elif row[cols_actions[ag]] == 4:  # left
-                    new_df.at[index, cols_DeltaX[ag]] = (n_cols - 1)
-                    new_df.at[index, cols_DeltaY[ag]] = 0
+                deltaY, deltaX = global_variables.DICT_IMPLEMENTED_ACTIONS[row[cols_actions[ag]]]
+
+                new_df.at[index, cols_DeltaX[ag]] = deltaX
+                new_df.at[index, cols_DeltaY[ag]] = deltaY
 
                 # print('New: ', new_df.loc[index, :])
     return new_df
@@ -155,7 +147,7 @@ for rows, cols in GRID_SIZES:
         class_train.start_train(env, batch_update_df_track=1000)
         df_track = class_train.get_df_track()
 
-        for if_tor_grid in [True, False]:
+        for if_tor_grid in [True]:
 
             if if_tor_grid:
                 toroidal_df_track = make_toroidal(df_track, n_agents=N_AGENTS, n_enemies=N_ENEMIES, n_goals=N_GOALS,
@@ -174,9 +166,9 @@ for rows, cols in GRID_SIZES:
                 causal_graph = cd.return_causal_graph()
                 dict_to_save_grid['causal_graph'][simulation_n] = causal_graph
 
-    with open(f'{DIR_SAVE_RESULTS_GRID}/results_Grid{rows}x{cols}_{N_ENEMIES}enemies_{N_TRAINING_EPISODE}episodes.json',
-              'w') as json_file:
-        json.dump(dict_to_save_grid, json_file)
+    #with open(f'{DIR_SAVE_RESULTS_GRID}/results_Grid{rows}x{cols}_{N_ENEMIES}enemies_{N_TRAINING_EPISODE}episodes.json',
+              #'w') as json_file:
+        #json.dump(dict_to_save_grid, json_file)
 
     with open(
             f'{DIR_SAVE_RESULTS_TOR_GRID}/results_TorGrid{rows}x{cols}_{N_ENEMIES}enemies_{N_TRAINING_EPISODE}episodes.json',

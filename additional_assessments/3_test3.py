@@ -1,5 +1,4 @@
 import os
-
 import global_variables
 from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.utils.environment import CustomEnv

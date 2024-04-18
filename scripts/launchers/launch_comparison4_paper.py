@@ -21,8 +21,8 @@ along with accompanying videos."""
 dir_start_results = 'Comparison123'
 dir_save = 'Comparison4'
 
-GRID_SIZES = [(5, 5)]#global_variables.GRID_SIZES_CONSIDERED_PAPER
-ENEMIES = [2] #lobal_variables.N_ENEMIES_CONSIDERED_PAPER
+GRID_SIZES = [(5, 5)]  # global_variables.GRID_SIZES_CONSIDERED_PAPER
+ENEMIES = [2]  # lobal_variables.N_ENEMIES_CONSIDERED_PAPER
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 
 if_maze = True
@@ -30,7 +30,6 @@ OFFLINE_CAUSAL_TABLE = pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFL
 TABLE_BATCH_EPISODES = pd.read_pickle(f'{global_variables.PATH_RESULTS_BATCH_EPISODES_ONLINE_CD}')
 
 
-# TODO: FIX LABELS TF AND NO TF and check the type of the q-table
 def get_q_table(game_infos: str, dir_results: str, algo: str):
     try:
         with open(f'{global_variables.GLOBAL_PATH_REPO}/Results/{dir_results}/{game_infos}/{algo}.json', 'r') as file:
@@ -39,6 +38,7 @@ def get_q_table(game_infos: str, dir_results: str, algo: str):
             return series['q_table']
     except:
         raise AssertionError('q table not available, check your usage of this function.')
+
 
 for simulation_n in range(N_SIMULATIONS):
     for rows, cols in GRID_SIZES:
@@ -129,22 +129,3 @@ for simulation_n in range(N_SIMULATIONS):
                                                 episodes_to_visualize=global_variables.EPISODES_TO_VISUALIZE_PAPER,
                                                 dir_save_videos=dir_save_final,
                                                 name_save_videos=name_save)
-
-
-"""if __name__ == '__main__':
-    dict_env_params = {'rows': 4, 'cols': 4, 'n_agents': 1, 'n_enemies': 1, 'n_goals': 1,
-                       'n_actions': global_variables.N_ACTIONS_PAPER,
-                       'if_maze': if_maze,
-                       'value_reward_alive': global_variables.VALUE_REWARD_ALIVE_PAPER,
-                       'value_reward_winner': global_variables.VALUE_REWARD_WINNER_PAPER,
-                       'value_reward_loser': global_variables.VALUE_REWARD_LOSER_PAPER,
-                       'seed_value': 1, 'enemies_actions': 'random', 'env_type': 'numpy',
-                       'predefined_env': None}
-    dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
-
-    dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
-
-    class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
-                           f'QL_causal_offline',
-                           f'EG',
-                           OFFLINE_CAUSAL_TABLE)"""

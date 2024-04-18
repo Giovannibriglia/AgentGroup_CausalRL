@@ -6,6 +6,7 @@ import time
 import warnings
 from typing import Tuple
 import cv2
+import networkx as nx
 import numpy as np
 import pygame
 import pygame.camera
@@ -176,7 +177,7 @@ class CustomEnv:
 
     def _define_maze(self):
 
-        def __generate_random_path():
+        """def __generate_random_path() -> list:
             # Find agent and goal positions
             agent_position = np.argwhere(self.grid_for_game == self.value_agent_cell)[0]
             goal_position = np.argwhere(self.grid_for_game == self.value_goal_cell)[0]
@@ -184,10 +185,10 @@ class CustomEnv:
             # Define possible moves (up, down, left, right)
             moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
-            # Initialize path with agent position
+            # Initialize a path with agent position
             path = [agent_position]
 
-            # Iterate until agent reaches the goal
+            # Iterate until the agent reaches the goal
             while tuple(path[-1]) != tuple(goal_position):
                 # Choose a random move
                 move = moves[np.random.randint(0, len(moves))]
@@ -202,10 +203,69 @@ class CustomEnv:
                     # Add new position to the path
                     path.append(new_position)
 
+            unique_path = []
+            for arr in path:
+                if not any(np.array_equal(arr, unique) for unique in unique_path):
+                    unique_path.append(arr)
+
+            return unique_path"""
+
+        def __generate_random_path() -> list:
+
+            # Helper function to add edges in the graph if inside the bounds and not an enemy
+            def ___add_edge_if_possible(x, y, dx, dy):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < self.grid_for_game.shape[0] and 0 <= ny < self.grid_for_game.shape[1]:
+                    if self.grid_for_game[nx, ny] != global_variables.VALUE_ENEMY_CELL:
+                        G.add_edge((x, y), (nx, ny), weight=1)
+
+            def ___greedy_best_first_search(graph, start_pos, goal_pos, heuristic_function) -> list:
+                from heapq import heappush, heappop
+                visited = set()
+                queue = [(___heuristic(start_pos, goal_pos), start_pos)]
+                path = []
+
+                while queue:
+                    _, current = heappop(queue)
+                    if current in visited:
+                        continue
+                    visited.add(current)
+                    path.append(current)
+                    if current == goal_pos:
+                        return path
+                    for neighbor in graph.neighbors(current):
+                        if neighbor not in visited:
+                            heappush(queue, (heuristic_function(neighbor, goal_pos), neighbor))
+                return path
+
+            # Define heuristic: Manhattan distance
+            def ___heuristic(a, b):
+                return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+            # Create a graph
+            G = nx.Graph()
+
+            # Build the graph
+            rows, cols = self.grid_for_game.shape
+            for x in range(rows):
+                for y in range(cols):
+                    if self.grid_for_game[x, y] != global_variables.VALUE_ENEMY_CELL:
+                        # Add edges to adjacent cells (up, down, left, right)
+                        ___add_edge_if_possible(x, y, 1, 0)  # down
+                        ___add_edge_if_possible(x, y, -1, 0)  # up
+                        ___add_edge_if_possible(x, y, 0, 1)  # right
+                        ___add_edge_if_possible(x, y, 0, -1)  # left
+
+            # TODO: multi agent and multi goal settings
+            start_pos = tuple(np.argwhere(self.grid_for_game == global_variables.VALUE_AGENT_CELL)[0])
+            goal_pos = tuple(np.argwhere(self.grid_for_game == global_variables.VALUE_GOAL_CELL)[0])
+
+            # path = nx.astar_path(G, start_pos, goal_pos, heuristic=___heuristic, weight='weight')
+            path = ___greedy_best_first_search(G, start_pos, goal_pos, ___heuristic)
+
             return path
 
-        def __place_random_walls(path):
-
+        def __place_random_walls(path: list):
             cells_with_entity = np.transpose(np.where(self.grid_for_game == global_variables.VALUE_EMPTY_CELL))
             empty_positions = np.concatenate((cells_with_entity, path))
 
@@ -214,15 +274,30 @@ class CustomEnv:
 
             self.walls_positions = np.empty((self.n_walls, 2))
 
-            selected_positions = np.random.choice(len(empty_positions), self.n_walls, replace=False)
+            blocking_positions = np.concatenate(
+                (self.agents_positions, self.enemies_positions, self.goals_positions, path))
 
-            for n, idx in enumerate(selected_positions):
-                i, j = empty_positions[idx]
+            blocking_pos_set = set(map(tuple, blocking_positions))
+            empty_pos_set = set(map(tuple, empty_positions))
+
+            resultant_empty_pos = empty_pos_set - blocking_pos_set
+
+            selected_positions = np.array(list(resultant_empty_pos))
+
+            random_selection = np.random.choice(len(selected_positions), size=self.n_walls, replace=False)
+            selected_couples = selected_positions[random_selection]
+
+            for n, pos in enumerate(selected_couples):
+                i, j = pos
                 self.walls_positions[n] = [i, j]
                 self.grid_for_game[i, j] = global_variables.VALUE_WALL_CELL
 
         random_path = __generate_random_path()
         __place_random_walls(random_path)
+
+        if any((self.walls_positions == self.agents_positions[0]).all(1)):
+            print(self.walls_positions, len(self.walls_positions))
+            print(self.agents_positions[0])
 
     def step_enemies(self):
         # Move enemies based on the enemies movement policy
@@ -481,7 +556,7 @@ class CustomEnv:
         return 0 <= row < self.rows and 0 <= col < self.cols
 
     def __is_wall(self, pos: np.ndarray) -> bool:
-        return self.grid_for_game[pos[0], pos[1]] == self.value_wall_cell
+        return self.grid_for_game[pos[0], pos[1]] == self.value_wall_cell and any((self.walls_positions == pos).all(1))
 
     def _get_direction(self, pos_xy_agent, pos_xy_other) -> int:
         def __find_key(dict_actions: dict, value: tuple) -> int:
@@ -498,4 +573,3 @@ class CustomEnv:
         # Print the named matrix
         print(named_matrix, '\n')
         time.sleep(2)
-
