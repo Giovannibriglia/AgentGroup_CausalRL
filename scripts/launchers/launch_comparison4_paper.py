@@ -64,59 +64,32 @@ for simulation_n in range(N_SIMULATIONS):
 
                 for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE]:
 
-                    if global_variables.LABEL_CAUSAL in label_kind_of_alg2:
-                        for if_transfer_learning in [False, True]:
-                            label_exploration_strategy = global_variables.LABEL_EPSILON_GREEDY
-
-                            dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
-
-                            game_info1 = f'Grid{rows}x{cols}_{n_enemies}'
-                            game_info1 += 'enemies' if n_enemies > 1 else 'enemy'
-
-                            name_alg = f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_game{simulation_n}'
-
-                            dict_learning_params['KNOWLEDGE_TRANSFERRED'] = get_q_table(game_info1,
-                                                                                        dir_start_results,
-                                                                                        name_alg) if if_transfer_learning else None
-
-                            class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
-                                                   f'{label_kind_of_alg}_{label_kind_of_alg2}',
-                                                   f'{label_exploration_strategy}',
-                                                   OFFLINE_CAUSAL_TABLE)
-
-                            add_name = 'Grid' if if_maze else 'Maze'
-                            add_name += f'{rows}x{cols}_{n_enemies}' + 'enemies' if n_enemies > 1 else 'enemy'
-
-                            dir_save_final = f'{dir_save}/{add_name}'
-                            name_save = 'TF_' if if_transfer_learning else ''
-                            name_save += name_alg
-
-                            cond_online = label_kind_of_alg2 == global_variables.LABEL_CAUSAL_ONLINE
-
-                            class_train.start_train(environment,
-                                                    dir_save_metrics=dir_save_final,
-                                                    name_save_metrics=name_save,
-                                                    batch_update_df_track=get_batch_episodes(n_enemies, rows,
-                                                                                             cols,
-                                                                                             TABLE_BATCH_EPISODES) if cond_online else None,
-                                                    episodes_to_visualize=global_variables.EPISODES_TO_VISUALIZE_PAPER,
-                                                    dir_save_videos=dir_save_final,
-                                                    name_save_videos=name_save)
-
-                    else:
+                    for if_transfer_learning in [True, False]:
                         label_exploration_strategy = global_variables.LABEL_EPSILON_GREEDY
 
                         dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
-                        dict_learning_params['KNOWLEDGE_TRANSFERRED'] = None
 
+                        game_info1 = f'Grid{rows}x{cols}_{n_enemies}'
+                        game_info1 += 'enemies' if n_enemies > 1 else 'enemy'
+
+                        name_alg = f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_game{simulation_n}'
+
+                        dict_learning_params['KNOWLEDGE_TRANSFERRED'] = get_q_table(game_info1,
+                                                                                    dir_start_results,
+                                                                                    name_alg) if if_transfer_learning else None
+
+                        print(f'** Simulation: {simulation_n+1}/{N_SIMULATIONS}')
                         class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                                f'{label_kind_of_alg}_{label_kind_of_alg2}',
-                                               f'{label_exploration_strategy}')
+                                               f'{label_exploration_strategy}',
+                                               OFFLINE_CAUSAL_TABLE)
 
-                        add_name_dir_save = 'Maze' if if_maze else 'Grid' + f'{rows}x{cols}_{n_enemies}' + 'enemies' if n_enemies > 1 else 'enemy'
+                        add_name = 'Grid' if if_maze else 'Maze'
+                        add_name += f'{rows}x{cols}_{n_enemies}' + 'enemies' if n_enemies > 1 else 'enemy'
 
-                        dir_save_final = f'{dir_save}/{add_name_dir_save}'
-                        name_save = f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_game{simulation_n}'
+                        dir_save_final = f'{dir_save}/{add_name}'
+                        name_save = 'TF_' if if_transfer_learning else ''
+                        name_save += name_alg
 
                         cond_online = label_kind_of_alg2 == global_variables.LABEL_CAUSAL_ONLINE
 

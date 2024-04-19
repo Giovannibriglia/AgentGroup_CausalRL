@@ -23,7 +23,7 @@ GRID_SIZES = global_variables.GRID_SIZES_CONSIDERED_PAPER
 ENEMIES = global_variables.N_ENEMIES_CONSIDERED_PAPER
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 
-for simulation_n in range(6, N_SIMULATIONS, 1):
+for simulation_n in range(9, N_SIMULATIONS, 1):
     for rows, cols in GRID_SIZES:
         for n_enemies in ENEMIES:
 
@@ -53,7 +53,7 @@ for simulation_n in range(6, N_SIMULATIONS, 1):
                                                                global_variables.LABEL_BOLTZMANN_MACHINE,
                                                                global_variables.LABEL_EPSILON_GREEDY,
                                                                global_variables.LABEL_SOFTMAX_ANNEALING]:
-
+                                print(f'** Simulation: {simulation_n + 1}/{N_SIMULATIONS}')
                                 if global_variables.LABEL_CAUSAL_OFFLINE in label_kind_of_alg2:
                                     class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                                            f'{label_kind_of_alg}_{label_kind_of_alg2}',

@@ -23,7 +23,7 @@ GRID_SIZES = global_variables.GRID_SIZES_CONSIDERED_PAPER
 ENEMIES = global_variables.N_ENEMIES_CONSIDERED_PAPER
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 
-for simulation_n in range(N_SIMULATIONS):
+for simulation_n in range(8, 9, 1):
     for rows, cols in GRID_SIZES:
         for n_enemies in ENEMIES:
 
@@ -41,13 +41,11 @@ for simulation_n in range(N_SIMULATIONS):
                 dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
                 dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
 
-                # Create an environment
                 environment = CustomEnv(dict_env_params)
 
                 for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
 
-                    for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_CAUSAL_ONLINE,
-                                               global_variables.LABEL_VANILLA]:
+                    for label_kind_of_alg2 in [global_variables.LABEL_VANILLA]:
 
                         if not(label_kind_of_alg == global_variables.LABEL_DQN and label_kind_of_alg2 == global_variables.LABEL_CAUSAL_ONLINE):
 
@@ -61,6 +59,7 @@ for simulation_n in range(N_SIMULATIONS):
                                                            f'{label_kind_of_alg}_{label_kind_of_alg2}',
                                                            f'{label_exploration_strategy}',
                                                            OFFLINE_CAUSAL_TABLE)
+
                                 else:
                                     class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                                            f'{label_kind_of_alg}_{label_kind_of_alg2}',

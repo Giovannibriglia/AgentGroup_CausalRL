@@ -147,7 +147,7 @@ for rows, cols in GRID_SIZES:
         class_train.start_train(env, batch_update_df_track=1000)
         df_track = class_train.get_df_track()
 
-        for if_tor_grid in [True]:
+        for if_tor_grid in [True, False]:
 
             if if_tor_grid:
                 toroidal_df_track = make_toroidal(df_track, n_agents=N_AGENTS, n_enemies=N_ENEMIES, n_goals=N_GOALS,
@@ -166,9 +166,9 @@ for rows, cols in GRID_SIZES:
                 causal_graph = cd.return_causal_graph()
                 dict_to_save_grid['causal_graph'][simulation_n] = causal_graph
 
-    #with open(f'{DIR_SAVE_RESULTS_GRID}/results_Grid{rows}x{cols}_{N_ENEMIES}enemies_{N_TRAINING_EPISODE}episodes.json',
-              #'w') as json_file:
-        #json.dump(dict_to_save_grid, json_file)
+    with open(f'{DIR_SAVE_RESULTS_GRID}/results_Grid{rows}x{cols}_{N_ENEMIES}enemies_{N_TRAINING_EPISODE}episodes.json',
+              'w') as json_file:
+        json.dump(dict_to_save_grid, json_file)
 
     with open(
             f'{DIR_SAVE_RESULTS_TOR_GRID}/results_TorGrid{rows}x{cols}_{N_ENEMIES}enemies_{N_TRAINING_EPISODE}episodes.json',

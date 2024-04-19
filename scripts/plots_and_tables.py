@@ -94,8 +94,9 @@ for file_main_folder in files_inside_main_folder:
     # for make order
     for algorithm in dict_values.keys():
         selected_elements = [string for string in files_inside_second_folder if algorithm in string]
-
+        print(algorithm, len(selected_elements))
         for element in selected_elements:
+            print(element)
             with open(f'{file_main_folder}/{element}', 'r') as file:
                 series = json.load(file)
 
@@ -117,7 +118,9 @@ for file_main_folder in files_inside_main_folder:
             computation_time_series = others.list_average(series[f'{name_computation_time_series}'])
 
             dict_metrics = others.compute_metrics(rewards_series, cumulative_rewards_series, actions_series,
-                                           computation_time_series)
+                                                  computation_time_series,
+                                                  col_average_cumulative_reward, col_average_reward,
+                                                  col_average_actions_needed, col_average_computation_time)
 
             cumulative_rewards_value_to_save = dict_metrics[f'{col_average_cumulative_reward}']
             actions_value_to_save = dict_metrics[f'{col_average_actions_needed}']
