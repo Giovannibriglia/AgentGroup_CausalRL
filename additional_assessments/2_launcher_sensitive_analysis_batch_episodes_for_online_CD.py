@@ -98,7 +98,7 @@ for dict_comb in list_combinations_for_simulations:
 
         class_train.start_train(env, batch_update_df_track=MAX_N_EPISODES[0])
 
-        df_track = class_train.df_track # to make better
+        df_track = class_train.df_track
         dict_simulations['dfs_track'][sim_n] = df_track.to_dict(orient='records')
 
     list_dicts.append(dict_simulations)
@@ -123,7 +123,6 @@ for single_dict in list_dicts:
 
         for sim_n in range(N_SIMULATIONS_CONSIDERED):
             df_track_cd = select_df(dfs_track[sim_n], n_episodes_cd)
-
             cd = CausalDiscovery(df_track_cd, n_agents, n_enemies, n_goals)
             out_causal_graph = cd.return_causal_graph()
             out_causal_table = cd.return_causal_table()
@@ -133,6 +132,6 @@ for single_dict in list_dicts:
             dict_to_save['causal_graphs'][sim_n] = out_causal_graph
             dict_to_save['causal_tables'][sim_n] = out_causal_table.to_dict(orient='records')
 
-        with open(f'{DIR_SAVING}/results_grid{rows}x{cols}_{n_enemies}enemies_{n_episodes_cd}episodes.json',
+        with open(f'{DIR_SAVING}/results_grid{rows}x{cols}_{n_enemies}enemies_{int(n_episodes_cd+1)}episodes.json',
                   'w') as json_file:
             json.dump(dict_to_save, json_file)

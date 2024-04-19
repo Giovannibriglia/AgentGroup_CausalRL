@@ -31,7 +31,7 @@ class TestCausalTable:
 
     def do_check(self) -> bool:
         for_goals = [s for s in self.possible_values if s != 0]
-        combinations = list(itertools.product(for_goals, itertools.product(self.possible_values, repeat=2))) # (goal, (enemies))
+        combinations = list(itertools.product(for_goals, itertools.product(self.possible_values, repeat=2)))
 
         count_wrongs = 0
         for comb in combinations:

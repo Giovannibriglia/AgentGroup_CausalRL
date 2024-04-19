@@ -31,7 +31,7 @@ two enemies:
 
 """
 
-dir_save = f'Test3'
+dir_save = f'Test3_2'
 
 
 def fake_offline_cd(env_params, other_params):

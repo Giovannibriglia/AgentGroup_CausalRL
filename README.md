@@ -1,7 +1,18 @@
-# Improving Exploration in RL with Causal Models of Core Environment Dynamics
-**Paper**: [Improving Exploration in RL with Causal Models of Core Environment Dynamics]( https://www.ecai2024.eu/calls/main-track)
+# Improving Reinforcement Learning Exploration with Causal Models of Core Environment Dynamics
+**Paper**: [Improving Reinforcement Learning Exploration with Causal Models of Core Environment Dynamics]( https://www.ecai2024.eu/calls/main-track)
 
-**Abstract**: @gio copia-incolla l'abstract
+**Abstract**:
+Agents trained with model-free Reinforcement Learning (RL)
+must explore the effects of the available actions in different environment states
+to successfully learn optimal control policies.
+Model-based training implies exploration too, but the additional goal is to build a model of the environment.
+Both exploration efforts may be impractical in complex environments (e.g.,\ many available actions and many states),
+hence ways to prune the exploration space must be found.
+In this paper, we propose to use causal discovery techniques to make a RL agent learn a causal model of the core dynamics of a simplified environment
+(i.e.,\ those leading to immediate failure or success). 
+Such a model is then used as a driving assistant during exploration of larger or more complex environments. 
+The goal is reducing the exploration space hence improving efficiency and convergence time. 
+Our experiments in a set of increasingly complex environments and with different baseline exploration strategies show that the causal discovery of a few cause-effect relations suffices in improving the convergence time of both vanilla Q-Learning and DQN.
 
 **Maintainer**: [Giovanni Briglia](https://github.com/Giovannibriglia)  
 **Affiliation**: [Distributed and Pervasive Intelligence Group](https://dipi-unimore.netlify.app/) at [University of Modena and Reggio Emilia](https://www.unimore.it/)  
