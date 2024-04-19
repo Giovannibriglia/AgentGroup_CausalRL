@@ -52,7 +52,7 @@ class TestCausalTable:
             print('Causal table and function for its usage are corrects')
             return True
         else:
-            print('Causal table and function for its usage are incorrects')
+            print(f'Causal table and function for its usage are incorrect - {count_wrongs} errors')
             return False
 
 

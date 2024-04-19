@@ -40,7 +40,7 @@ def get_q_table(game_infos: str, dir_results: str, algo: str):
         raise AssertionError('q table not available, check your usage of this function.')
 
 
-for simulation_n in range(5, N_SIMULATIONS, 1):
+for simulation_n in range(0, 5, 1):
     for rows, cols in GRID_SIZES:
         for n_enemies in ENEMIES:
 
@@ -61,7 +61,7 @@ for simulation_n in range(5, N_SIMULATIONS, 1):
 
                 label_kind_of_alg = global_variables.LABEL_Q_LEARNING
 
-                for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_CAUSAL_ONLINE]:
+                for label_kind_of_alg2 in [global_variables.LABEL_VANILLA]:
 
                     for if_transfer_learning in [True, False]:
                         label_exploration_strategy = global_variables.LABEL_EPSILON_GREEDY

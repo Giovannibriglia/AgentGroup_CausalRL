@@ -20,8 +20,8 @@ N_GAMES_PERFORMED = global_variables.N_SIMULATIONS_PAPER
 n_episodes = global_variables.N_TRAINING_EPISODES
 
 group_exp_strategies = global_variables.LIST_IMPLEMENTED_EXPLORATION_STRATEGIES
-group_kind_algs = global_variables.LIST_IMPLEMENTED_ALGORITHMS
-group_kind_algs.remove(global_variables.LABEL_RANDOM_AGENT)
+group_kind_algs = [f'{global_variables.LABEL_Q_LEARNING}_{global_variables.LABEL_CAUSAL_OFFLINE}']#global_variables.LIST_IMPLEMENTED_ALGORITHMS
+# group_kind_algs.remove(global_variables.LABEL_RANDOM_AGENT)
 
 vet_enemies = global_variables.N_ENEMIES_CONSIDERED_PAPER
 vet_grid_sizes = global_variables.GRID_SIZES_CONSIDERED_PAPER

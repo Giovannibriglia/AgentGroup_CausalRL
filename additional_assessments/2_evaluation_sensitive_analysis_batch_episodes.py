@@ -42,10 +42,10 @@ for file_main_folder in os.listdir(DIR_RESULTS):
         # envs = series['envs']
         # causal_graphs = series['causal_graphs']
         dicts_causal_tables = series['causal_tables']
-
+        print(f'*** {rows}x{cols} - {n_enemies} enemies - {n_episodes} episodes')
         count_ok = 0
         for dict_causal_table in dicts_causal_tables:
-            causal_table = pd.DataFrame(dicts_causal_tables)
+            causal_table = pd.DataFrame(dict_causal_table)
             test = TestCausalTable(causal_table, global_variables.get_possible_actions)
             if test.do_check():
                 count_ok += 1
