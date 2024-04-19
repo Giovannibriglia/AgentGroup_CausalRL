@@ -47,7 +47,6 @@ class MergeCausalGraphs:
         combined_list = []
         for single_causal_graph in self.list_causal_graphs:
             if single_causal_graph is not None:
-                print(single_causal_graph)
                 combined_list += single_causal_graph
 
         tuple_lists = [tuple(sublist) for sublist in combined_list]
@@ -56,7 +55,7 @@ class MergeCausalGraphs:
         self.edges = []
         for element, count in element_counts.items():
             if count > int(len(self.list_causal_graphs) / 2):
-                print(f"Edge: {element}, Occurrences: {count}")
+                # print(f"Edge: {element}, Occurrences: {count}")
                 self.edges.append(element)
 
         self._generate_plot(self.edges, 'Average causal graph', True)

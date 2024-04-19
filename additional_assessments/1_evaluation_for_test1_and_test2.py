@@ -16,11 +16,6 @@ N_TRAINING_EPISODE = global_variables.N_TRAINING_EPISODES
 NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Test2'
 files_inside_main_folder = os.listdir(NAME_DIR_RESULTS)
 
-"""col_n_checks_ok = 'n_checks_ok'
-col_suitable = 'suitable'
-cols_table_results = ['grid_size', 'n_enemies', 'n_episodes', 'n_simulations', f'{col_n_checks_ok}', f'{col_suitable}']
-table_results = pd.DataFrame(columns=cols_table_results)"""
-
 for file_inside_main_folder in files_inside_main_folder:
     print('\n', file_inside_main_folder)
     dict_new_row = {}
@@ -28,14 +23,16 @@ for file_inside_main_folder in files_inside_main_folder:
     n_simulations, n_checks_ok = 0, 0
     with open(f'{NAME_DIR_RESULTS}/{file_inside_main_folder}', 'r') as file:
         dict_results = json.load(file)
+        try:
+            merging = MergeCausalGraphs(dict_results=dict_results)
+            merging.start_merging()
+            out_causal_graph = merging.get_merged_causal_graph()
 
-        merging = MergeCausalGraphs(dict_results=dict_results)
-        merging.start_merging()
-        out_causal_graph = merging.get_merged_causal_graph()
+            merging.start_cd()
+            out_causal_table = merging.get_causal_table()
 
-        merging.start_cd()
-        out_causal_table = merging.get_causal_table()
-
-        test = TestCausalTable(out_causal_table, global_variables.get_possible_actions)
-        test.do_check()
+            test = TestCausalTable(out_causal_table, global_variables.get_possible_actions)
+            test.do_check()
+        except:
+            print('no')
 
