@@ -20,7 +20,11 @@ N_GAMES_PERFORMED = global_variables.N_SIMULATIONS_PAPER
 n_episodes = global_variables.N_TRAINING_EPISODES
 
 group_exp_strategies = global_variables.LIST_IMPLEMENTED_EXPLORATION_STRATEGIES
-group_kind_algs = [f'{global_variables.LABEL_Q_LEARNING}_{global_variables.LABEL_CAUSAL_OFFLINE}']#global_variables.LIST_IMPLEMENTED_ALGORITHMS
+group_kind_algs = [f'{global_variables.LABEL_Q_LEARNING}_{global_variables.LABEL_CAUSAL_OFFLINE}',
+                   f'{global_variables.LABEL_Q_LEARNING}_{global_variables.LABEL_VANILLA}',
+                   #f'{global_variables.LABEL_DQN}_{global_variables.LABEL_CAUSAL_OFFLINE}',
+                   #f'{global_variables.LABEL_DQN}_{global_variables.LABEL_VANILLA}'
+                   ] #global_variables.LIST_IMPLEMENTED_ALGORITHMS
 # group_kind_algs.remove(global_variables.LABEL_RANDOM_AGENT)
 
 vet_enemies = global_variables.N_ENEMIES_CONSIDERED_PAPER
@@ -91,12 +95,13 @@ for file_main_folder in files_inside_main_folder:
     grid_size, n_enemies = extract_grid_size_and_n_enemies(os.path.basename(file_main_folder))
     figures_subtitle = f'{os.path.basename(file_main_folder).replace("_", " ")} - Averaged over {N_GAMES_PERFORMED} games'
 
+    print(f'*** Grid/Maze {grid_size} - {n_enemies} enemy/enemies')
     # for make order
     for algorithm in dict_values.keys():
         selected_elements = [string for string in files_inside_second_folder if algorithm in string]
-        print(algorithm, len(selected_elements))
+        if len(selected_elements) != N_GAMES_PERFORMED:
+            print(f'* {algorithm} - timeout - {N_GAMES_PERFORMED - len(selected_elements)} times')
         for element in selected_elements:
-            print(element)
             with open(f'{file_main_folder}/{element}', 'r') as file:
                 series = json.load(file)
 
@@ -136,8 +141,8 @@ for file_main_folder in files_inside_main_folder:
             new_row_df = pd.DataFrame([new_row_dict])
             table_results = pd.concat([table_results, new_row_df], ignore_index=True)
 
-    """# for plots and tables
-    save_plot = f'{dir_saving_plots_and_table}/{file_main_folder}'
+    # for plots and tables
+    save_plot = f'{dir_saving_plots_and_table}/{os.path.basename(file_main_folder)}'
     os.makedirs(save_plot, exist_ok=True)
     
     for group_chosen in [group_exp_strategies, group_kind_algs]:
@@ -185,13 +190,13 @@ for file_main_folder in files_inside_main_folder:
                             series[key] = [sublist for i, sublist in enumerate(series[key]) if
                                            i not in indices_to_remove]
 
-                    rewards_series = list_average(series[f'{name_rewards_series}'])
-                    cumulative_rewards_series = cumulative_list(rewards_series)
-                    actions_series = list_average(series[f'{name_actions_series}'])
-                    computation_time_series = list_average(series[f'{name_computation_time_series}'])
+                    rewards_series = others.list_average(series[f'{name_rewards_series}'])
+                    cumulative_rewards_series = others.cumulative_list(rewards_series)
+                    actions_series = others.list_average(series[f'{name_actions_series}'])
+                    computation_time_series = others.list_average(series[f'{name_computation_time_series}'])
 
-                    dict_metrics = compute_metrics(rewards_series, cumulative_rewards_series, actions_series,
-                                                   computation_time_series)
+                    dict_metrics = others.compute_metrics(rewards_series, cumulative_rewards_series, actions_series,
+                                                   computation_time_series, col_average_cumulative_reward, col_average_reward, col_average_actions_needed, col_average_computation_time)
 
                     cumulative_rewards_value_to_save = dict_metrics[f'{col_average_cumulative_reward}']
                     actions_value_to_save = dict_metrics[f'{col_average_actions_needed}']
@@ -205,7 +210,7 @@ for file_main_folder in files_inside_main_folder:
                     upload_fig(ax_time, computation_time_series, computation_time_value_to_save, label_plot,
                                str_timeout)
 
-            plt.show()"""
+            plt.show()
 
 table_results.to_excel(f'{dir_saving_plots_and_table}/results.xlsx')
 table_results.to_pickle(f'{dir_saving_plots_and_table}/results.pkl')

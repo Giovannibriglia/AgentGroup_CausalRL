@@ -40,7 +40,7 @@ def get_q_table(game_infos: str, dir_results: str, algo: str):
         raise AssertionError('q table not available, check your usage of this function.')
 
 
-for simulation_n in range(0, 5, 1):
+for simulation_n in range(5, N_SIMULATIONS, 1):
     for rows, cols in GRID_SIZES:
         for n_enemies in ENEMIES:
 
