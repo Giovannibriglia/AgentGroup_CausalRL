@@ -57,9 +57,11 @@ class TestCausalTable:
 
 
 if __name__ == '__main__':
-    ct = pd.read_pickle('C:\\Users\giova\Documents\Research\CausalRL\out_causal_table_8x8.pkl')
+    ct = pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
     # ct = pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
 
-    test = TestCausalTable(ct, global_variables.get_possible_actions)
+    #test = TestCausalTable(ct, global_variables.get_possible_actions)
 
-    test.do_check()
+    #test.do_check()
+
+    print(global_variables.get_possible_actions(ct, [0, 50, 3, 50, 50, 50], [50]))
