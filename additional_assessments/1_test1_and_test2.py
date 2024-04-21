@@ -101,7 +101,6 @@ def make_toroidal(df_input, n_agents, n_enemies, n_goals):
                         new_df.at[index, cols_GoalNearby[goal]] = global_variables.VALUE_ENTITY_FAR
 
                 deltaY, deltaX = global_variables.DICT_IMPLEMENTED_ACTIONS[row[cols_actions[ag]]]
-
                 new_df.at[index, cols_DeltaX[ag]] = deltaX
                 new_df.at[index, cols_DeltaY[ag]] = deltaY
 
