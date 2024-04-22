@@ -5,6 +5,10 @@ from typing import Tuple
 import re
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
+from scipy.ndimage import gaussian_filter1d
+import seaborn as sns
+
 import global_variables
 
 
@@ -116,12 +120,26 @@ def IQM_mean(data: list) -> Decimal:
     return iq_mean
 
 
-def list_average(list_of_lists: list[list]) -> list:
-    list_length = len(list_of_lists[0])  # Assuming all sublists have the same length
+"""def list_average(list_of_lists: list[list], ok_indexes: list[int]) -> list:
+    list_length = len(list_of_lists[0])
     averages = []
     for i in range(list_length):
-        total = sum(sublist[i] for sublist in list_of_lists)
+        total = sum(sublist[i] for sublist in list_of_lists[ok_indexes])
         averages.append(total / len(list_of_lists))
+    return averages"""
+
+
+def list_average(list_of_lists: list[list], ok_indexes: list[int]) -> list:
+    if not list_of_lists or not ok_indexes or len(ok_indexes) == 0:
+        return []  # Return an empty list if there are no sublists or no ok indexes
+
+    list_length = len(list_of_lists[ok_indexes[0]])
+    averages = []
+    for i in range(list_length):
+        # Select only the sublist specified by ok_indexes and ensure the index is within the sublist length
+        total = sum(list_of_lists[idx][i] for idx in ok_indexes if i < len(list_of_lists[idx]))
+        count = sum(1 for idx in ok_indexes if i < len(list_of_lists[idx]))  # Count only the valid contributions
+        averages.append(total / count if count > 0 else 0)  # Handle division by zero if no valid sublists
     return averages
 
 
@@ -135,7 +153,17 @@ def cumulative_list(input_list: list) -> list:
 
 
 def compute_my_confidence_interval(data: list) -> Decimal:
-    value = Decimal(np.std(data)).quantize(Decimal('.001'))
+    data_series = pd.Series(data)
+
+    # Calculate the 25th and 75th percentiles
+    q25 = data_series.quantile(0.25)
+    q75 = data_series.quantile(0.75)
+
+    # Filter the series to values between these percentiles
+    filtered_series = data_series[(data_series >= q25) & (data_series <= q75)]
+
+    value = Decimal(filtered_series.std()).quantize(Decimal('.01'))
+
     return value
 
 
@@ -143,23 +171,63 @@ def compute_metrics(rewards: list, cumulative_rewards: list, actions: list, comp
                     col_average_cumulative_reward: str, col_average_reward: str, col_average_actions_needed: str,
                     col_average_computation_time: str) -> dict:
     dict_out = {}
-    IQM_cumulative_reward_value = cumulative_rewards[-1]
-    confidence_interval_cumulative_reward_series = compute_my_confidence_interval(rewards) * len(rewards)
-    dict_out[
-        f'{col_average_cumulative_reward}'] = f'{round(IQM_cumulative_reward_value, 2)} \u00B1 {round(confidence_interval_cumulative_reward_series, 3)}'
+    if len(cumulative_rewards) > 0:
+        IQM_cumulative_reward_value = cumulative_rewards[-1]
+        confidence_interval_cumulative_reward_series = compute_my_confidence_interval(rewards) * len(rewards)
+        dict_out[
+            f'{col_average_cumulative_reward}'] = f'{round(IQM_cumulative_reward_value, 2)} \u00B1 {round(confidence_interval_cumulative_reward_series, 2)}'
+    else:
+        dict_out[
+            f'{col_average_cumulative_reward}'] = None
 
-    IQM_reward_value = IQM_mean(rewards)
-    confidence_interval_reward_series = compute_my_confidence_interval(rewards)
-    dict_out[f'{col_average_reward}'] = f'{IQM_reward_value} \u00B1 {confidence_interval_reward_series}'
+    if len(rewards) > 0:
+        IQM_reward_value = IQM_mean(rewards)
+        confidence_interval_reward_series = compute_my_confidence_interval(rewards)
+        dict_out[f'{col_average_reward}'] = f'{IQM_reward_value} \u00B1 {confidence_interval_reward_series}'
+    else:
+        dict_out[f'{col_average_reward}'] = None
 
-    IQM_actions_needed = IQM_mean(actions)
-    confidence_interval_actions_needed_series = compute_my_confidence_interval(actions)
-    dict_out[
-        f'{col_average_actions_needed}'] = f'{IQM_actions_needed} \u00B1 {confidence_interval_actions_needed_series}'
+    if len(actions) > 0:
+        IQM_actions_needed = IQM_mean(actions)
+        confidence_interval_actions_needed_series = compute_my_confidence_interval(actions)
+        dict_out[
+            f'{col_average_actions_needed}'] = f'{IQM_actions_needed} \u00B1 {confidence_interval_actions_needed_series}'
+    else:
+        dict_out[f'{col_average_actions_needed}'] = None
 
-    IQM_computation_time = IQM_mean(computation_times)
-    confidence_interval_computation_time_series = compute_my_confidence_interval(computation_times)
-    dict_out[
-        f'{col_average_computation_time}'] = f'{IQM_computation_time} \u00B1 {confidence_interval_computation_time_series}'
+    if len(computation_times) > 0:
+        IQM_computation_time = IQM_mean(computation_times)
+        confidence_interval_computation_time_series = compute_my_confidence_interval(computation_times)
+        dict_out[
+            f'{col_average_computation_time}'] = f'{IQM_computation_time} \u00B1 {confidence_interval_computation_time_series}'
+    else:
+        dict_out[f'{col_average_computation_time}'] = None
 
     return dict_out
+
+
+SIGMA_GAUSSIAN_FILTER = 3
+
+
+def upload_fig(ax_n: plt.axes, values: list, value_to_display: str, label_series: str,
+               str_timeout: str, algo_number: int):
+    colors = sns.color_palette("Set2")
+    color_algo = colors[algo_number]
+
+    series_smooth = gaussian_filter1d(values, SIGMA_GAUSSIAN_FILTER)
+    x_data = np.arange(0, len(series_smooth), 1)
+    if str_timeout is not None:
+        ax_n.plot(x_data, series_smooth, color=color_algo,
+                  label=f'{label_series}: {value_to_display} ({str_timeout})')
+    else:
+        ax_n.plot(x_data, series_smooth, color=color_algo,
+                  label=f'{label_series}: {value_to_display}')
+
+    data_series_pandas = pd.Series(values)
+    rolling_max = data_series_pandas.rolling(window=25).max()
+    rolling_min = data_series_pandas.rolling(window=25).min()
+    ax_n.fill_between(x_data, (rolling_min), (rolling_max),
+                      color=color_algo,
+                      alpha=0.2)
+
+    ax_n.legend(fontsize='small')

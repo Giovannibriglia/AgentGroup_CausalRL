@@ -86,7 +86,7 @@ def make_toroidal(df_input, n_agents, n_enemies, n_goals):
     for index, row in new_df.iterrows():
         for ag in range(n_agents):
             if row[cols_actions[ag]] != 0 and (row[cols_DeltaX[ag]] == 0 and row[cols_DeltaY[ag]] == 0):
-                print('\n*****Past', row)
+                #print('\n*****Past', row)
 
                 for en in range(n_enemies):
                     if row[cols_rewards[ag]] == global_variables.VALUE_REWARD_LOSER_PAPER:
@@ -104,7 +104,7 @@ def make_toroidal(df_input, n_agents, n_enemies, n_goals):
                 new_df.at[index, cols_DeltaX[ag]] = deltaX
                 new_df.at[index, cols_DeltaY[ag]] = deltaY
 
-                print('New: ', new_df.loc[index, :])
+                #print('New: ', new_df.loc[index, :])
     return new_df
 
 

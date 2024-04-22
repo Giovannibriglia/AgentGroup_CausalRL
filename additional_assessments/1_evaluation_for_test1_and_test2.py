@@ -13,7 +13,7 @@ with open(f'{global_variables.PATH_CAUSAL_GRAPH_OFFLINE}', 'r') as file:
 
 N_ENEMIES = 1
 N_TRAINING_EPISODE = global_variables.N_TRAINING_EPISODES
-NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Test2'
+NAME_DIR_RESULTS = f'{global_variables.GLOBAL_PATH_REPO}/Results/Test2_new'
 files_inside_main_folder = os.listdir(NAME_DIR_RESULTS)
 
 for file_inside_main_folder in files_inside_main_folder:

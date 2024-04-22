@@ -20,12 +20,9 @@ N_GAMES_PERFORMED = global_variables.N_SIMULATIONS_PAPER
 n_episodes = global_variables.N_TRAINING_EPISODES
 
 group_exp_strategies = global_variables.LIST_IMPLEMENTED_EXPLORATION_STRATEGIES
-group_kind_algs = [f'{global_variables.LABEL_Q_LEARNING}_{global_variables.LABEL_CAUSAL_OFFLINE}',
-                   f'{global_variables.LABEL_Q_LEARNING}_{global_variables.LABEL_VANILLA}',
-                   #f'{global_variables.LABEL_DQN}_{global_variables.LABEL_CAUSAL_OFFLINE}',
-                   #f'{global_variables.LABEL_DQN}_{global_variables.LABEL_VANILLA}'
-                   ] #global_variables.LIST_IMPLEMENTED_ALGORITHMS
-# group_kind_algs.remove(global_variables.LABEL_RANDOM_AGENT)
+group_kind_algs = global_variables.LIST_IMPLEMENTED_ALGORITHMS
+group_kind_algs.remove(global_variables.LABEL_RANDOM_AGENT)
+# group_kind_algs.remove(f'{global_variables.LABEL_Q_LEARNING}_{global_variables.LABEL_CAUSAL_ONLINE}')
 
 vet_enemies = global_variables.N_ENEMIES_CONSIDERED_PAPER
 vet_grid_sizes = global_variables.GRID_SIZES_CONSIDERED_PAPER
@@ -47,33 +44,23 @@ def drop_characters_after_first_word(string: str, words_to_drop: str) -> str:
     return string
 
 
-def upload_fig(ax_n: plt.axes, values: list, value_to_display: str, label_series: str,
-               str_timeout: str):
-    # TODO: FIX COLORS
-    color_algo = global_variables.COLORS_ALGORITHMS[label_series]
-    series_smooth = gaussian_filter1d(values, SIGMA_GAUSSIAN_FILTER)
-    x_data = np.arange(0, len(series_smooth), 1)
-    if str_timeout is not None:
-        ax_n.plot(x_data, series_smooth, color=color_algo,
-                  label=f'{label_series}: {value_to_display} ({str_timeout})')
-    else:
-        ax_n.plot(x_data, series_smooth, color=color_algo,
-                  label=f'{label_series}: {value_to_display}')
-
-    mean_str, std_str = value_to_display.split(' ± ')
-    confidence_interval = float(std_str)
-    ax_n.fill_between(x_data, (series_smooth - confidence_interval), (series_smooth + confidence_interval),
-                      color=color_algo, alpha=0.2)
-
-    ax_n.legend(fontsize='small')
+def extract_from_input(input_string: str, possible_matches: list[str]) -> str:
+    # Iterate through each string in the possible matches list
+    for match in possible_matches:
+        # Check if the match is a substring of the input string
+        if match in input_string:
+            return match  # Return the first matching substring found
+    return ""  # Return an empty string if no match is found
 
 
 col_average_reward = 'IQM_average_reward'
 col_average_cumulative_reward = 'IQM_average_cumulative_reward'
 col_average_actions_needed = 'IQM_average_actions_needed'
-col_average_computation_time = 'IQM_average_computation_time'
-columns_table_results = ['grid_size', 'n_enemies', 'algo', f'{col_average_reward}', f'{col_average_cumulative_reward}',
-                         f'{col_average_actions_needed}', f'{col_average_computation_time}']
+col_average_computation_time = 'IQM_average_computation_time[min]'
+col_timeout = '#timeouts'
+columns_table_results = ['grid_size', 'n_enemies', 'algo', 'exploration', f'{col_average_reward}',
+                         f'{col_average_cumulative_reward}',
+                         f'{col_average_actions_needed}', f'{col_average_computation_time}', f'{col_timeout}']
 
 table_results = pd.DataFrame(columns=columns_table_results)
 
@@ -95,12 +82,13 @@ for file_main_folder in files_inside_main_folder:
     grid_size, n_enemies = extract_grid_size_and_n_enemies(os.path.basename(file_main_folder))
     figures_subtitle = f'{os.path.basename(file_main_folder).replace("_", " ")} - Averaged over {N_GAMES_PERFORMED} games'
 
-    print(f'*** Grid/Maze {grid_size} - {n_enemies} enemy/enemies')
+    print(f'\n*** Grid/Maze {grid_size} - {n_enemies} enemy/enemies')
     # for make order
     for algorithm in dict_values.keys():
         selected_elements = [string for string in files_inside_second_folder if algorithm in string]
+
         if len(selected_elements) != N_GAMES_PERFORMED:
-            print(f'* {algorithm} - timeout - {N_GAMES_PERFORMED - len(selected_elements)} times')
+            print(f'* {algorithm} - missed - {N_GAMES_PERFORMED - len(selected_elements)} times')
         for element in selected_elements:
             with open(f'{file_main_folder}/{element}', 'r') as file:
                 series = json.load(file)
@@ -109,18 +97,25 @@ for file_main_folder in files_inside_main_folder:
 
             dict_values[algorithm][f'{name_rewards_series}'].append(series[global_variables.KEY_METRIC_REWARDS_EPISODE])
             dict_values[algorithm][f'{name_actions_series}'].append(series[global_variables.KEY_METRICS_STEPS_EPISODE])
-            dict_values[algorithm][f'{name_computation_time_series}'].append(
-                series[global_variables.KEY_METRIC_TIME_EPISODE])
+
+            time_series_int = [element * 60 for element in series[global_variables.KEY_METRIC_TIME_EPISODE]]
+            dict_values[algorithm][f'{name_computation_time_series}'].append(time_series_int)
+
             dict_values[algorithm][f'{name_timeout_series}'].append(
                 series[global_variables.KEY_METRIC_TIMEOUT_CONDITION])
 
     # for table
     for algorithm, series in dict_values.items():
         if series[f'{name_rewards_series}']:
-            rewards_series = others.list_average(series[f'{name_rewards_series}'])
+            tot_indexes = len(series[f'{name_timeout_series}'])
+            ok_indexes = [index for index, value in enumerate(series[f'{name_timeout_series}']) if value == False]
+            if len(ok_indexes) != tot_indexes:
+                print(f'{algorithm}: {tot_indexes - len(ok_indexes)}/{tot_indexes} timeouts')
+
+            rewards_series = others.list_average(series[f'{name_rewards_series}'], ok_indexes)
             cumulative_rewards_series = others.cumulative_list(rewards_series)
-            actions_series = others.list_average(series[f'{name_actions_series}'])
-            computation_time_series = others.list_average(series[f'{name_computation_time_series}'])
+            actions_series = others.list_average(series[f'{name_actions_series}'], ok_indexes)
+            computation_time_series = others.list_average(series[f'{name_computation_time_series}'], ok_indexes)
 
             dict_metrics = others.compute_metrics(rewards_series, cumulative_rewards_series, actions_series,
                                                   computation_time_series,
@@ -132,27 +127,34 @@ for file_main_folder in files_inside_main_folder:
             reward_value_to_save = dict_metrics[f'{col_average_reward}']
             computation_time_value_to_save = dict_metrics[f'{col_average_computation_time}']
 
-            new_row_dict = {'grid_size': f'{grid_size[0]}x{grid_size[1]}', 'n_enemies': n_enemies, 'algo': algorithm,
+            algo_str = extract_from_input(algorithm, group_kind_algs)
+            exploration_str = extract_from_input(algorithm, group_exp_strategies)
+
+            new_row_dict = {'grid_size': f'{grid_size[0]}x{grid_size[1]}', 'n_enemies': n_enemies,
+                            'algo': f'{algo_str}',
+                            'exploration': f'{exploration_str}',
                             f'{col_average_reward}': reward_value_to_save,
                             f'{col_average_cumulative_reward}': cumulative_rewards_value_to_save,
                             f'{col_average_actions_needed}': actions_value_to_save,
-                            f'{col_average_computation_time}': computation_time_value_to_save}
+                            f'{col_average_computation_time}': computation_time_value_to_save,
+                            f'{col_timeout}': f'{tot_indexes - len(ok_indexes)}/{tot_indexes}'}
 
             new_row_df = pd.DataFrame([new_row_dict])
             table_results = pd.concat([table_results, new_row_df], ignore_index=True)
 
-    # for plots and tables
+    """# for plots and tables
     save_plot = f'{dir_saving_plots_and_table}/{os.path.basename(file_main_folder)}'
     os.makedirs(save_plot, exist_ok=True)
-    
+
     for group_chosen in [group_exp_strategies, group_kind_algs]:
 
         for item_chosen in group_chosen:
             algos_chosen_from_dict = {key: value for key, value in dict_values.items() if item_chosen in key}
 
-            fig_iqm_reward, ax_iqm_reward = plt.subplots(dpi=1000)
+            count_alg = 0
+            fig_reward, ax_iqm_reward = plt.subplots(dpi=1000)
             ax_iqm_reward.set_title('Average reward')
-            fig_iqm_reward.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
+            fig_reward.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
 
             fig_cum_reward, ax_cum_reward = plt.subplots(dpi=1000)
             ax_cum_reward.set_title('Cumulative reward')
@@ -165,15 +167,17 @@ for file_main_folder in files_inside_main_folder:
             fig_time, ax_time = plt.subplots(dpi=1000)
             ax_time.set_title('Computation time needed to complete the episode')
             fig_time.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
+            ax_time.set_ylabel('Minutes', fontsize=fontsize)
 
             for algorithm, series in algos_chosen_from_dict.items():
-                print(algorithm)
                 if series[f'{name_rewards_series}']:
 
                     label_plot = algorithm
 
                     n_games_performed = len(series[f'{name_timeout_series}'])
-                    n_games_ok = series[f'{name_timeout_series}'].count(False)
+                    ok_indexes = [index for index, value in enumerate(series[f'{name_timeout_series}']) if
+                                  value == False]
+                    n_games_ok = len(ok_indexes)
 
                     if n_games_ok < n_games_performed:
                         str_timeout = f'{n_games_ok}/{n_games_performed}'
@@ -184,33 +188,38 @@ for file_main_folder in files_inside_main_folder:
                             f'*** Problem with timeout counter: n_games_performed: {n_games_performed} - n_games_ok: {n_games_ok}')
                         str_timeout = None
 
-                    indices_to_remove = [i for i, value in enumerate(series[f'{name_timeout_series}']) if value]
-                    for key in series:
-                        if key != f'{name_timeout_series}':
-                            series[key] = [sublist for i, sublist in enumerate(series[key]) if
-                                           i not in indices_to_remove]
-
-                    rewards_series = others.list_average(series[f'{name_rewards_series}'])
+                    rewards_series = others.list_average(series[f'{name_rewards_series}'], ok_indexes)
                     cumulative_rewards_series = others.cumulative_list(rewards_series)
-                    actions_series = others.list_average(series[f'{name_actions_series}'])
-                    computation_time_series = others.list_average(series[f'{name_computation_time_series}'])
+                    actions_series = others.list_average(series[f'{name_actions_series}'], ok_indexes)
+                    computation_time_series = others.list_average(series[f'{name_computation_time_series}'], ok_indexes)
 
                     dict_metrics = others.compute_metrics(rewards_series, cumulative_rewards_series, actions_series,
-                                                   computation_time_series, col_average_cumulative_reward, col_average_reward, col_average_actions_needed, col_average_computation_time)
+                                                          computation_time_series, col_average_cumulative_reward,
+                                                          col_average_reward, col_average_actions_needed,
+                                                          col_average_computation_time)
 
                     cumulative_rewards_value_to_save = dict_metrics[f'{col_average_cumulative_reward}']
                     actions_value_to_save = dict_metrics[f'{col_average_actions_needed}']
                     reward_value_to_save = dict_metrics[f'{col_average_reward}']
                     computation_time_value_to_save = dict_metrics[f'{col_average_computation_time}']
 
-                    upload_fig(ax_iqm_reward, rewards_series, reward_value_to_save, label_plot, str_timeout)
-                    upload_fig(ax_cum_reward, cumulative_rewards_series, cumulative_rewards_value_to_save, label_plot,
-                               str_timeout)
-                    upload_fig(ax_actions, actions_series, actions_value_to_save, label_plot, str_timeout)
-                    upload_fig(ax_time, computation_time_series, computation_time_value_to_save, label_plot,
-                               str_timeout)
+                    others.upload_fig(ax_iqm_reward, rewards_series, reward_value_to_save, label_plot, str_timeout,
+                                      count_alg)
+                    others.upload_fig(ax_cum_reward, cumulative_rewards_series, cumulative_rewards_value_to_save,
+                                      label_plot,
+                                      str_timeout, count_alg)
+                    others.upload_fig(ax_actions, actions_series, actions_value_to_save, label_plot, str_timeout,
+                                      count_alg)
+                    others.upload_fig(ax_time, computation_time_series, computation_time_value_to_save, label_plot,
+                                      str_timeout, count_alg)
+
+                    count_alg += 1
 
             plt.show()
+            plt.close(fig_time)
+            plt.close(fig_actions)
+            plt.close(fig_reward)
+            plt.close(fig_cum_reward)"""
 
 table_results.to_excel(f'{dir_saving_plots_and_table}/results.xlsx')
 table_results.to_pickle(f'{dir_saving_plots_and_table}/results.pkl')

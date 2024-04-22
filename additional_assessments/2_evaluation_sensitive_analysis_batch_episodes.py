@@ -41,7 +41,6 @@ for file_main_folder in os.listdir(DIR_RESULTS):
         causal_graphs = series['causal_graphs']
         # dicts_causal_tables = series['causal_tables']
         print(f'*** {rows}x{cols} - {n_enemies} enemies - {n_episodes} episodes')
-        print(pd.DataFrame(dicts_dfs_track[0]).columns)
         list_results = [causal_graphs, dicts_dfs_track]
         merging = MergeCausalGraphs(list_results=list_results)
         merging.start_merging()

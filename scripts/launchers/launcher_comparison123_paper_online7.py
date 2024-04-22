@@ -23,11 +23,12 @@ GRID_SIZES = global_variables.GRID_SIZES_CONSIDERED_PAPER
 ENEMIES = global_variables.N_ENEMIES_CONSIDERED_PAPER
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 
-simulation_n = 7
+simulation_n = 6
 for rows, cols in GRID_SIZES:
     for n_enemies in ENEMIES:
 
-        if not (rows == 5 and n_enemies == 10):
+        if not (rows == 5 and n_enemies == 10) and (not (rows == 10 and n_enemies == 10)) and (
+        not (rows == 10 and n_enemies == 5)):
             seed_value = global_variables.seed_values[simulation_n]
 
             dict_env_params = {'rows': rows, 'cols': cols, 'n_agents': 1, 'n_enemies': n_enemies, 'n_goals': 1,
@@ -41,13 +42,15 @@ for rows, cols in GRID_SIZES:
             dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
             dict_other_params = global_variables.DICT_OTHER_PARAMETERS_PAPER
 
+            # Create an environment
             environment = CustomEnv(dict_env_params)
 
-            for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
+            for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING]:
 
-                for label_kind_of_alg2 in [global_variables.LABEL_VANILLA]:
+                for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_ONLINE]:
 
-                    if not(label_kind_of_alg == global_variables.LABEL_DQN and label_kind_of_alg2 == global_variables.LABEL_CAUSAL_ONLINE):
+                    if not (
+                            label_kind_of_alg == global_variables.LABEL_DQN and label_kind_of_alg2 == global_variables.LABEL_CAUSAL_ONLINE):
 
                         for label_exploration_strategy in [global_variables.LABEL_THOMPSON_SAMPLING,
                                                            global_variables.LABEL_BOLTZMANN_MACHINE,
@@ -75,7 +78,8 @@ for rows, cols in GRID_SIZES:
                                                     dir_save_metrics=dir_save_final,
                                                     name_save_metrics=name_save,
                                                     batch_update_df_track=get_batch_episodes(n_enemies, rows,
-                                                                                             cols, TABLE_BATCH_EPISODES) if cond_online else None,
+                                                                                             cols,
+                                                                                             TABLE_BATCH_EPISODES) if cond_online else None,
                                                     episodes_to_visualize=global_variables.EPISODES_TO_VISUALIZE_PAPER,
                                                     dir_save_videos=dir_save_final,
                                                     name_save_videos=name_save)

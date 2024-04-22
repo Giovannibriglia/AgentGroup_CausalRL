@@ -1,19 +1,13 @@
 import os
-import re
 from itertools import product
 import pandas as pd
 import global_variables
 import matplotlib.pyplot as plt
 import json
-import numpy as np
-from scipy.ndimage import gaussian_filter1d
-from decimal import *
-
 from scripts.utils import others
 from scripts.utils.others import extract_grid_size_and_n_enemies
 
 fontsize = 12
-SIGMA_GAUSSIAN_FILTER = 3
 
 dir_results = 'Test3'
 N_GAMES_PERFORMED = global_variables.N_SIMULATIONS_PAPER
@@ -43,28 +37,6 @@ def drop_characters_after_first_word(string: str, words_to_drop: list) -> str:
         if word in string:
             return string.split(word)[0]
     return string
-
-
-def upload_fig(ax_n: plt.axes, values: list, value_to_display: str, label_series: str,
-               str_timeout: str):
-    # TODO: FIX COLORS
-    # color_algo = global_variables.COLORS_ALGORITHMS[label_series]
-    series_smooth = gaussian_filter1d(values, SIGMA_GAUSSIAN_FILTER)
-    x_data = np.arange(0, len(series_smooth), 1)
-    if str_timeout is not None:
-        ax_n.plot(x_data, series_smooth,  # color=color_algo,
-                  label=f'{label_series}: {value_to_display} ({str_timeout})')
-    else:
-        ax_n.plot(x_data, series_smooth,  # color=color_algo,
-                  label=f'{label_series}: {value_to_display}')
-
-    mean_str, std_str = value_to_display.split(' ± ')
-    confidence_interval = float(std_str)
-    ax_n.fill_between(x_data, (series_smooth - confidence_interval), (series_smooth + confidence_interval),
-                      # color=color_algo,
-                      alpha=0.2)
-
-    ax_n.legend(fontsize='small')
 
 
 col_average_reward = 'IQM_average_reward'
@@ -142,7 +114,7 @@ for file_main_folder in files_inside_main_folder:
     for item_chosen in group_test:
         print(item_chosen)
         algos_chosen_from_dict = {key: value for key, value in dict_values.items() if item_chosen in key}
-
+        count_alg = 0
         fig_reward, ax_iqm_reward = plt.subplots(dpi=1000)
         ax_iqm_reward.set_title(f'Average reward {item_chosen}')
         fig_reward.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
@@ -160,6 +132,7 @@ for file_main_folder in files_inside_main_folder:
         fig_time.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
 
         for algorithm, series in algos_chosen_from_dict.items():
+
             if series[f'{name_rewards_series}']:
 
                 label_plot = algorithm.replace(f'{item_chosen}', '')
@@ -193,11 +166,13 @@ for file_main_folder in files_inside_main_folder:
                 reward_value_to_save = dict_metrics[f'{col_average_reward}']
                 computation_time_value_to_save = dict_metrics[f'{col_average_computation_time}']
 
-                upload_fig(ax_iqm_reward, rewards_series, reward_value_to_save, label_plot, str_timeout)
-                upload_fig(ax_cum_reward, cumulative_rewards_series, cumulative_rewards_value_to_save, label_plot,
-                           str_timeout)
-                upload_fig(ax_actions, actions_series, actions_value_to_save, label_plot, str_timeout)
-                upload_fig(ax_time, computation_time_series, computation_time_value_to_save, label_plot, str_timeout)
+                others.upload_fig(ax_iqm_reward, rewards_series, reward_value_to_save, label_plot, str_timeout, count_alg)
+                others.upload_fig(ax_cum_reward, cumulative_rewards_series, cumulative_rewards_value_to_save, label_plot,
+                           str_timeout, count_alg)
+                others.upload_fig(ax_actions, actions_series, actions_value_to_save, label_plot, str_timeout, count_alg)
+                others.upload_fig(ax_time, computation_time_series, computation_time_value_to_save, label_plot, str_timeout, count_alg)
+
+                count_alg += 1
 
         fig_time.savefig(f'{save_plot}/test3_time_{item_chosen}.png')
         fig_actions.savefig(f'{save_plot}/test3_actions_{item_chosen}.png')
