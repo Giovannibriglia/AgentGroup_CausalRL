@@ -23,7 +23,7 @@ GRID_SIZES = global_variables.GRID_SIZES_CONSIDERED_PAPER
 ENEMIES = global_variables.N_ENEMIES_CONSIDERED_PAPER
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 
-simulation_n = 6
+simulation_n = 8
 for rows, cols in GRID_SIZES:
     for n_enemies in ENEMIES:
 
