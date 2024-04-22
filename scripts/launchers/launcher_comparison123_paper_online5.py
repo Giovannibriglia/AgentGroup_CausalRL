@@ -46,8 +46,7 @@ for rows, cols in GRID_SIZES:
 
             for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
 
-                for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_CAUSAL_ONLINE,
-                                           global_variables.LABEL_VANILLA]:
+                for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_ONLINE]:
 
                     if not(label_kind_of_alg == global_variables.LABEL_DQN and label_kind_of_alg2 == global_variables.LABEL_CAUSAL_ONLINE):
 
