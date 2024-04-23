@@ -284,7 +284,10 @@ class CustomEnv:
 
             selected_positions = np.array(list(resultant_empty_pos))
 
-            random_selection = np.random.choice(len(selected_positions), size=self.n_walls, replace=False)
+            if self.n_walls > len(selected_positions):
+                random_selection = np.random.choice(len(selected_positions), size=len(selected_positions), replace=False)
+            else:
+                random_selection = np.random.choice(len(selected_positions), size=self.n_walls, replace=False)
             selected_couples = selected_positions[random_selection]
 
             for n, pos in enumerate(selected_couples):

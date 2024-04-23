@@ -8,3 +8,4 @@ scipy
 networkx
 opencv-python
 palettable
+seaborn

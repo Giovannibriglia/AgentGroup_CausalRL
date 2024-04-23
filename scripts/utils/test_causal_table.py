@@ -31,7 +31,7 @@ class TestCausalTable:
 
     def do_check(self) -> bool:
         for_goals = [s for s in self.possible_values if s != 0]
-        combinations = list(itertools.product(for_goals, itertools.product(self.possible_values, repeat=2))) # (goal, (enemies))
+        combinations = list(itertools.product(for_goals, itertools.product(self.possible_values, repeat=2)))
 
         count_wrongs = 0
         for comb in combinations:
@@ -52,14 +52,16 @@ class TestCausalTable:
             print('Causal table and function for its usage are corrects')
             return True
         else:
-            print('Causal table and function for its usage are incorrects')
+            print(f'Causal table and function for its usage are incorrect - {count_wrongs} errors')
             return False
 
 
 if __name__ == '__main__':
-    ct = pd.read_pickle('C:\\Users\giova\Documents\Research\CausalRL\out_causal_table_8x8.pkl')
+    ct = pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
     # ct = pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
 
-    test = TestCausalTable(ct, global_variables.get_possible_actions)
+    #test = TestCausalTable(ct, global_variables.get_possible_actions)
 
-    test.do_check()
+    #test.do_check()
+
+    print(global_variables.get_possible_actions(ct, [0, 50, 3, 50, 50, 50], [50]))
