@@ -4,6 +4,8 @@ from scripts.utils.environment import CustomEnv
 from scripts.utils.others import get_batch_episodes
 from scripts.utils.train_models import Training
 import json
+import os
+import re
 
 """The objective of this script is to perform comparative analyses aimed at understanding the effectiveness of 
 transfer learning within a maze-like environment. This investigation utilizes the Q-Learning algorithm with an 
@@ -40,7 +42,7 @@ def get_q_table(game_infos: str, dir_results: str, algo: str):
         raise AssertionError('q table not available, check your usage of this function.')
 
 
-for simulation_n in range(5, N_SIMULATIONS, 1):
+for simulation_n in range(N_SIMULATIONS):
     for rows, cols in GRID_SIZES:
         for n_enemies in ENEMIES:
 
@@ -61,7 +63,8 @@ for simulation_n in range(5, N_SIMULATIONS, 1):
 
                 label_kind_of_alg = global_variables.LABEL_Q_LEARNING
 
-                for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_CAUSAL_ONLINE]:
+                for label_kind_of_alg2 in [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE,
+                                           global_variables.LABEL_CAUSAL_ONLINE]:
 
                     for if_transfer_learning in [True, False]:
                         label_exploration_strategy = global_variables.LABEL_EPSILON_GREEDY
@@ -77,7 +80,7 @@ for simulation_n in range(5, N_SIMULATIONS, 1):
                                                                                     dir_start_results,
                                                                                     name_alg) if if_transfer_learning else None
 
-                        print(f'** Simulation: {simulation_n+1}/{N_SIMULATIONS}')
+                        print(f'** Simulation: {simulation_n + 1}/{N_SIMULATIONS}')
                         class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
                                                f'{label_kind_of_alg}_{label_kind_of_alg2}',
                                                f'{label_exploration_strategy}',
@@ -87,8 +90,10 @@ for simulation_n in range(5, N_SIMULATIONS, 1):
                         add_name += f'{rows}x{cols}_{n_enemies}' + 'enemies' if n_enemies > 1 else 'enemy'
 
                         dir_save_final = f'{dir_save}/{add_name}'
-                        name_save = 'TF_' if if_transfer_learning else ''
-                        name_save += name_alg
+
+                        name_save = f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_'
+                        name_save += 'TransferLearning' if if_transfer_learning else 'NoTL'
+                        name_save += f'_game{simulation_n}'
 
                         cond_online = label_kind_of_alg2 == global_variables.LABEL_CAUSAL_ONLINE
 
@@ -101,3 +106,42 @@ for simulation_n in range(5, N_SIMULATIONS, 1):
                                                 episodes_to_visualize=global_variables.EPISODES_TO_VISUALIZE_PAPER,
                                                 dir_save_videos=dir_save_final,
                                                 name_save_videos=name_save)
+
+
+"""def rename_files(directory):
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            # Separate the base name and the extension
+            base_name, extension = os.path.splitext(filename)
+
+            # Detect parts like "game4"
+            match = re.search(r'(game\d+)', base_name)
+            if match:
+                game_part = match.group(0)  # The 'game' followed by digits (e.g., 'game4')
+                base_name = base_name.replace(game_part, '')  # Remove 'game4' from base
+            else:
+                game_part = ''  # No 'game' followed by digits part found
+
+            # Remove 'TF' and append '_TransferLearning' or append '_NoTL'
+            if 'TF' in base_name:
+                new_base_name = base_name.replace('TF_', '') + 'TransferLearning'
+            else:
+                new_base_name = base_name + 'NoTL'
+
+            # Construct the new filename, placing the 'game' part at the end
+            new_filename = new_base_name
+            if game_part:
+                new_filename += '_' + game_part  # Append 'game4' at the end if it was found
+            new_filename += extension  # Append the file extension
+
+            # Full path with the new file name
+            new_file_path = os.path.join(root, new_filename)
+
+            # Rename the file
+            os.rename(os.path.join(root, filename), new_file_path)
+            print(f'Renamed {os.path.join(root, filename)} to {new_file_path}')
+
+
+# Replace 'your_directory_path' with the path to the directory you want to process
+rename_files(f'{global_variables.GLOBAL_PATH_REPO}/Results/Comparison4')"""
+

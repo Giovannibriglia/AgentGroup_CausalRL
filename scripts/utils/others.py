@@ -210,7 +210,7 @@ SIGMA_GAUSSIAN_FILTER = 3
 
 
 def upload_fig(ax_n: plt.axes, values: list, value_to_display: str, label_series: str,
-               str_timeout: str, algo_number: int):
+               str_timeout: str, algo_number: int, if_legend: bool = True):
     colors = sns.color_palette("Set2")
     color_algo = colors[algo_number]
 
@@ -229,5 +229,44 @@ def upload_fig(ax_n: plt.axes, values: list, value_to_display: str, label_series
     ax_n.fill_between(x_data, (rolling_min), (rolling_max),
                       color=color_algo,
                       alpha=0.2)
+    if if_legend:
+        ax_n.legend(fontsize='small')
+
+
+"""def upload_fig_time(ax_n: plt.axes, list_values: list[list], list_value_to_display: list[str], list_label_series: list[str],
+                    list_str_timeout: list[str]):
+    colors = sns.color_palette("Set2")
+    # color_algo = colors[algo_number]
+
+    labels = []
+    for n in range(len(list_values)):
+        # labels.append(f'{list_label_series[n]}: {list_value_to_display[n]} ({list_str_timeout[n]})')
+        labels.append(f'{list_label_series[n]}')
+
+    #x_data = np.arange(0, len(series_smooth), 1)
+
+    ax_n.boxplot(list_values, vert=True, patch_artist=True, labels=labels)
+
+    #ax_n.legend(fontsize='small')"""
+
+
+def upload_fig_time(ax_n: plt.axes, values: list, value_to_display: str, label_series: str,
+                    str_timeout: str, algo_number: int):
+    # Define color palette and select color for the algorithm
+    colors = sns.color_palette("Set2")
+    color_algo = colors[algo_number]
+
+    if value_to_display is not None:
+        mean_str, std_str = value_to_display.split(' \u00B1 ')
+    else:
+        mean_str, std_str = 'nan', 'nan'
+
+    # Bar plot for the single value at the specified index
+    if str_timeout is not None:
+        ax_n.bar(label_series, float(mean_str), yerr=float(std_str), capsize=5, color=color_algo,
+                 label=f'{label_series}: {value_to_display} ({str_timeout})')
+    else:
+        ax_n.bar(label_series, float(mean_str), yerr=float(std_str),  capsize=5, color=color_algo,
+                 label=f'{label_series}: {value_to_display}')
 
     ax_n.legend(fontsize='small')
