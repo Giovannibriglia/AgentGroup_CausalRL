@@ -1,11 +1,13 @@
+import json
+
 import networkx as nx
 from causalnex.structure import StructureModel
 from matplotlib import pyplot as plt
+
 import global_variables
 from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.utils.environment import CustomEnv
 from scripts.utils.train_models import Training
-import json
 
 """
 The aim of this script is to produce the 'ground truth' for the causal table. Given its significance, we opted for

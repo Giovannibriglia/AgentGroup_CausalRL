@@ -1,10 +1,12 @@
 import random
 from collections import namedtuple
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from gymnasium.spaces import Discrete
+
 from scripts.utils.dqn_class_and_memory import ClassDQN, ReplayMemory
 
 """class EpsilonGreedyQAgent:

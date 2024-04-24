@@ -1,7 +1,8 @@
+import json
+
 import global_variables
 from scripts.utils.merge_causal_graphs import MergeCausalGraphs
 from scripts.utils.test_causal_table import TestCausalTable
-import json
 
 DIR_RESULTS = 'OfflineCD_MultiEnv_4x4'
 

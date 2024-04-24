@@ -1,11 +1,13 @@
-import numpy as np
-import random
-import global_variables
-import os
 import json
+import os
+import random
+
+import numpy as np
+
+import global_variables
+from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.utils.environment import CustomEnv
 from scripts.utils.train_models import Training
-from scripts.algorithms.causal_discovery import CausalDiscovery
 
 """
 We develop this assessment to validate our hypothesis concerning the extraction of causal relationships. Our 

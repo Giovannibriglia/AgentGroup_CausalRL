@@ -1,12 +1,14 @@
+import json
 import os
+
 import networkx as nx
+import pandas as pd
 from causalnex.structure import StructureModel
 from matplotlib import pyplot as plt
+
 import global_variables
 from scripts.utils.merge_causal_graphs import MergeCausalGraphs
 from scripts.utils.test_causal_table import TestCausalTable
-import json
-import pandas as pd
 
 
 # TODO: vedi se va bene il count separato e se valutare il merge

@@ -1,13 +1,14 @@
+import json
+import os
+from collections import Counter
 from itertools import product
+
 import networkx as nx
 import pandas as pd
 from causalnex.inference import InferenceEngine
 from causalnex.network import BayesianNetwork
-from matplotlib import pyplot as plt
-import os
-from collections import Counter
 from causalnex.structure import StructureModel
-import json
+from matplotlib import pyplot as plt
 
 
 class MergeCausalGraphs:

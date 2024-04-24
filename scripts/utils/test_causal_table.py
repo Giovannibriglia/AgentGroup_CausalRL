@@ -1,7 +1,9 @@
 import itertools
-import pandas as pd
-import global_variables
+
 import numpy as np
+import pandas as pd
+
+import global_variables
 
 
 class TestCausalTable:

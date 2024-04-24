@@ -1,13 +1,12 @@
-import math
 import random
-import time
+import warnings
 
 import numpy as np
 import pandas as pd
 from gymnasium.spaces import Discrete
-from scripts.utils import exploration_strategies
+
 import global_variables
-import warnings
+from scripts.utils import exploration_strategies
 
 
 class QLearningAgent:

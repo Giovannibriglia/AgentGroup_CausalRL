@@ -1,9 +1,11 @@
+import json
 import os
 import random
-import json
 from itertools import product
+
 import numpy as np
 import pandas as pd
+
 import global_variables
 from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.utils.environment import CustomEnv
@@ -37,13 +39,13 @@ def select_df(dict_for_df: dict, n_ep) -> pd.DataFrame:
         return df
 
 
-DIR_SAVING = f'{global_variables.GLOBAL_PATH_REPO}/Results/Sensitive_Analysis_Batch_Episodes'
-N_SIMULATIONS_CONSIDERED = global_variables.N_SIMULATIONS_PAPER
-N_ENEMIES_CONSIDERED = global_variables.N_ENEMIES_CONSIDERED_PAPER
+DIR_SAVING = f'{global_variables.GLOBAL_PATH_REPO}/Results/Sensitive_Analysis_Batch_Episodes_2'
+N_SIMULATIONS_CONSIDERED = 1 #global_variables.N_SIMULATIONS_PAPER
+N_ENEMIES_CONSIDERED = [2] #global_variables.N_ENEMIES_CONSIDERED_PAPER
 N_EPISODES_CONSIDERED = global_variables.N_EPISODES_CONSIDERED_FOR_SENSITIVE_ANALYSIS_PAPER
 N_EPISODES_CONSIDERED = [s-1 for s in N_EPISODES_CONSIDERED]
 MAX_N_EPISODES = [max(N_EPISODES_CONSIDERED)]
-GRID_SIZES_CONSIDERED = global_variables.GRID_SIZES_CONSIDERED_PAPER
+GRID_SIZES_CONSIDERED = [(5, 5)] #global_variables.GRID_SIZES_CONSIDERED_PAPER
 n_agents = 1
 n_goals = 1
 
@@ -126,7 +128,8 @@ for single_dict in list_dicts:
             cd = CausalDiscovery(df_track_cd, n_agents, n_enemies, n_goals)
             out_causal_graph = cd.return_causal_graph()
             out_causal_table = cd.return_causal_table()
-
+            print(out_causal_graph.columns)
+            print(list(set(out_causal_graph)))
             dict_to_save['dfs_track'][sim_n] = df_track_cd.to_dict(orient='records')
             dict_to_save['envs'][sim_n] = envs[sim_n].tolist()
             dict_to_save['causal_graphs'][sim_n] = out_causal_graph

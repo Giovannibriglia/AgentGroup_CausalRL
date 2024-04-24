@@ -1,12 +1,14 @@
+import json
 import os
+
 import networkx as nx
 from causalnex.structure import StructureModel
 from matplotlib import pyplot as plt
+
 import global_variables
 from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.utils.environment import CustomEnv
 from scripts.utils.train_models import Training
-import json
 
 """The purpose of this script is to generate the 'ground truth' for the causal table and for the causal graph. 
 Recognizing its critical importance, we conducted a substantial number of episodes to ensure its accuracy. 

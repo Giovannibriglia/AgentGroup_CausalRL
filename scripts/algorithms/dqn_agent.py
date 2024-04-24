@@ -1,11 +1,13 @@
 import random
+import warnings
+
 import numpy as np
 import pandas as pd
 import torch
 from gymnasium.spaces import Discrete
-from scripts.utils import exploration_strategies
+
 import global_variables
-import warnings
+from scripts.utils import exploration_strategies
 
 
 class DQNAgent:

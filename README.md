@@ -30,10 +30,13 @@ additional_assessments
    |__2_evaluation_sensitive_analysis_batch_episodes.py
    |__2_launcher_sensitive_analysis_batch_episodes_for_online_cd.py
    |__3_evaluation_test3.py
-   |__3_test3
+   |__3_test3.py
    |__4.1_launcher_offline_CD_analysis.py
    |__4.2_launcher_offline_CD_analysis_multienv.py
    |__init__.py
+Plots_and_Tables
+   |__Comparison123
+   |__Comparison4
 Results
    |__Comparison123
    |__Comparison4
@@ -69,12 +72,12 @@ scripts
       |__ground_truth_causal_table.pkl
       |__merge_causal_graphs.py
       |__others.py
+      |__plot_and_tables.py
       |__seed_values.npy
       |__test_causal_table
       |__train_models.py
    __init__.py
    example.py
-   plot_and_tables.py
 Videos
    |__Comparison123
    |__Comparison4

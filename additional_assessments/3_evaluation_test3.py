@@ -1,9 +1,11 @@
+import json
 import os
 from itertools import product
-import pandas as pd
-import global_variables
+
 import matplotlib.pyplot as plt
-import json
+import pandas as pd
+
+import global_variables
 from scripts.utils import others
 from scripts.utils.others import extract_grid_size_and_n_enemies
 

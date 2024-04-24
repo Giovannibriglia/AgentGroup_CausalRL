@@ -1,18 +1,18 @@
-import os
 import json
+import os
+import re
 from decimal import Decimal
 from typing import Tuple
-import re
+
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter1d
-import seaborn as sns
 
 import global_variables
 
 
-# TODO: SISTEMARE COME DIO COMANDA
 def create_next_alg_folder(base_dir: str, core_word_path: str) -> str:
     # Ensure base directory exists
     if not os.path.exists(base_dir):
@@ -120,15 +120,6 @@ def IQM_mean(data: list) -> Decimal:
     return iq_mean
 
 
-"""def list_average(list_of_lists: list[list], ok_indexes: list[int]) -> list:
-    list_length = len(list_of_lists[0])
-    averages = []
-    for i in range(list_length):
-        total = sum(sublist[i] for sublist in list_of_lists[ok_indexes])
-        averages.append(total / len(list_of_lists))
-    return averages"""
-
-
 def list_average(list_of_lists: list[list], ok_indexes: list[int]) -> list:
     if not list_of_lists or not ok_indexes or len(ok_indexes) == 0:
         return []  # Return an empty list if there are no sublists or no ok indexes
@@ -206,22 +197,24 @@ def compute_metrics(rewards: list, cumulative_rewards: list, actions: list, comp
     return dict_out
 
 
-SIGMA_GAUSSIAN_FILTER = 3
-
-
 def upload_fig(ax_n: plt.axes, values: list, value_to_display: str, label_series: str,
-               str_timeout: str, algo_number: int, if_legend: bool = True):
+               str_timeout: str, algo_number: int, if_legend: bool = True, fontsize_legend: int = 24):
     colors = sns.color_palette("Set2")
     color_algo = colors[algo_number]
 
-    series_smooth = gaussian_filter1d(values, SIGMA_GAUSSIAN_FILTER)
+    label_series = label_series.replace('TransferLearning', 'TL')
+
+    series_smooth = gaussian_filter1d(values, global_variables.SIGMA_GAUSSIAN_FILTER)
     x_data = np.arange(0, len(series_smooth), 1)
-    if str_timeout is not None:
+    """if str_timeout is not None:
         ax_n.plot(x_data, series_smooth, color=color_algo,
                   label=f'{label_series}: {value_to_display} ({str_timeout})')
     else:
         ax_n.plot(x_data, series_smooth, color=color_algo,
-                  label=f'{label_series}: {value_to_display}')
+                  label=f'{label_series}: {value_to_display}')"""
+
+    ax_n.plot(x_data, series_smooth, color=color_algo,
+              label=f'{label_series}')
 
     data_series_pandas = pd.Series(values)
     rolling_max = data_series_pandas.rolling(window=25).max()
@@ -230,31 +223,20 @@ def upload_fig(ax_n: plt.axes, values: list, value_to_display: str, label_series
                       color=color_algo,
                       alpha=0.2)
     if if_legend:
-        ax_n.legend(fontsize='small')
+        # ax_n.legend(fontsize='small')
+        ax_n.legend(fontsize=fontsize_legend)
 
-
-"""def upload_fig_time(ax_n: plt.axes, list_values: list[list], list_value_to_display: list[str], list_label_series: list[str],
-                    list_str_timeout: list[str]):
-    colors = sns.color_palette("Set2")
-    # color_algo = colors[algo_number]
-
-    labels = []
-    for n in range(len(list_values)):
-        # labels.append(f'{list_label_series[n]}: {list_value_to_display[n]} ({list_str_timeout[n]})')
-        labels.append(f'{list_label_series[n]}')
-
-    #x_data = np.arange(0, len(series_smooth), 1)
-
-    ax_n.boxplot(list_values, vert=True, patch_artist=True, labels=labels)
-
-    #ax_n.legend(fontsize='small')"""
+    ax_n.tick_params(axis='x', labelsize=fontsize_legend)  # Set x-axis tick label size
+    ax_n.tick_params(axis='y', labelsize=fontsize_legend)  # Set y-axis tick label size
 
 
 def upload_fig_time(ax_n: plt.axes, values: list, value_to_display: str, label_series: str,
-                    str_timeout: str, algo_number: int):
+                    str_timeout: str, algo_number: int, if_legend: bool = True, fontsize_legend: int = 22):
     # Define color palette and select color for the algorithm
     colors = sns.color_palette("Set2")
     color_algo = colors[algo_number]
+
+    label_series = label_series.replace('TransferLearning', 'TL')
 
     if value_to_display is not None:
         mean_str, std_str = value_to_display.split(' \u00B1 ')
@@ -262,11 +244,20 @@ def upload_fig_time(ax_n: plt.axes, values: list, value_to_display: str, label_s
         mean_str, std_str = 'nan', 'nan'
 
     # Bar plot for the single value at the specified index
-    if str_timeout is not None:
+    """if str_timeout is not None:
         ax_n.bar(label_series, float(mean_str), yerr=float(std_str), capsize=5, color=color_algo,
                  label=f'{label_series}: {value_to_display} ({str_timeout})')
     else:
-        ax_n.bar(label_series, float(mean_str), yerr=float(std_str),  capsize=5, color=color_algo,
-                 label=f'{label_series}: {value_to_display}')
+        ax_n.bar(label_series, float(mean_str), yerr=float(std_str), capsize=5, color=color_algo,
+                 label=f'{label_series}: {value_to_display}')"""
 
-    ax_n.legend(fontsize='small')
+    ax_n.bar(label_series, float(mean_str), yerr=float(std_str), capsize=5, color=color_algo, label=f'{label_series}')
+
+    if if_legend:
+        # ax_n.legend(fontsize='small')
+        ax_n.legend(fontsize=fontsize_legend)
+
+    # Hide x-axis labels
+    ax_n.set_xticklabels([])
+    ax_n.tick_params(axis='x', labelsize=fontsize_legend)  # Set x-axis tick label size
+    ax_n.tick_params(axis='y', labelsize=fontsize_legend)  # Set y-axis tick label size

@@ -1,16 +1,18 @@
+import itertools
 import pandas as pd
-from scripts.utils.environment import CustomEnv
-from scripts.utils.train_models import Training
-from scripts.utils.others import get_batch_episodes
 import global_variables
+from scripts.utils.plots_and_tables import get_results
+from scripts.utils.environment import CustomEnv
+from scripts.utils.others import get_batch_episodes
+from scripts.utils.train_models import Training
 
 """The objective of this script is to conduct comparative analyses across various environments, algorithms (
 Q-Learning and DQN), exploration strategies (Epsilon-Greedy, Thompson Sampling, Boltzmann Machine, and Softmax 
 Annealing), and algorithm types (vanilla, with offline-extracted causal knowledge, with online-extracted causal 
-knowledge).
+knowledge). You can choose whatever you want.
 
 The simulation results include metrics such as rewards for each episode, computation time for each episode, 
-final q-table (if available), the number of steps taken to complete each episode and number of timeout occurred, 
+final q-table (if Q-Learning), the number of steps taken to complete each episode and number of timeout occurred, 
 along with accompanying videos."""
 
 dir_save = 'Example'
@@ -21,7 +23,11 @@ table_batch_episodes = pd.read_pickle(f'{global_variables.PATH_RESULTS_BATCH_EPI
 if_maze = False
 GRID_SIZES = [(5, 5)]
 ENEMIES = [2]
-N_SIMULATIONS = 3
+EPISODES_TO_VISUALIZE = [0, 1000]
+N_SIMULATIONS = 1
+ALGORITHMS = [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]
+KINDS_OF_ALGORITHMS = [global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_ONLINE]
+EXPLORATION_STRATEGIES = [global_variables.LABEL_EPSILON_GREEDY, global_variables.LABEL_THOMPSON_SAMPLING]
 
 for simulation_n in range(N_SIMULATIONS):
     for rows, cols in GRID_SIZES:
@@ -44,12 +50,11 @@ for simulation_n in range(N_SIMULATIONS):
                 # Create an environment
                 environment = CustomEnv(dict_env_params)
 
-                for label_kind_of_alg in [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]:
+                for label_kind_of_alg in ALGORITHMS:
 
-                    for label_kind_of_alg2 in [global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_VANILLA,
-                                               global_variables.LABEL_CAUSAL_ONLINE]:
+                    for label_kind_of_alg2 in KINDS_OF_ALGORITHMS:
 
-                        for label_exploration_strategy in [global_variables.LABEL_EPSILON_GREEDY]:
+                        for label_exploration_strategy in EXPLORATION_STRATEGIES:
 
                             if global_variables.LABEL_CAUSAL_OFFLINE in label_kind_of_alg2:
                                 class_train = Training(dict_env_params, dict_learning_params, dict_other_params,
@@ -61,7 +66,9 @@ for simulation_n in range(N_SIMULATIONS):
                                                        f'{label_kind_of_alg}_{label_kind_of_alg2}',
                                                        f'{label_exploration_strategy}')
 
-                            add_name_dir_save = 'Maze' if if_maze else 'Grid' + f'{rows}x{cols}_{n_enemies}' + 'enemies' if n_enemies > 1 else 'enemy'
+                            add_name_dir_save = 'Maze' if if_maze else 'Grid'
+                            add_name_dir_save += f'{rows}x{cols}_{n_enemies}'
+                            add_name_dir_save += 'enemies' if n_enemies > 1 else 'enemy'
 
                             dir_save_final = f'{dir_save}/{add_name_dir_save}'
                             name_save = f'{label_kind_of_alg}_{label_kind_of_alg2}_{label_exploration_strategy}_game{simulation_n}'
@@ -73,6 +80,13 @@ for simulation_n in range(N_SIMULATIONS):
                                                     name_save_metrics=name_save,
                                                     batch_update_df_track=get_batch_episodes(n_enemies, rows,
                                                                                              cols, table_batch_episodes) if cond_online else None,
-                                                    episodes_to_visualize=global_variables.EPISODES_TO_VISUALIZE_PAPER,
+                                                    episodes_to_visualize=EPISODES_TO_VISUALIZE,
                                                     dir_save_videos=dir_save_final,
                                                     name_save_videos=name_save)
+
+
+product_list = itertools.product(ALGORITHMS, KINDS_OF_ALGORITHMS)
+group_algorithms = [f'{algorithm}_{kind}' for algorithm, kind in product_list]
+get_results(dir_save, group_algorithms, EXPLORATION_STRATEGIES, if_table=True, if_plots=True, N_GAMES_PERFORMED=N_SIMULATIONS)
+
+

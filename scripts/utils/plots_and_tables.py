@@ -1,20 +1,19 @@
+import json
 import os
 from itertools import product
-import pandas as pd
-import global_variables
 import matplotlib.pyplot as plt
-import json
+import pandas as pd
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+import global_variables
 from scripts.utils import others
 from scripts.utils.others import extract_grid_size_and_n_enemies
 
-fontsize = 12
-SIGMA_GAUSSIAN_FILTER = 3
-
-N_GAMES_PERFORMED = global_variables.N_SIMULATIONS_PAPER
+fontsize = 20
+ticksize = 15
 
 
-def get_results(dir_results, group_kind_of_algs, group_kind_of_exps, if_table, if_plots, if_comp4=False):
+def get_results(dir_results, group_kind_of_algs, group_kind_of_exps, if_table, if_plots,
+                if_comp4=False, N_GAMES_PERFORMED=global_variables.N_SIMULATIONS_PAPER, if_paper=False):
     combinations_algs = list(product(group_kind_of_algs, group_kind_of_exps))
 
     dir_saving_plots_and_table = f'{global_variables.GLOBAL_PATH_REPO}/Plots_and_Tables/{dir_results}'
@@ -72,7 +71,7 @@ def get_results(dir_results, group_kind_of_algs, group_kind_of_exps, if_table, i
             selected_elements = [string for string in files_inside_second_folder if algorithm in string]
 
             if len(selected_elements) != N_GAMES_PERFORMED:
-                print(f'* {algorithm} - missed - {N_GAMES_PERFORMED - len(selected_elements)} times')
+                print(f'* {algorithm} - missed {N_GAMES_PERFORMED - len(selected_elements)} files')
             for element in selected_elements:
                 with open(f'{file_main_folder}/{element}', 'r') as file:
                     series = json.load(file)
@@ -95,8 +94,12 @@ def get_results(dir_results, group_kind_of_algs, group_kind_of_exps, if_table, i
                     tot_indexes = len(series[f'{name_timeout_series}'])
                     ok_indexes = [index for index, value in enumerate(series[f'{name_timeout_series}']) if
                                   value == False]
+
                     if len(ok_indexes) != tot_indexes:
                         print(f'{algorithm}: {tot_indexes - len(ok_indexes)}/{tot_indexes} timeouts')
+
+                    """for n, sublist in enumerate(series[f'{name_rewards_series}']):
+                        print(f'sim {n} - {len(sublist)} completed episodes')"""
 
                     rewards_series = others.list_average(series[f'{name_rewards_series}'], ok_indexes)
                     cumulative_rewards_series = others.cumulative_list(rewards_series)
@@ -145,28 +148,27 @@ def get_results(dir_results, group_kind_of_algs, group_kind_of_exps, if_table, i
                     algos_chosen_from_dict = {key: value for key, value in dict_values.items() if item_chosen in key}
 
                     count_alg = 0
-                    fig_reward, ax_reward = plt.subplots(dpi=1000)
-                    ax_reward.set_title('Average reward')
-                    fig_reward.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
+                    fig_reward, ax_reward = plt.subplots(dpi=1000, figsize=(16, 9))
+                    """ax_reward.set_title('Reward', fontsize=fontsize)
+                    fig_reward.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)"""
+                    if if_paper:
+                        axin_rew = inset_axes(ax_reward, width="52%", height="52%", borderpad=1, loc='center right')
 
-                    fig_cum_reward, ax_cumul_reward = plt.subplots(dpi=1000)
-                    ax_cumul_reward.set_title('Cumulative reward')
-                    fig_cum_reward.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
-                    # ax_cum_reward.set_yscale('log')
+                    fig_cum_reward, ax_cumul_reward = plt.subplots(dpi=1000, figsize=(16, 9))
+                    """ax_cumul_reward.set_title('Cumulative reward', fontsize=fontsize)
+                    fig_cum_reward.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)"""
 
-                    fig_actions, ax_actions = plt.subplots(dpi=1000)
-                    ax_actions.set_title('Actions needed to complete the episode')
-                    fig_actions.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
+                    fig_actions, ax_actions = plt.subplots(dpi=1000, figsize=(16, 9))
+                    """ax_actions.set_title('Actions to complete the episode', fontsize=fontsize)
+                    fig_actions.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)"""
                     ax_actions.set_yscale('log')
-                    # axin_actions = inset_axes(ax_actions, width="30%", height="30%", borderpad=1, loc='upper left')
-                    # axin_actions.set_yscale('log')
 
-                    fig_time, ax_time = plt.subplots(dpi=1000)
-                    ax_time.set_title('Computation time needed to complete the episode')
-                    fig_time.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)
-                    fig_time.subplots_adjust(bottom=0.45)
+                    fig_time, ax_time = plt.subplots(dpi=1000, figsize=(16, 9))
+                    """ax_time.set_title('Computation time to complete the episode', fontsize=fontsize)
+                    fig_time.suptitle(f'{figures_subtitle}', fontsize=fontsize + 3)"""
+                    # fig_time.subplots_adjust(bottom=0.45)
                     ax_time.set_ylabel('Minutes', fontsize=fontsize)
-                    ax_time.set_xlabel('Algorithm', fontsize=fontsize)
+                    ax_time.set_xlabel('Algorithms', fontsize=fontsize)
 
                     for algorithm, series in algos_chosen_from_dict.items():
                         if series[f'{name_rewards_series}']:
@@ -207,15 +209,16 @@ def get_results(dir_results, group_kind_of_algs, group_kind_of_exps, if_table, i
 
                             others.upload_fig(ax_reward, rewards_series, reward_value_to_save, label_plot, str_timeout,
                                               count_alg)
+                            if if_paper:
+                                others.upload_fig(axin_rew, rewards_series, reward_value_to_save, label_plot,
+                                                  str_timeout,
+                                                  count_alg, if_legend=False)
                             others.upload_fig(ax_cumul_reward, cumulative_rewards_series,
                                               cumulative_rewards_value_to_save,
                                               label_plot, str_timeout, count_alg)
                             others.upload_fig(ax_actions, actions_series, actions_value_to_save, label_plot,
                                               str_timeout,
                                               count_alg)
-                            """others.upload_fig(axin_actions, actions_series, actions_value_to_save, label_plot,
-                                              str_timeout,
-                                              count_alg, if_legend=False)"""
                             others.upload_fig_time(ax_time, computation_time_series, computation_time_value_to_save,
                                                    label_plot,
                                                    str_timeout,
@@ -223,21 +226,24 @@ def get_results(dir_results, group_kind_of_algs, group_kind_of_exps, if_table, i
 
                             count_alg += 1
 
-                    """axin_actions.set_xlim(0, 500)
+                    if if_paper:
+                        axin_rew.set_xlim(-10, 500)
+                        axin_rew.set_ylim(-5, 1.2)
+                        # axin_rew.set_yticks([])
+                        ax_reward.indicate_inset_zoom(axin_rew)
+                        ax_reward.legend(loc='lower left', fontsize=25)
 
-                    ax_actions.indicate_inset_zoom(axin_actions)
-
-                    ax_reward.set_xlim(0, 100)
-
-                    ax_actions.set_xlim(0, 500)
-
-                    ax_cumul_reward.set_xlim(0, 500)
-                    ax_cumul_reward.set_ylim(-3000, 750)"""
+                        ax_actions.legend(loc='upper right', fontsize=32)
 
                     ax_time.set_xticklabels(ax_time.get_xticklabels(), rotation=90)
 
-                    if if_comp4:
-                        add_save = 'TL_settings'
+                    fig_time.tight_layout()
+                    fig_actions.tight_layout()
+                    fig_cum_reward.tight_layout()
+                    fig_reward.tight_layout()
+
+                    if if_comp4 and item_chosen == 'EG':
+                        add_save = f'ALL_TF'
                     else:
                         add_save = item_chosen
                     fig_time.savefig(f'{save_plot}/time_{grid_enemies_values_save}_{add_save}.pdf')
@@ -257,13 +263,14 @@ def get_results(dir_results, group_kind_of_algs, group_kind_of_exps, if_table, i
         table_results.to_pickle(f'{dir_saving_plots_and_table}/results.pkl')
 
 
-dir_res = 'Comparison123'
-group_algs = global_variables.LIST_IMPLEMENTED_ALGORITHMS
-group_algs.remove(global_variables.LABEL_RANDOM_AGENT)
-group_exps = global_variables.LIST_IMPLEMENTED_EXPLORATION_STRATEGIES
+if __name__ == "__main__":
+    dir_res = 'Comparison123'
+    group_algs = global_variables.LIST_IMPLEMENTED_ALGORITHMS
+    group_algs.remove(global_variables.LABEL_RANDOM_AGENT)
+    group_exps = global_variables.LIST_IMPLEMENTED_EXPLORATION_STRATEGIES
 
-"""dir_res = 'Comparison4'
-group_algs = ['QL_causal_online_EG', 'QL_causal_offline_EG', 'QL_vanilla_EG']
-group_exps = ['TransferLearning', 'NoTL']"""
+    """dir_res = 'Comparison4'
+    group_algs = ['QL_causal_online_EG', 'QL_causal_offline_EG', 'QL_vanilla_EG']
+    group_exps = ['TransferLearning', 'NoTL']"""
 
-get_results(dir_res, group_algs, group_exps, if_table=True, if_plots=False, if_comp4=False)
+    get_results(dir_res, group_algs, group_exps, if_table=False, if_plots=True, if_comp4=False, if_paper=False)

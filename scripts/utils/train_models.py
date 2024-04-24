@@ -3,10 +3,12 @@ import os
 import random
 import time
 from typing import Tuple
+
 import numpy as np
 import pandas as pd
 from gymnasium.spaces import Discrete
 from tqdm.auto import tqdm
+
 import global_variables
 from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.algorithms.dqn_agent import DQNAgent

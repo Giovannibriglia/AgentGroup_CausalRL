@@ -1,16 +1,18 @@
+import json
 import random
 import re
 import warnings
 from itertools import product
+
 import networkx as nx
 import pandas as pd
 from causalnex.inference import InferenceEngine
 from causalnex.network import BayesianNetwork
+from causalnex.structure import StructureModel
 from causalnex.structure.notears import from_pandas
 from matplotlib import pyplot as plt
-from causalnex.structure import StructureModel
+
 import global_variables
-import json
 
 warnings.filterwarnings("ignore")
 
@@ -219,8 +221,6 @@ class CausalDiscovery:
     def __perform_interventions(self) -> pd.DataFrame:
         table = pd.DataFrame(columns=self.features_names)
 
-        """do_on_ind = True
-        if do_on_ind:  # ok"""
         arrays = []
         for feat_dep in self.dependents_var:
             arrays.append(self.df[feat_dep].unique())
