@@ -36,7 +36,11 @@ additional_assessments
    |__init__.py
 Plots_and_Tables
    |__Comparison123
+      |__results.pkl
+      |__results.xlsx
    |__Comparison4
+      |__results.pkl
+      |__results.xlsx
 Results
    |__Comparison123
    |__Comparison4
@@ -73,9 +77,6 @@ scripts
       |__train_models.py
    __init__.py
    example.py
-Videos
-   |__Comparison123
-   |__Comparison4
 __init__.py
 experiments_parameters.png
 flowchart_resume.png
@@ -119,9 +120,8 @@ values_reasons_parameters.png
 
 ## Parameters
 ![experiments_parameters](experiments_parameters.png)
-<p align="center">
-  <img width="460" height="300" src=values_reasons_parameters.png>
-</p>
+![values_reasons_parameters](values_reasons_parameters.png)
+
 
 ## Develop your Own Extension
 Your extension can take various paths:
