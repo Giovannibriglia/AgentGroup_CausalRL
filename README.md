@@ -40,11 +40,6 @@ Plots_and_Tables
 Results
    |__Comparison123
    |__Comparison4
-   |__OfflineCD_MultiEnv
-   |__Sensitive_Analysis_Batch_Episodes
-   |__Test1
-   |__Test2
-   |__Test3
 scripts
    |__algorithms
       |__init__py
