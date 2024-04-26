@@ -41,9 +41,6 @@ Plots_and_Tables
    |__Comparison4
       |__results.pkl
       |__results.xlsx
-Results
-   |__Comparison123
-   |__Comparison4
 scripts
    |__algorithms
       |__init__py
