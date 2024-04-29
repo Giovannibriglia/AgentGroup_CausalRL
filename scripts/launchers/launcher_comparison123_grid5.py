@@ -27,9 +27,7 @@ GRID_SIZES = [(5, 5)]  # global_variables.GRID_SIZES_CONSIDERED_PAPER
 ENEMIES = global_variables.N_ENEMIES_CONSIDERED_PAPER
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 ALGORITHMS = [global_variables.LABEL_Q_LEARNING]  # [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]
-KINDS_OF_ALGORITHMS = [global_variables.LABEL_CAUSAL_OFFLINE,
-                       global_variables.LABEL_CAUSAL_ONLINE,
-                       global_variables.LABEL_VANILLA]
+KINDS_OF_ALGORITHMS = [global_variables.LABEL_CAUSAL_ONLINE]
 EXPLORATION_STRATEGIES = [global_variables.LABEL_THOMPSON_SAMPLING, global_variables.LABEL_BOLTZMANN_MACHINE,
                           global_variables.LABEL_EPSILON_GREEDY,
                           global_variables.LABEL_SOFTMAX_ANNEALING]

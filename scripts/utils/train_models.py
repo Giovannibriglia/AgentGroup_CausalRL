@@ -131,9 +131,7 @@ class Training:
             if not self._check_if_timeout():
                 self._init_episode(episode)
 
-                computation_time_episode = self._run_episode(episode)
-
-                self._update_episode_metrics(episode, computation_time_episode)
+                self._run_episode(episode)
 
                 if self.batch_update_df_track is not None and (episode % self.batch_update_df_track == 0):
                     self._update_df_track()
@@ -141,6 +139,8 @@ class Training:
 
                     if global_variables.LABEL_CAUSAL_ONLINE in self.kind_of_alg:
                         self._cd_online()
+
+                self._update_episode_metrics(episode)
 
         self._update_game_metrics()
 
@@ -162,7 +162,7 @@ class Training:
             with open(f'{dir_save}/{self.name_save_metrics}.json', 'w') as f:
                 json.dump(self.dict_metrics, f, cls=NumpyEncoder)
 
-    def _update_episode_metrics(self, episode: int, comp_time_episode: float):
+    def _update_episode_metrics(self, episode: int):
         self.algorithm.update_exp_fact(episode)
 
         if episode in self.episodes_to_visualize and self.name_save_videos is not None and self.dir_save_videos is not None:
@@ -172,14 +172,13 @@ class Training:
 
         self.dict_metrics[f'{self.key_metric_rewards_for_episodes}'].append(self.total_episode_reward)
         self.dict_metrics[f'{self.key_metric_steps_for_episodes}'].append(self.step_for_episode)
-        self.dict_metrics[f'{self.key_metric_average_time_for_episodes}'].append(comp_time_episode)
+        self.dict_metrics[f'{self.key_metric_average_time_for_episodes}'].append(time.time()-self.start_time_episode)
 
         mean = round(np.mean(self.dict_metrics[f'{self.key_metric_rewards_for_episodes}']), 2)
         self.pbar.set_postfix_str(
             f'{self.name_alg}, Average reward: {mean}, #Defeats: {self.env.n_times_loser}')
 
-    def _run_episode(self, episode: int) -> float:
-        initial_time_episode = time.time()
+    def _run_episode(self, episode: int):
         while not self.done and not self._check_if_timeout():
             agent_n = 0
 
@@ -206,8 +205,6 @@ class Training:
                 self.current_states = self.env.reset(if_reset_n_time_loser=False)
             else:
                 self.current_states = next_states
-
-        return time.time() - initial_time_episode
 
     def _update_algorithm_knowledge(self, agent_n, current_states, actions, rewards, next_states):
 
@@ -348,6 +345,8 @@ class Training:
         self.total_episode_reward = 0
         self.step_for_episode = 0
         self.done = False
+
+        self.start_time_episode = time.time()
 
     def _cd_online(self):
         df = self.df_track.drop('episode', axis=1, inplace=False)
