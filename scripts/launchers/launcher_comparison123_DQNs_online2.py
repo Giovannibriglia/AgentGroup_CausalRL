@@ -57,9 +57,6 @@ for simulation_n in range(N_SIMULATIONS):
 
                     for label_kind_of_alg2 in KINDS_OF_ALGORITHMS:
 
-                        if not (
-                                label_kind_of_alg == global_variables.LABEL_DQN and label_kind_of_alg2 == global_variables.LABEL_CAUSAL_ONLINE):
-
                             for label_exploration_strategy in EXPLORATION_STRATEGIES:
                                 print(f'** Simulation: {simulation_n + 1}/{N_SIMULATIONS}')
                                 if global_variables.LABEL_CAUSAL_OFFLINE in label_kind_of_alg2:
