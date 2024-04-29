@@ -94,6 +94,6 @@ for simulation_n in range(N_SIMULATIONS):
                                                         name_save_videos=name_save)
 
 
-product_list = itertools.product(ALGORITHMS, KINDS_OF_ALGORITHMS)
+"""product_list = itertools.product(ALGORITHMS, KINDS_OF_ALGORITHMS)
 group_algorithms = [f'{algorithm}_{kind}' for algorithm, kind in product_list]
-get_results(dir_save, group_algorithms, EXPLORATION_STRATEGIES, if_table=True, if_plots=True)
+get_results(dir_save, group_algorithms, EXPLORATION_STRATEGIES, if_table=True, if_plots=True)"""

@@ -16,10 +16,7 @@ The aim of this script is to produce the 'ground truth' for the causal table. Gi
 
 The result of this simulation is the causal table used in algorithms incorporating offline causal discovery.
 """
-# TODO: Extracting causal dependencies encounters a challenge: when the agent encounters a wall, it executes an action
-#  (nonzero) despite resulting in deltaX and deltaY being 0. This discrepancy arises because the action isn't 0.
-#  A potential solution involves incorporating the impact of walls as a distinct feature termed "Wall_Nearby_Agent"
-#  in the modeling process.
+
 N_AGENTS = 1
 N_ENEMIES = 3
 N_GOALS = 1

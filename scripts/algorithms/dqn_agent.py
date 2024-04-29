@@ -1,11 +1,9 @@
 import random
 import warnings
-
 import numpy as np
 import pandas as pd
 import torch
 from gymnasium.spaces import Discrete
-
 import global_variables
 from scripts.utils import exploration_strategies
 
@@ -13,7 +11,6 @@ from scripts.utils import exploration_strategies
 class DQNAgent:
     def __init__(self, dict_env_parameters: dict, dict_learning_parameters: dict, dict_other_params: dict,
                  kind_of_alg: str, exploration_strategy: str):
-        # TODO: predefined network
 
         self.rows = dict_env_parameters['rows']
         self.cols = dict_env_parameters['cols']
@@ -76,14 +73,14 @@ class DQNAgent:
 
             action = self.agent.choose_action(state, possible_actions)
 
-            if action not in possible_actions and action not in goals_nearby_agent.tolist():
+            if action not in possible_actions and goals_nearby_agent is not None and action not in goals_nearby_agent:
                 print(
-                    f'enemies nearby: {enemies_nearby_agent} - possible actions: {possible_actions} - action chosen {action}')
+                    f'goals nearby {goals_nearby_agent} - enemies nearby: {enemies_nearby_agent} - possible actions: {possible_actions} - action chosen {action}')
                 warnings.warn("Wrong causal model, enemies nearby", UserWarning)
 
-            if action not in possible_actions and action in enemies_nearby_agent.tolist():
+            if action not in possible_actions and enemies_nearby_agent is not None and action in enemies_nearby_agent:
                 print(
-                    f'goals nearby {goals_nearby_agent} - possible actions: {possible_actions} - action chosen {action}')
+                    f'goals nearby {goals_nearby_agent} - enemies nearby: {enemies_nearby_agent} - possible actions: {possible_actions} - action chosen {action}')
                 warnings.warn("Wrong causal model, goals nearby", UserWarning)
         else:
             possible_actions = list(np.arange(0, self.n_actions, 1))
@@ -105,3 +102,11 @@ class DQNAgent:
         return possible_actions"""
 
         return global_variables.get_possible_actions(causal_table, enemies_nearby, goals_nearby)
+
+    def return_q_network(self):
+        model_dict = {
+            "state_dict": {k: v.tolist() for k, v in self.agent.policy_net.state_dict().items()},
+            "input_dim": self.agent.policy_net.layer1.in_features,
+            "output_dim": self.agent.policy_net.final_layer.out_features
+        }
+        return model_dict

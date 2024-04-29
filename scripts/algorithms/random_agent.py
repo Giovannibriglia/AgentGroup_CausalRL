@@ -1,12 +1,9 @@
 import random
-
 import numpy as np
 from gymnasium.spaces import Discrete
-
 import global_variables
 
 
-# TODO: the problem for the causality is on the deltaX and deltaY of the actions, check this aspect in the causal table
 class RandomAgent:
     def __init__(self, dict_env_parameters: dict, dict_learning_parameters: dict, dict_other_params: dict,
                  kind_of_alg: str, exploration_strategy: str):

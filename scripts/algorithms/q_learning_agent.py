@@ -1,10 +1,8 @@
 import random
 import warnings
-
 import numpy as np
 import pandas as pd
 from gymnasium.spaces import Discrete
-
 import global_variables
 from scripts.utils import exploration_strategies
 
@@ -12,7 +10,7 @@ from scripts.utils import exploration_strategies
 class QLearningAgent:
     def __init__(self, dict_env_parameters: dict, dict_learning_parameters: dict, dict_other_params: dict,
                  kind_of_alg: str, exploration_strategy: str):
-        # TODO: predefined q-table
+
         self.rows = dict_env_parameters['rows']
         self.cols = dict_env_parameters['cols']
         self.n_actions = int(dict_env_parameters['n_actions'])

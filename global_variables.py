@@ -29,7 +29,7 @@ LABEL_CAUSAL_ONLINE = f'{LABEL_CAUSAL}_online'
 LIST_IMPLEMENTED_ALGORITHMS = [f'{LABEL_RANDOM_AGENT}',
                                f'{LABEL_Q_LEARNING}_{LABEL_VANILLA}', f'{LABEL_Q_LEARNING}_{LABEL_CAUSAL_OFFLINE}',
                                f'{LABEL_Q_LEARNING}_{LABEL_CAUSAL_ONLINE}',
-                               f'{LABEL_DQN}_{LABEL_VANILLA}', f'{LABEL_DQN}_{LABEL_CAUSAL_OFFLINE}']
+                               f'{LABEL_DQN}_{LABEL_VANILLA}', f'{LABEL_DQN}_{LABEL_CAUSAL_OFFLINE}', f'{LABEL_DQN}_{LABEL_CAUSAL_ONLINE}']
 
 LABEL_EPSILON_GREEDY = 'EG'
 LABEL_THOMPSON_SAMPLING = 'TS'
@@ -148,54 +148,61 @@ def get_possible_actions(causal_table: pd.DataFrame,
         possible_actions = [s for s in possible_actions if s not in enemies_nearby]
 
     return possible_actions"""
-    try:
-        if enemies_nearby is not None:
-            enemies_nearby = list(set(enemies_nearby))
-        if goals_nearby is not None:
-            goals_nearby = list(set(goals_nearby))
-
-        col_action = next(s for s in causal_table.columns if LABEL_COL_ACTION in s)
-        col_reward = next(s for s in causal_table.columns if LABEL_COL_REWARD in s)
-        col_enemy_nearby = next(s for s in causal_table.columns if LABEL_ENEMY_CAUSAL_TABLE in s and
-                                LABEL_NEARBY_CAUSAL_TABLE in s)
-        col_goal_nearby = next(s for s in causal_table.columns if
-                               LABEL_GOAL_CAUSAL_TABLE in s and LABEL_NEARBY_CAUSAL_TABLE in s)
-
-        if enemies_nearby is not None and goals_nearby is not None:
-            filtered_rows = causal_table[(causal_table[col_goal_nearby].isin(goals_nearby)) &
-                                         (causal_table[col_enemy_nearby].isin(enemies_nearby))]
-        elif enemies_nearby is not None:
-            filtered_rows = causal_table[(causal_table[col_goal_nearby].isin([50])) &
-                                         (causal_table[col_enemy_nearby].isin(enemies_nearby))]
-        elif goals_nearby is not None:
-            filtered_rows = causal_table[(causal_table[col_goal_nearby].isin(goals_nearby)) &
-                                         (causal_table[col_enemy_nearby].isin([50]))]
-        else:
-            filtered_rows = causal_table
-
-        max_achievable_reward = filtered_rows[col_reward].max()
-        filtered_max_reward = filtered_rows[filtered_rows[col_reward] == max_achievable_reward]
-        # Group by action and calculate average rewards
-        grouped = filtered_max_reward.groupby([col_reward, col_enemy_nearby, col_goal_nearby])[col_action]
-        # Initialize a variable to hold the common values
-        possible_actions = None
-        # Iterate over the groups
-        for name, group in grouped:
-            # If it's the first group, initialize common_values with the values of the first group
-            if possible_actions is None:
-                possible_actions = set(group)
-            # Otherwise, take the intersection of common_values and the values of the current group
+    if causal_table is not None:
+        try:
+            if enemies_nearby is not None:
+                enemies_nearby = list(set(enemies_nearby))
             else:
-                possible_actions = possible_actions.intersection(group)
-        if possible_actions is not None:
-            possible_actions = list(possible_actions)
-        else:
-            possible_actions = []
+                enemies_nearby = [50]
+            if goals_nearby is not None:
+                goals_nearby = list(set(goals_nearby))
+            else:
+                goals_nearby = [50]
 
-        return possible_actions
-    except:
-        print('error in "get_possible_actions" function')
-        return []
+            col_action = next(s for s in causal_table.columns if LABEL_COL_ACTION in s)
+            col_reward = next(s for s in causal_table.columns if LABEL_COL_REWARD in s)
+            col_enemy_nearby = next(s for s in causal_table.columns if LABEL_ENEMY_CAUSAL_TABLE in s and
+                                    LABEL_NEARBY_CAUSAL_TABLE in s)
+            col_goal_nearby = next(s for s in causal_table.columns if
+                                   LABEL_GOAL_CAUSAL_TABLE in s and LABEL_NEARBY_CAUSAL_TABLE in s)
+
+            if enemies_nearby is not None and goals_nearby is not None:
+                filtered_rows = causal_table[(causal_table[col_goal_nearby].isin(goals_nearby)) &
+                                             (causal_table[col_enemy_nearby].isin(enemies_nearby))]
+            elif enemies_nearby is not None:
+                filtered_rows = causal_table[(causal_table[col_goal_nearby].isin([50])) &
+                                             (causal_table[col_enemy_nearby].isin(enemies_nearby))]
+            elif goals_nearby is not None:
+                filtered_rows = causal_table[(causal_table[col_goal_nearby].isin(goals_nearby)) &
+                                             (causal_table[col_enemy_nearby].isin([50]))]
+            else:
+                filtered_rows = causal_table
+
+            max_achievable_reward = filtered_rows[col_reward].max()
+            filtered_max_reward = filtered_rows[filtered_rows[col_reward] == max_achievable_reward]
+            # Group by action and calculate average rewards
+            grouped = filtered_max_reward.groupby([col_reward, col_enemy_nearby, col_goal_nearby])[col_action]
+            # Initialize a variable to hold the common values
+            possible_actions = None
+            # Iterate over the groups
+            for name, group in grouped:
+                # If it's the first group, initialize common_values with the values of the first group
+                if possible_actions is None:
+                    possible_actions = set(group)
+                # Otherwise, take the intersection of common_values and the values of the current group
+                else:
+                    possible_actions = possible_actions.intersection(group)
+            if possible_actions is not None:
+                possible_actions = list(possible_actions)
+            else:
+                possible_actions = []
+
+            return possible_actions
+        except:
+            print('error in "get_possible_actions" function')
+            return []
+    else:
+        return list(DICT_IMPLEMENTED_ACTIONS.keys())
 
 
 LIST_IMPLEMENTED_EXPLORATION_STRATEGIES = [f'{LABEL_EPSILON_GREEDY}', f'{LABEL_THOMPSON_SAMPLING}',

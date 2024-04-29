@@ -5,7 +5,6 @@ import shutil
 import time
 import warnings
 from typing import Tuple
-
 import cv2
 import networkx as nx
 import numpy as np

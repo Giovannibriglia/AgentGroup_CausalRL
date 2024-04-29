@@ -3,12 +3,10 @@ import os
 import random
 import time
 from typing import Tuple
-
 import numpy as np
 import pandas as pd
 from gymnasium.spaces import Discrete
 from tqdm.auto import tqdm
-
 import global_variables
 from scripts.algorithms.causal_discovery import CausalDiscovery
 from scripts.algorithms.dqn_agent import DQNAgent
@@ -152,8 +150,8 @@ class Training:
     def _update_game_metrics(self):
         if global_variables.LABEL_Q_LEARNING in self.kind_of_alg:
             self.dict_metrics[f'{self.key_metric_q_table}'] = self.algorithm.return_q_table()
-        else:
-            self.dict_metrics[f'{self.key_metric_q_table}'] = None
+        elif global_variables.LABEL_DQN in self.kind_of_alg:
+            self.dict_metrics[f'{self.key_metric_q_table}'] = self.algorithm.return_q_network()
 
         self.dict_metrics[f'{self.key_metric_timeout_condition}'] = self._check_if_timeout()
 
