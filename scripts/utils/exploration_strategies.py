@@ -65,7 +65,7 @@ class EpsilonGreedyQAgent:
         state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
         with torch.no_grad():
             if np.random.uniform(0, 1) < self.exp_proba and possible_actions is not None:
-                action = random.choice(possible_actions)
+                action = np.random.choice(possible_actions) if possible_actions is not None and len(possible_actions) > 0 else np.random.randint(self.n_actions)
             else:
                 q_values = self.policy_net(state)
                 if possible_actions is not None:
