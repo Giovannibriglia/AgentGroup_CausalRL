@@ -35,7 +35,6 @@ class CausalDiscovery:
         else:
             self.df = df
 
-        # to speed up causal inference
         for col in self.df.columns:
             self.df[str(col)] = self.df[str(col)].astype(str).str.replace(',', '').astype(float)
 
