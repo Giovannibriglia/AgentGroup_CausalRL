@@ -33,7 +33,7 @@ if_maze = True
 OFFLINE_CAUSAL_TABLE = pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
 TABLE_BATCH_EPISODES = pd.read_pickle(f'{global_variables.PATH_RESULTS_BATCH_EPISODES_ONLINE_CD}')
 
-ALGORITHMS = [global_variables.LABEL_Q_LEARNING]
+ALGORITHMS = [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]
 KINDS_OF_ALGORITHMS = [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE,
                        global_variables.LABEL_CAUSAL_ONLINE]
 EXPLORATION_STRATEGIES = [global_variables.LABEL_EPSILON_GREEDY]

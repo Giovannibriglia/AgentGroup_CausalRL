@@ -43,7 +43,13 @@ class EpsilonGreedyQAgent:
         self.hidden_layers = dict_learning_parameters['HIDDEN_LAYERS']
         self.replay_memory_capacity = dict_learning_parameters['REPLAY_MEMORY_CAPACITY']
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.policy_net = ClassDQN(self.cols * self.rows, self.n_actions, self.hidden_layers).to(self.device)
+        if dict_learning_parameters['KNOWLEDGE_TRANSFERRED'] is not None:
+            model_dict = dict_learning_parameters['KNOWLEDGE_TRANSFERRED']
+            self.policy_net = ClassDQN(model_dict["input_dim"], model_dict["output_dim"], self.hidden_layers).to(self.device)
+            self.policy_net.load_state_dict({k: torch.tensor(v) for k, v in model_dict["state_dict"].items()})
+        else:
+            self.policy_net = ClassDQN(self.cols * self.rows, self.n_actions, self.hidden_layers).to(self.device)
+
         self.target_net = ClassDQN(self.cols * self.rows, self.n_actions, self.hidden_layers).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
@@ -65,7 +71,8 @@ class EpsilonGreedyQAgent:
         state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
         with torch.no_grad():
             if np.random.uniform(0, 1) < self.exp_proba and possible_actions is not None:
-                action = np.random.choice(possible_actions) if possible_actions is not None and len(possible_actions) > 0 else np.random.randint(self.n_actions)
+                action = np.random.choice(possible_actions) if possible_actions is not None and len(
+                    possible_actions) > 0 else np.random.randint(self.n_actions)
             else:
                 q_values = self.policy_net(state)
                 if possible_actions is not None:
@@ -77,13 +84,15 @@ class EpsilonGreedyQAgent:
 
     def _choose_action_q_table(self, state, possible_actions):
         if np.random.uniform(0, 1) < self.exp_proba:
-            action = np.random.choice(possible_actions) if possible_actions is not None and len(possible_actions) > 0 else np.random.randint(self.n_actions)
+            action = np.random.choice(possible_actions) if possible_actions is not None and len(
+                possible_actions) > 0 else np.random.randint(self.n_actions)
 
         else:
             q_values = self.q_table[state[0], state[1], :]
             if possible_actions is not None:
                 if len(possible_actions) > 0:
-                    q_values = np.array([q_values[a] if a in possible_actions else -np.inf for a in range(self.n_actions)])
+                    q_values = np.array(
+                        [q_values[a] if a in possible_actions else -np.inf for a in range(self.n_actions)])
             action = np.argmax(q_values)
         return action
 
@@ -201,7 +210,13 @@ class BoltzmannQAgent:
         self.batch_size, self.tau = params['BATCH_SIZE'], params['TAU']
         self.hidden_layers = params['HIDDEN_LAYERS']
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.policy_net = ClassDQN(self.cols * self.rows, self.n_actions, self.hidden_layers).to(self.device)
+        if params['KNOWLEDGE_TRANSFERRED'] is not None:
+            model_dict = params['KNOWLEDGE_TRANSFERRED']
+            self.policy_net = ClassDQN(model_dict["input_dim"], model_dict["output_dim"], self.hidden_layers).to(
+                self.device)
+            self.policy_net.load_state_dict({k: torch.tensor(v) for k, v in model_dict["state_dict"].items()})
+        else:
+            self.policy_net = ClassDQN(self.cols * self.rows, self.n_actions, self.hidden_layers).to(self.device)
         self.target_net = ClassDQN(self.cols * self.rows, self.n_actions, self.hidden_layers).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
@@ -340,7 +355,13 @@ class SoftmaxAnnealingQAgent:
         self.batch_size, self.tau = params['BATCH_SIZE'], params['TAU']
         self.hidden_layers = params['HIDDEN_LAYERS']
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.policy_net = ClassDQN(self.cols * self.rows, self.n_actions, self.hidden_layers).to(self.device)
+        if params['KNOWLEDGE_TRANSFERRED'] is not None:
+            model_dict = params['KNOWLEDGE_TRANSFERRED']
+            self.policy_net = ClassDQN(model_dict["input_dim"], model_dict["output_dim"], self.hidden_layers).to(
+                self.device)
+            self.policy_net.load_state_dict({k: torch.tensor(v) for k, v in model_dict["state_dict"].items()})
+        else:
+            self.policy_net = ClassDQN(self.cols * self.rows, self.n_actions, self.hidden_layers).to(self.device)
         self.target_net = ClassDQN(self.cols * self.rows, self.n_actions, self.hidden_layers).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
@@ -477,7 +498,13 @@ class ThompsonSamplingQAgent:
         self.alpha = torch.full((self.rows, self.cols, self.n_actions), alpha, dtype=torch.float, device=self.device)
         self.beta = torch.full((self.rows, self.cols, self.n_actions), beta, dtype=torch.float, device=self.device)
 
-        self.policy_net = ClassDQN(self.cols * self.rows, self.n_actions, self.hidden_layers).to(self.device)
+        if dict_learning_parameters['KNOWLEDGE_TRANSFERRED'] is not None:
+            model_dict = dict_learning_parameters['KNOWLEDGE_TRANSFERRED']
+            self.policy_net = ClassDQN(model_dict["input_dim"], model_dict["output_dim"], self.hidden_layers).to(
+                self.device)
+            self.policy_net.load_state_dict({k: torch.tensor(v) for k, v in model_dict["state_dict"].items()})
+        else:
+            self.policy_net = ClassDQN(self.cols * self.rows, self.n_actions, self.hidden_layers).to(self.device)
         self.target_net = ClassDQN(self.cols * self.rows, self.n_actions, self.hidden_layers).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
