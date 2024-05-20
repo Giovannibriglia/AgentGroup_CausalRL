@@ -264,13 +264,14 @@ def get_results(dir_results, group_kind_of_algs, group_kind_of_exps, if_table, i
 
 
 if __name__ == "__main__":
-    dir_res = 'Comparison123'
+    """dir_res = 'Comparison123'
     group_algs = global_variables.LIST_IMPLEMENTED_ALGORITHMS
     group_algs.remove(global_variables.LABEL_RANDOM_AGENT)
-    group_exps = ['EG'] #global_variables.LIST_IMPLEMENTED_EXPLORATION_STRATEGIES
+    group_exps = ['EG'] #global_variables.LIST_IMPLEMENTED_EXPLORATION_STRATEGIES"""
 
-    """dir_res = 'Comparison4'
-    group_algs = ['QL_causal_online_EG', 'QL_causal_offline_EG', 'QL_vanilla_EG']
-    group_exps = ['TransferLearning', 'NoTL']"""
+    dir_res = 'Comparison4'
+    group_algs = ['QL_vanilla_EG', 'QL_causal_offline_EG', 'QL_causal_online_EG',
+                  'DQN_vanilla_EG', 'DQN_causal_offline_EG', 'DQN_causal_online_EG',]
+    group_exps = ['TransferLearning', 'NoTL']
 
-    get_results(dir_res, group_algs, group_exps, if_table=True, if_plots=False, if_comp4=False, if_paper=True)
+    get_results(dir_res, group_algs, group_exps, if_table=True, if_plots=False, if_comp4=True, if_paper=False)

@@ -25,17 +25,17 @@ along with accompanying videos."""
 dir_start_results = 'Comparison123'
 dir_save = 'Comparison4'
 
-GRID_SIZES = global_variables.GRID_SIZES_CONSIDERED_PAPER
-ENEMIES = global_variables.N_ENEMIES_CONSIDERED_PAPER
+GRID_SIZES = [(5, 5)]  # global_variables.GRID_SIZES_CONSIDERED_PAPER
+ENEMIES = [2]  # global_variables.N_ENEMIES_CONSIDERED_PAPER
 N_SIMULATIONS = global_variables.N_SIMULATIONS_PAPER
 
 if_maze = True
 OFFLINE_CAUSAL_TABLE = pd.read_pickle(f'{global_variables.PATH_CAUSAL_TABLE_OFFLINE}')
 TABLE_BATCH_EPISODES = pd.read_pickle(f'{global_variables.PATH_RESULTS_BATCH_EPISODES_ONLINE_CD}')
 
-ALGORITHMS = [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]
-KINDS_OF_ALGORITHMS = [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE,
-                       global_variables.LABEL_CAUSAL_ONLINE]
+ALGORITHMS = [global_variables.LABEL_Q_LEARNING]  # [global_variables.LABEL_Q_LEARNING, global_variables.LABEL_DQN]
+KINDS_OF_ALGORITHMS = [
+    global_variables.LABEL_CAUSAL_ONLINE]  # [global_variables.LABEL_VANILLA, global_variables.LABEL_CAUSAL_OFFLINE, global_variables.LABEL_CAUSAL_ONLINE]
 EXPLORATION_STRATEGIES = [global_variables.LABEL_EPSILON_GREEDY]
 
 
@@ -75,7 +75,6 @@ for simulation_n in range(N_SIMULATIONS):
                         for if_transfer_learning in [True, False]:
 
                             for label_exploration_strategy in EXPLORATION_STRATEGIES:
-
                                 dict_learning_params = global_variables.DICT_LEARNING_PARAMETERS_PAPER
 
                                 game_info1 = f'Grid{rows}x{cols}_{n_enemies}'
