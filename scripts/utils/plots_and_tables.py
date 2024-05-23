@@ -271,7 +271,7 @@ if __name__ == "__main__":
 
     dir_res = 'Comparison4'
     group_algs = ['QL_vanilla_EG', 'QL_causal_offline_EG', 'QL_causal_online_EG',
-                  'DQN_vanilla_EG', 'DQN_causal_offline_EG', 'DQN_causal_online_EG',]
+                  'DQN_vanilla_EG', 'DQN_causal_offline_EG', 'DQN_causal_online_EG']
     group_exps = ['TransferLearning', 'NoTL']
 
-    get_results(dir_res, group_algs, group_exps, if_table=True, if_plots=False, if_comp4=True, if_paper=False)
+    get_results(dir_res, group_algs, group_exps, if_table=True, if_plots=False, if_comp4=True, if_paper=True)
