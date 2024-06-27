@@ -119,6 +119,9 @@ values_reasons_parameters.png
 ![experiments_parameters](experiments_parameters.png)
 ![values_reasons_parameters](values_reasons_parameters.png)
 
+## Results
+### Tables 
+![res_transfer_learning](res_transfer_learning.png)
 
 ## Develop your Own Extension
 Your extension can take various paths:
