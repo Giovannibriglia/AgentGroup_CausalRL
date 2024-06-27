@@ -1,18 +1,23 @@
-# Improving Reinforcement Learning Exploration with Causal Models of Core Environment Dynamics
-**Paper**: [Improving Reinforcement Learning Exploration with Causal Models of Core Environment Dynamics]( https://www.ecai2024.eu/calls/main-track)
+# Improving Reinforcement Learning-based Autonomous Agents with Causal Models
+**Paper**: [Improving Reinforcement Learning-based Autonomous Agents with Causal Models]( https://www.ecai2024.eu/calls/main-track)
 
 **Abstract**:
-Agents trained with model-free Reinforcement Learning (RL)
-must explore the effects of the available actions in different environment states
-to successfully learn optimal control policies.
-Model-based training implies exploration too, but the additional goal is to build a model of the environment.
-Both exploration efforts may be impractical in complex environments (e.g.,\ many available actions and many states),
-hence ways to prune the exploration space must be found.
-In this paper, we propose to use causal discovery techniques to make a RL agent learn a causal model of the core dynamics of a simplified environment
-(i.e.,\ those leading to immediate failure or success). 
-Such a model is then used as a driving assistant during exploration of larger or more complex environments. 
-The goal is reducing the exploration space hence improving efficiency and convergence time. 
-Our experiments in a set of increasingly complex environments and with different baseline exploration strategies show that the causal discovery of a few cause-effect relations suffices in improving the convergence time of both vanilla Q-Learning and DQN.
+Autonomous Agents trained with Reinforcement Learning
+(RL)
+must explore the effects of their available actions in different environment states
+to successfully learn optimal control policies or build
+a model of the environment.
+Exploration efforts may be impractical in
+complex environments, hence ways to prune the exploration space must
+be found.
+In this paper, we propose to augment an autonomous agent
+with a causal model of the core dynamics of its environment, learnt on a
+simplified version and then used as a driving assistant for larger or more
+complex environments.
+Our experiments with different RL algorithms,
+in a set of increasingly complex environments, and with different base-
+line exploration strategies, show that learning such a model suffices in
+improving the agent behaviour.
 
 **Maintainer**: [Giovanni Briglia](https://github.com/Giovannibriglia)  
 **Affiliation**: [Distributed and Pervasive Intelligence Group](https://dipi-unimore.netlify.app/) at [University of Modena and Reggio Emilia](https://www.unimore.it/)  
@@ -120,7 +125,10 @@ values_reasons_parameters.png
 ![values_reasons_parameters](values_reasons_parameters.png)
 
 ## Results
-### Tables 
+### Vanilla vs Causal Offline vs Causal Online
+![res_comp123_1](res_comp123_1.png)
+![res_comp123_2](res_comp123_2.png)
+### Transfer Learning
 ![res_transfer_learning](res_transfer_learning.png)
 
 ## Develop your Own Extension
