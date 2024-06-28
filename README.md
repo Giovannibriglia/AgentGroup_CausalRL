@@ -1,5 +1,5 @@
 # Improving Reinforcement Learning-based Autonomous Agents with Causal Models
-**Paper**: [Improving Reinforcement Learning-based Autonomous Agents with Causal Models]( https://www.ecai2024.eu/calls/main-track)
+**Paper**: [Improving Reinforcement Learning-based Autonomous Agents with Causal Models]()
 
 **Abstract**:
 Autonomous Agents trained with Reinforcement Learning
