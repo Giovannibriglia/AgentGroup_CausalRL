@@ -1,4 +1,5 @@
 # Improving Reinforcement Learning-based Autonomous Agents with Causal Models
+
 **Paper**: [Improving Reinforcement Learning-based Autonomous Agents with Causal Models]()
 
 **Abstract**:
@@ -25,7 +26,7 @@ improving the agent behaviour.
 
 ![flowchart_resume](flowchart_resume.png)
 
-## Project Structure
+## 1. Project Structure
 
 ```
 additional_assessments
@@ -90,7 +91,8 @@ setup.py
 values_reasons_parameters.png
 ```
 
-## Installation
+## 2. Installation
+
 1. Create a new python virtual environment with 'python 3.10'
 2. Install 'requirements'
    ```
@@ -104,7 +106,8 @@ values_reasons_parameters.png
    ```
    python3.10 -m scripts/example.py
    ```
-## How to Reproduce Paper Results
+   
+## 3. How to Reproduce Paper Results
    For comparison: Vanilla vs Causal Offline vs Causal Online in Grid-like Environments:
    ```
    python setup.py install
@@ -120,18 +123,24 @@ values_reasons_parameters.png
    python3.10 -m scripts/launchers/launcher_comparison4_paper.py
    ```
 
-## Parameters
+## 4. Parameters
+
 ![experiments_parameters](experiments_parameters.png)
 ![values_reasons_parameters](values_reasons_parameters.png)
 
-## Results
-### Vanilla vs Causal Offline vs Causal Online
+## 5. Results
+
+### 5.1 Vanilla vs Causal Offline vs Causal Online
+
 ![res_comp123_1](res_comp123_1.png)
 ![res_comp123_2](res_comp123_2.png)
-### Transfer Learning
+
+### 5.2 Transfer Learning
+
 ![res_transfer_learning](res_transfer_learning.png)
 
-## Develop your Own Extension
+## 6. Develop your Own Extension
+
 Your extension can take various paths:
 1) One direction involves modifying the causal discovery algorithms.
 2) Another direction entails adding new kinds of agent (currently Q-Learning and DQN have been developed). It's crucial to maintain consistency with the training class by implementing the "__update_Q_or_memory__", "__update_exp_fact__", "__select_action__" and "__return_q_table__" functions. Additionally, in the "global_variables.py" script, you need to include your custom label.
