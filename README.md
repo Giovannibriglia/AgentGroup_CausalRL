@@ -25,6 +25,13 @@ such a model improves the agent behaviour.
   <img src="flowchart_resume.png" alt="Flowchart resume" width="1222"/>
 </p>
 
+
+<p align="center">
+    <img src="gif_grid.gif" alt="First GIF" width="45%" style="display:inline-block; margin-right: 1000px;"/>
+    <img src="gif_maze.gif" alt="Second GIF" width="45%" style="display:inline-block;"/>
+</p>
+
+
 ## 1. Project Structure
 
 ```
