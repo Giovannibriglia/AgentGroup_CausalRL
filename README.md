@@ -17,7 +17,7 @@ such a model improves the agent behaviour.
 
 **Keywords**: Autonomous Agents, Causal Discovery, Reinforcement Learning
 
-**Conference Presentation**: [slides](https://docs.google.com/presentation/d/14cewQS9lm92rp0atnfKo0i9B4tSb4jVb/edit?usp=sharing&ouid=101638657537645885348&rtpof=true&sd=true)
+**Conference Presentation**: [slides]([https://docs.google.com/presentation/d/14cewQS9lm92rp0atnfKo0i9B4tSb4jVb/edit?usp=sharing&ouid=101638657537645885348&rtpof=true&sd=true](https://docs.google.com/presentation/d/e/2PACX-1vTDZUHQdq7vz76_2bpJQyv7qEs7iYSTHEL0j5rVM4-nWIytgcNoq7vLfv64DY4Qeg/pub?start=false&loop=false&delayms=60000))
 
 **Maintainer**: [Giovanni Briglia](https://github.com/Giovannibriglia)  
 **Affiliation**: [Distributed and Pervasive Intelligence Group](https://dipi-unimore.netlify.app/) at [University of Modena and Reggio Emilia](https://www.unimore.it/)  
