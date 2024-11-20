@@ -174,6 +174,13 @@ Your extension can take various paths:
 
 ## Citation  
 ```
-@inproceedings{}
+@inproceedings{briglia2024improving,
+  title={Improving Reinforcement Learning-Based Autonomous Agents with Causal Models},
+  author={Briglia, Giovanni and Lippi, Marco and Mariani, Stefano and Zambonelli, Franco},
+  booktitle={International Conference on Principles and Practice of Multi-Agent Systems},
+  pages={267--283},
+  year={2024},
+  organization={Springer}
+}
 ```
 
